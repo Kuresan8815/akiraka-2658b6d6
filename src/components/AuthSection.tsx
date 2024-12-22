@@ -22,8 +22,6 @@ export const AuthSection = () => {
 
     setIsLoading(true);
     try {
-      // Here we would typically integrate with an authentication service
-      // For now, we'll just show a success message
       toast({
         title: "Success!",
         description: "Check your email for further instructions.",
@@ -41,35 +39,32 @@ export const AuthSection = () => {
   };
 
   return (
-    <div className="bg-eco-primary/5 py-24">
+    <div className="bg-eco-primary/5 py-12">
       <div className="container mx-auto px-4">
-        <div className="max-w-md mx-auto text-center">
-          <h2 className="text-3xl font-bold text-eco-primary mb-6">
+        <div className="max-w-sm mx-auto text-center">
+          <h2 className="text-2xl font-bold text-eco-primary mb-4">
             Join Our Community
           </h2>
-          <p className="text-gray-600 mb-8">
-            Start your sustainable journey today. Sign up for early access and
-            exclusive updates.
+          <p className="text-sm text-gray-600 mb-6">
+            Sign up for early access and updates.
           </p>
-          <form onSubmit={handleEmailSignUp} className="space-y-4">
-            <div className="flex gap-2">
-              <Input
-                type="email"
-                placeholder="Enter your email"
-                className="h-12"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-              <Button 
-                type="submit"
-                size="lg" 
-                className="bg-eco-primary hover:bg-eco-secondary"
-                disabled={isLoading}
-              >
-                Sign Up
-              </Button>
-            </div>
+          <form onSubmit={handleEmailSignUp} className="space-y-3">
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              className="h-10"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+            />
+            <Button 
+              type="submit"
+              size="lg" 
+              className="w-full bg-eco-primary hover:bg-eco-secondary"
+              disabled={isLoading}
+            >
+              Sign Up
+            </Button>
             <Button
               variant="outline"
               size="lg"
@@ -82,7 +77,7 @@ export const AuthSection = () => {
               }}
               disabled={isLoading}
             >
-              <Mail className="mr-2 h-5 w-5" />
+              <Mail className="mr-2 h-4 w-4" />
               Continue with Email
             </Button>
           </form>
