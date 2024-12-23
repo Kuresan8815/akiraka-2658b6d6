@@ -9,7 +9,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from "recharts";
 
 interface DashboardMetrics {
   totalCarbonSaved: number;
@@ -142,30 +142,29 @@ export const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="h-[200px]">
-            <ChartContainer
-              className="h-full"
-              config={{
-                line: {
-                  theme: {
-                    light: "var(--eco-primary)",
-                    dark: "var(--eco-primary)",
-                  },
-                },
-              }}
-            >
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={metrics.monthlyScans}>
                 <XAxis dataKey="month" />
                 <YAxis />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      return (
+                        <div className="bg-white p-2 border rounded shadow">
+                          <p className="text-sm">{`${label}: ${payload[0].value} scans`}</p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
                 <Bar
                   dataKey="scans"
                   fill="var(--eco-primary)"
                   radius={[4, 4, 0, 0]}
                 />
-                <ChartTooltip>
-                  <ChartTooltipContent />
-                </ChartTooltip>
               </BarChart>
-            </ChartContainer>
+            </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
