@@ -28,9 +28,14 @@ export const ProductDetails = () => {
         .from("products")
         .select("*")
         .eq("qr_code_id", qrCodeId)
-        .single();
+        .maybeSingle();
 
       if (error) {
+        console.error("Error fetching product:", error);
+        throw error;
+      }
+
+      if (!data) {
         toast({
           title: "Demo Mode",
           description: "Showing demo product details",
