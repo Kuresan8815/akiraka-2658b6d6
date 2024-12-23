@@ -14,6 +14,7 @@ const DEMO_PRODUCT = {
   water_usage: 2,
   origin: "Sustainable Factory, Sweden",
   qr_code_id: "demo",
+  sustainability_score: 85,
 };
 
 export const ProductDetails = () => {
@@ -82,10 +83,16 @@ export const ProductDetails = () => {
           <CardTitle className="text-xl text-eco-primary">
             {product.name}
           </CardTitle>
-          <Badge className={certificationColor}>
-            <Award className="mr-1 h-3 w-3" />
-            {product.certification_level} Certified
-          </Badge>
+          <div className="flex flex-col gap-2">
+            <Badge className={certificationColor}>
+              <Award className="mr-1 h-3 w-3" />
+              {product.certification_level} Certified
+            </Badge>
+            <Badge className="bg-green-500">
+              <Leaf className="mr-1 h-3 w-3" />
+              Sustainability Score: {product.sustainability_score}/100
+            </Badge>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2">

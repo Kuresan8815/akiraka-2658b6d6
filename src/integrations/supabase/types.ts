@@ -18,6 +18,7 @@ export type Database = {
           name: string
           origin: string
           qr_code_id: string
+          sustainability_score: number
           water_usage: number
         }
         Insert: {
@@ -28,6 +29,7 @@ export type Database = {
           name: string
           origin: string
           qr_code_id: string
+          sustainability_score?: number
           water_usage: number
         }
         Update: {
@@ -38,6 +40,7 @@ export type Database = {
           name?: string
           origin?: string
           qr_code_id?: string
+          sustainability_score?: number
           water_usage?: number
         }
         Relationships: []
