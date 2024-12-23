@@ -6,6 +6,16 @@ import { Badge } from "./ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { useToast } from "./ui/use-toast";
 
+const DEMO_PRODUCT = {
+  id: "demo",
+  name: "Eco-Friendly Water Bottle",
+  certification_level: "Gold",
+  carbon_footprint: 0.5,
+  water_usage: 2,
+  origin: "Sustainable Factory, Sweden",
+  qr_code_id: "demo",
+};
+
 export const ProductDetails = () => {
   const { qrCodeId } = useParams();
   const { toast } = useToast();
@@ -21,11 +31,10 @@ export const ProductDetails = () => {
 
       if (error) {
         toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Product not found",
+          title: "Demo Mode",
+          description: "Showing demo product details",
         });
-        throw error;
+        return DEMO_PRODUCT;
       }
 
       // Record scan in history if user is authenticated
