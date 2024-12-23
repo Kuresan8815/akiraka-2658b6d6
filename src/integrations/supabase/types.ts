@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      products: {
+        Row: {
+          carbon_footprint: number
+          certification_level: string
+          created_at: string
+          id: string
+          name: string
+          origin: string
+          qr_code_id: string
+          water_usage: number
+        }
+        Insert: {
+          carbon_footprint: number
+          certification_level: string
+          created_at?: string
+          id?: string
+          name: string
+          origin: string
+          qr_code_id: string
+          water_usage: number
+        }
+        Update: {
+          carbon_footprint?: number
+          certification_level?: string
+          created_at?: string
+          id?: string
+          name?: string
+          origin?: string
+          qr_code_id?: string
+          water_usage?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -29,6 +62,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      scan_history: {
+        Row: {
+          id: string
+          product_id: string
+          scanned_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          product_id: string
+          scanned_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          product_id?: string
+          scanned_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_history_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
