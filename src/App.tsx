@@ -10,19 +10,19 @@ import { ProductDetails } from "./components/ProductDetails";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <TooltipProvider>
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/scan" element={<QRScanner />} />
           <Route path="/product/:qrCodeId" element={<ProductDetails />} />
         </Routes>
-      </BrowserRouter>
-    </QueryClientProvider>
-  </TooltipProvider>
+      </TooltipProvider>
+    </BrowserRouter>
+  </QueryClientProvider>
 );
 
 export default App;
