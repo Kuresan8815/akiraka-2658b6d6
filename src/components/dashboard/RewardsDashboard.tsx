@@ -1,10 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Award, Gift, Star } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { MetricCard } from "./MetricCard";
+import { RewardTierCard } from "./RewardTierCard";
 
 const REWARD_TIERS = [
   { points: 100, reward: "10% off your next purchase", icon: Star },
@@ -56,7 +55,7 @@ export const RewardsDashboard = () => {
       .from("rewards")
       .update({
         points_redeemed: rewards.points_redeemed + points,
-        reward_history: [...rewards.reward_history, {
+        reward_history: [...(rewards.reward_history as any[]), {
           points,
           reward,
           redeemedAt: new Date().toISOString(),
@@ -88,6 +87,7 @@ export const RewardsDashboard = () => {
   }
 
   const availablePoints = rewards ? rewards.points_earned - rewards.points_redeemed : 0;
+  const rewardHistoryLength = rewards?.reward_history ? (rewards.reward_history as any[]).length : 0;
 
   return (
     <div className="space-y-6">
@@ -104,33 +104,23 @@ export const RewardsDashboard = () => {
         />
         <MetricCard
           title="Rewards Redeemed"
-          value={rewards?.reward_history.length.toString() || "0"}
+          value={rewardHistoryLength.toString()}
           icon={Gift}
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {REWARD_TIERS.map(({ points, reward, icon: Icon }) => {
+        {REWARD_TIERS.map(({ points, reward, icon }) => {
           const isUnlocked = availablePoints >= points;
           return (
-            <Card key={points} className={!isUnlocked ? "opacity-60" : ""}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {points} Points
-                </CardTitle>
-                <Icon className={`h-4 w-4 ${isUnlocked ? "text-eco-primary" : "text-gray-400"}`} />
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">{reward}</p>
-                <Button
-                  onClick={() => handleRedeemPoints(points, reward)}
-                  disabled={!isUnlocked}
-                  className="w-full"
-                >
-                  {isUnlocked ? "Redeem Points" : "Locked"}
-                </Button>
-              </CardContent>
-            </Card>
+            <RewardTierCard
+              key={points}
+              points={points}
+              reward={reward}
+              icon={icon}
+              isUnlocked={isUnlocked}
+              onRedeem={() => handleRedeemPoints(points, reward)}
+            />
           );
         })}
       </div>
