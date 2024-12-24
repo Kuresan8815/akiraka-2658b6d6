@@ -10,8 +10,8 @@ import { ProductDetails } from "./components/ProductDetails";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+  <TooltipProvider>
+    <QueryClientProvider client={queryClient}>
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -21,8 +21,8 @@ const App = () => (
           <Route path="/product/:qrCodeId" element={<ProductDetails />} />
         </Routes>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </TooltipProvider>
 );
 
 export default App;
