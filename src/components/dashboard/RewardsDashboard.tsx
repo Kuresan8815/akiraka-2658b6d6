@@ -131,7 +131,8 @@ export const RewardsDashboard = () => {
                 </Button>
               </CardContent>
             </Card>
-          ))}
+          );
+        })}
       </div>
     </div>
   );
