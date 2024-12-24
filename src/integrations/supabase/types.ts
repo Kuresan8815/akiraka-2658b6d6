@@ -66,6 +66,36 @@ export type Database = {
         }
         Relationships: []
       }
+      rewards: {
+        Row: {
+          created_at: string
+          id: string
+          points_earned: number
+          points_redeemed: number
+          reward_history: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          points_earned?: number
+          points_redeemed?: number
+          reward_history?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          points_earned?: number
+          points_redeemed?: number
+          reward_history?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scan_history: {
         Row: {
           id: string
