@@ -35,7 +35,7 @@ export const AuthSection = () => {
 
       toast({
         title: "Success!",
-        description: "Check your email for further instructions.",
+        description: "Account created successfully. You can now sign in.",
       });
       setEmail("");
       setPassword("");
@@ -96,7 +96,7 @@ export const AuthSection = () => {
           <p className="text-sm text-gray-600 mb-6">
             Sign up or sign in to access your dashboard.
           </p>
-          <form className="space-y-3">
+          <form onSubmit={handleEmailSignUp} className="space-y-3">
             <Input
               type="email"
               placeholder="Enter your email"
@@ -118,7 +118,6 @@ export const AuthSection = () => {
               size="lg" 
               className="w-full bg-eco-primary hover:bg-eco-secondary"
               disabled={isLoading}
-              onClick={handleEmailSignUp}
             >
               Sign Up
             </Button>
@@ -127,7 +126,7 @@ export const AuthSection = () => {
               variant="outline"
               size="lg"
               className="w-full"
-              onClick={handleEmailSignIn}
+              onClick={(e) => handleEmailSignIn(e)}
               disabled={isLoading}
             >
               <Mail className="mr-2 h-4 w-4" />
