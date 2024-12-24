@@ -5,7 +5,7 @@ import { MilestoneProgress } from "./dashboard/MilestoneProgress";
 import { RewardsDashboard } from "./dashboard/RewardsDashboard";
 
 export const Dashboard = () => {
-  const { data: session } = useQuery({
+  const { data: session, isLoading: isSessionLoading } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -13,8 +13,20 @@ export const Dashboard = () => {
     },
   });
 
+  if (isSessionLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
+      </div>
+    );
+  }
+
   if (!session) {
-    return null;
+    return (
+      <div className="text-center py-8">
+        <p className="text-gray-600">Please sign in to view your dashboard</p>
+      </div>
+    );
   }
 
   // Sample data for demonstration
