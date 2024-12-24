@@ -3,18 +3,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 export const AuthSection = () => {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) {
+    if (!email || !password) {
       toast({
         title: "Error",
-        description: "Please enter your email address",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -22,15 +26,59 @@ export const AuthSection = () => {
 
     setIsLoading(true);
     try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
       toast({
         title: "Success!",
         description: "Check your email for further instructions.",
       });
       setEmail("");
-    } catch (error) {
+      setPassword("");
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: error.message || "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: "You have been signed in.",
+      });
+      navigate("/");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -46,9 +94,9 @@ export const AuthSection = () => {
             Join Our Community
           </h2>
           <p className="text-sm text-gray-600 mb-6">
-            Sign up for early access and updates.
+            Sign up or sign in to access your dashboard.
           </p>
-          <form onSubmit={handleEmailSignUp} className="space-y-3">
+          <form className="space-y-3">
             <Input
               type="email"
               placeholder="Enter your email"
@@ -57,28 +105,33 @@ export const AuthSection = () => {
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
             />
+            <Input
+              type="password"
+              placeholder="Enter your password"
+              className="h-10"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
+            />
             <Button 
               type="submit"
               size="lg" 
               className="w-full bg-eco-primary hover:bg-eco-secondary"
               disabled={isLoading}
+              onClick={handleEmailSignUp}
             >
               Sign Up
             </Button>
             <Button
+              type="button"
               variant="outline"
               size="lg"
               className="w-full"
-              onClick={() => {
-                toast({
-                  title: "Coming Soon",
-                  description: "Email sign-in will be available soon!",
-                });
-              }}
+              onClick={handleEmailSignIn}
               disabled={isLoading}
             >
               <Mail className="mr-2 h-4 w-4" />
-              Continue with Email
+              Sign In
             </Button>
           </form>
         </div>
