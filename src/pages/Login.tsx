@@ -27,16 +27,12 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      console.log("Starting login attempt for:", email);
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error("Login error:", error);
-        
         let errorMessage = "Invalid email or password";
         if (error.message.includes("Email not confirmed")) {
           errorMessage = "Please verify your email before logging in";
@@ -52,22 +48,13 @@ const Login = () => {
         return;
       }
 
-      if (!data.user) {
-        console.error("No user data returned");
+      if (data?.user) {
         toast({
-          title: "Error",
-          description: "Unable to log in. Please try again.",
-          variant: "destructive",
+          title: "Success!",
+          description: "You have been signed in.",
         });
-        return;
+        navigate("/");
       }
-
-      console.log("Login successful:", data);
-      toast({
-        title: "Success!",
-        description: "You have been signed in.",
-      });
-      navigate("/");
     } catch (error: any) {
       console.error("Login process error:", error);
       toast({
