@@ -27,30 +27,41 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      console.log("Attempting to sign in with:", { email });
+      console.log("Starting login attempt for:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error("Login error:", error);
+        console.error("Login error details:", {
+          code: error.status,
+          message: error.message,
+          details: error
+        });
+
+        let errorMessage = "Invalid email or password";
+        if (error.message.includes("Email not confirmed")) {
+          errorMessage = "Please verify your email before logging in";
+        }
+
+        toast({
+          title: "Login Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
         throw error;
       }
 
-      console.log("Sign in successful:", data);
+      console.log("Login successful:", data);
       toast({
         title: "Success!",
         description: "You have been signed in.",
       });
       navigate("/");
     } catch (error: any) {
-      console.error("Caught error:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
+      console.error("Login process error:", error);
     } finally {
       setIsLoading(false);
     }
