@@ -35,12 +35,8 @@ const Login = () => {
       });
 
       if (error) {
-        console.error("Login error details:", {
-          code: error.status,
-          message: error.message,
-          details: error
-        });
-
+        console.error("Login error:", error);
+        
         let errorMessage = "Invalid email or password";
         if (error.message.includes("Email not confirmed")) {
           errorMessage = "Please verify your email before logging in";
@@ -51,7 +47,7 @@ const Login = () => {
           description: errorMessage,
           variant: "destructive",
         });
-        throw error;
+        return;
       }
 
       console.log("Login successful:", data);
@@ -62,6 +58,11 @@ const Login = () => {
       navigate("/");
     } catch (error: any) {
       console.error("Login process error:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
