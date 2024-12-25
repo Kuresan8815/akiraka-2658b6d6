@@ -32,11 +32,20 @@ export const Hero = () => {
             <QrCode className="mr-2" />
             Scan Product
           </Button>
-          <Button size="lg" className="w-full bg-eco-primary hover:bg-eco-secondary">
+          <Button 
+            size="lg" 
+            className="w-full bg-eco-primary hover:bg-eco-secondary"
+            onClick={() => navigate("/signup")}
+          >
             Sign Up
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
-          <Button size="lg" variant="outline" className="w-full">
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="w-full"
+            onClick={() => navigate("/login")}
+          >
             Log In
           </Button>
         </div>

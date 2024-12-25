@@ -50,18 +50,27 @@ export type Database = {
           created_at: string
           has_completed_onboarding: boolean | null
           id: string
+          name: string | null
+          preferences: Json | null
+          sustainability_goals: Json | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           has_completed_onboarding?: boolean | null
           id: string
+          name?: string | null
+          preferences?: Json | null
+          sustainability_goals?: Json | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           has_completed_onboarding?: boolean | null
           id?: string
+          name?: string | null
+          preferences?: Json | null
+          sustainability_goals?: Json | null
           updated_at?: string
         }
         Relationships: []
