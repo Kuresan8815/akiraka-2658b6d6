@@ -40,11 +40,23 @@ const Login = () => {
         let errorMessage = "Invalid email or password";
         if (error.message.includes("Email not confirmed")) {
           errorMessage = "Please verify your email before logging in";
+        } else if (error.message.includes("Invalid login credentials")) {
+          errorMessage = "The email or password you entered is incorrect";
         }
 
         toast({
           title: "Login Failed",
           description: errorMessage,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data.user) {
+        console.error("No user data returned");
+        toast({
+          title: "Error",
+          description: "Unable to log in. Please try again.",
           variant: "destructive",
         });
         return;
