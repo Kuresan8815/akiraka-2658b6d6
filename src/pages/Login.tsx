@@ -27,19 +27,25 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("Attempting to sign in with:", { email });
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
 
+      console.log("Sign in successful:", data);
       toast({
         title: "Success!",
         description: "You have been signed in.",
       });
       navigate("/");
     } catch (error: any) {
+      console.error("Caught error:", error);
       toast({
         title: "Error",
         description: error.message || "Something went wrong. Please try again.",
@@ -86,7 +92,7 @@ const Login = () => {
           className="w-full bg-eco-primary hover:bg-eco-secondary"
           disabled={isLoading}
         >
-          Sign In
+          {isLoading ? "Signing in..." : "Sign In"}
         </Button>
 
         <p className="text-center text-sm text-gray-600">
