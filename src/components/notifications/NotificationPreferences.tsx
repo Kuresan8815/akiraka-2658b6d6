@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { Gift, Lightbulb, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Json } from "@/integrations/supabase/types";
 
 interface NotificationPreferences {
   notifications?: {
@@ -14,7 +15,7 @@ interface NotificationPreferences {
 }
 
 interface Profile {
-  preferences: NotificationPreferences | null;
+  preferences: Json | null;
 }
 
 export const NotificationPreferences = () => {
@@ -38,7 +39,7 @@ export const NotificationPreferences = () => {
   });
 
   const updatePreferencesMutation = useMutation({
-    mutationFn: async (preferences: NotificationPreferences) => {
+    mutationFn: async (preferences: Json) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session");
 
@@ -64,17 +65,17 @@ export const NotificationPreferences = () => {
     },
   });
 
-  const preferences = profile?.preferences || { notifications: {} };
+  const parsedPreferences = profile?.preferences as NotificationPreferences || { notifications: {} };
 
   const updatePreference = (key: string, value: boolean) => {
     const newPreferences = {
-      ...preferences,
+      ...parsedPreferences,
       notifications: {
-        ...preferences.notifications,
+        ...parsedPreferences.notifications,
         [key]: value,
       },
     };
-    updatePreferencesMutation.mutate(newPreferences);
+    updatePreferencesMutation.mutate(newPreferences as Json);
   };
 
   if (isLoading) {
@@ -119,7 +120,7 @@ export const NotificationPreferences = () => {
               </div>
             </div>
             <Switch
-              checked={preferences?.notifications?.[id as keyof typeof preferences.notifications] ?? true}
+              checked={parsedPreferences?.notifications?.[id as keyof typeof parsedPreferences.notifications] ?? true}
               onCheckedChange={(checked) => updatePreference(id, checked)}
             />
           </div>
