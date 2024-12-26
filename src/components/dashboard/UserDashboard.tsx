@@ -5,11 +5,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Leaf, Droplet, QrCode, Gift, History, RefreshCw } from "lucide-react";
+import { Leaf, Droplet, QrCode, Gift, History } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { MetricCard } from "./MetricCard";
 import { MilestoneProgress } from "./MilestoneProgress";
 import { MonthlyScansChart } from "./MonthlyScansChart";
+
+// Type guard to check if a value is an array
+const isArray = (value: unknown): value is Array<unknown> => Array.isArray(value);
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
@@ -89,7 +92,8 @@ export const UserDashboard = () => {
   const totalWaterSaved = scanHistory?.reduce((total, scan) => 
     total + (scan.products?.water_usage || 0), 0) || 0;
 
-  const achievements = rewards?.reward_history || [];
+  // Use type guard to ensure achievements is an array
+  const achievements = isArray(rewards?.reward_history) ? rewards.reward_history : [];
   const pointsToNextMilestone = 100 - (rewards?.points_earned % 100);
 
   return (
