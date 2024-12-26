@@ -27,6 +27,15 @@ const SignUp = () => {
       return;
     }
 
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast({
         title: "Error",
@@ -38,7 +47,7 @@ const SignUp = () => {
 
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -48,17 +57,33 @@ const SignUp = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Signup error:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      toast({
-        title: "Success!",
-        description: "Account created successfully. You can now sign in.",
-      });
-      navigate("/login");
+      if (data?.user) {
+        toast({
+          title: "Success!",
+          description: "Account created successfully. You can now sign in.",
+        });
+        // Clear the form
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setName("");
+        navigate("/login");
+      }
     } catch (error: any) {
+      console.error("Unexpected error:", error);
       toast({
         title: "Error",
-        description: error.message || "Something went wrong. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -82,6 +107,8 @@ const SignUp = () => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={isLoading}
+              required
+              minLength={2}
             />
           </div>
           <div className="relative">
@@ -93,6 +120,7 @@ const SignUp = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isLoading}
+              required
             />
           </div>
           <div className="relative">
@@ -104,6 +132,8 @@ const SignUp = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
+              required
+              minLength={6}
             />
           </div>
           <div className="relative">
@@ -115,6 +145,8 @@ const SignUp = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={isLoading}
+              required
+              minLength={6}
             />
           </div>
         </div>
@@ -124,7 +156,7 @@ const SignUp = () => {
           className="w-full bg-eco-primary hover:bg-eco-secondary"
           disabled={isLoading}
         >
-          Create Account
+          {isLoading ? "Creating Account..." : "Create Account"}
         </Button>
 
         <p className="text-center text-sm text-gray-600">
