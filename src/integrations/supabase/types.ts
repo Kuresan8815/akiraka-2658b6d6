@@ -9,6 +9,33 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          type: Database["public"]["Enums"]["notification_type"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           carbon_footprint: number
@@ -139,10 +166,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      mark_notifications_as_read: {
+        Args: {
+          notification_ids: string[]
+        }
+        Returns: string[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      notification_type: "rewards" | "sustainability_tips" | "store_alerts"
     }
     CompositeTypes: {
       [_ in never]: never

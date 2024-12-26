@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import { QRScanner } from "./components/QRScanner";
 import { ProductDetails } from "./components/ProductDetails";
+import Notifications from "./pages/Notifications";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/signup" element={<SignUp />} />
           <Route path="/scan" element={<QRScanner />} />
           <Route path="/product/:qrCodeId" element={<ProductDetails />} />
+          <Route path="/notifications" element={<Notifications />} />
         </Routes>
       </TooltipProvider>
     </BrowserRouter>
