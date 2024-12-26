@@ -5,6 +5,18 @@ import { Card } from "@/components/ui/card";
 import { Gift, Lightbulb, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+interface NotificationPreferences {
+  notifications?: {
+    rewards?: boolean;
+    sustainability_tips?: boolean;
+    store_alerts?: boolean;
+  };
+}
+
+interface Profile {
+  preferences: NotificationPreferences | null;
+}
+
 export const NotificationPreferences = () => {
   const { toast } = useToast();
 
@@ -21,12 +33,12 @@ export const NotificationPreferences = () => {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as Profile;
     },
   });
 
   const updatePreferencesMutation = useMutation({
-    mutationFn: async (preferences: any) => {
+    mutationFn: async (preferences: NotificationPreferences) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session");
 
@@ -52,7 +64,7 @@ export const NotificationPreferences = () => {
     },
   });
 
-  const preferences = profile?.preferences || {};
+  const preferences = profile?.preferences || { notifications: {} };
 
   const updatePreference = (key: string, value: boolean) => {
     const newPreferences = {
@@ -107,7 +119,7 @@ export const NotificationPreferences = () => {
               </div>
             </div>
             <Switch
-              checked={preferences?.notifications?.[id] ?? true}
+              checked={preferences?.notifications?.[id as keyof typeof preferences.notifications] ?? true}
               onCheckedChange={(checked) => updatePreference(id, checked)}
             />
           </div>
