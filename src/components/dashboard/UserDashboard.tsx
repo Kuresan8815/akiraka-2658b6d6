@@ -1,15 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Leaf, Droplet, QrCode, Gift, History } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { MetricCard } from "./MetricCard";
-import { MilestoneProgress } from "./MilestoneProgress";
+import { DashboardHeader } from "./DashboardHeader";
+import { QuickActions } from "./QuickActions";
+import { StatsGrid } from "./StatsGrid";
+import { DashboardProgress } from "./DashboardProgress";
+import { Achievements } from "./Achievements";
+import { DailyTip } from "./DailyTip";
 import { MonthlyScansChart } from "./MonthlyScansChart";
+import { MilestoneProgress } from "./MilestoneProgress";
 
 // Type guard to check if a value is an array
 const isArray = (value: unknown): value is Array<unknown> => Array.isArray(value);
@@ -92,114 +92,20 @@ export const UserDashboard = () => {
   const totalWaterSaved = scanHistory?.reduce((total, scan) => 
     total + (scan.products?.water_usage || 0), 0) || 0;
 
-  // Use type guard to ensure achievements is an array
   const achievements = isArray(rewards?.reward_history) ? rewards.reward_history : [];
   const pointsToNextMilestone = 100 - (rewards?.points_earned % 100);
 
   return (
     <div className="container mx-auto p-4 space-y-6 animate-fade-up">
-      {/* Header Section */}
-      <div className="flex items-center gap-4 mb-6">
-        <Avatar className="h-16 w-16">
-          <AvatarImage src={session.user.user_metadata?.avatar_url} />
-          <AvatarFallback>{profile?.name?.[0] || session.user.email?.[0]}</AvatarFallback>
-        </Avatar>
-        <div>
-          <h1 className="text-2xl font-bold">
-            Hello, {profile?.name || session.user.email?.split("@")[0]}!
-          </h1>
-          <p className="text-gray-600">Your sustainable choices make a difference!</p>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-4">
-        <Button
-          onClick={() => navigate("/scan")}
-          className="bg-eco-primary hover:bg-eco-secondary"
-        >
-          <QrCode className="mr-2" />
-          Scan QR
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/rewards")}
-        >
-          <Gift className="mr-2" />
-          Rewards
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate("/history")}
-        >
-          <History className="mr-2" />
-          History
-        </Button>
-      </div>
-
-      {/* Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <MetricCard
-          title="Carbon Footprint Saved"
-          value={`${totalCarbonSaved.toFixed(1)} kg`}
-          icon={Leaf}
-        />
-        <MetricCard
-          title="Water Usage Saved"
-          value={`${totalWaterSaved.toFixed(0)} L`}
-          icon={Droplet}
-        />
-      </div>
-
-      {/* Progress Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Milestone Progress</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Progress value={(rewards?.points_earned % 100)} className="h-2" />
-          <p className="text-sm text-gray-500 mt-2">
-            {pointsToNextMilestone} points away from your next milestone!
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Achievements */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Your Achievements</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            {achievements.map((achievement: any, index: number) => (
-              <div
-                key={index}
-                className="p-4 border rounded-lg text-center bg-gray-50"
-              >
-                <p className="font-medium">{achievement.name}</p>
-                <p className="text-sm text-gray-600">{achievement.description}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Daily Tip */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Daily Eco Tip</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">
-            Switch off unused lights to save energy and reduce your carbon footprint!
-          </p>
-          <Button variant="link" className="mt-2 p-0">
-            See More Tips
-          </Button>
-        </CardContent>
-      </Card>
-
-      {/* Charts */}
+      <DashboardHeader profile={profile} session={session} />
+      <QuickActions />
+      <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
+      <DashboardProgress 
+        pointsEarned={rewards?.points_earned || 0}
+        pointsToNextMilestone={pointsToNextMilestone}
+      />
+      <Achievements achievements={achievements} />
+      <DailyTip />
       <div className="grid gap-4 md:grid-cols-2">
         <MonthlyScansChart data={[
           { month: "Jan", scans: 10 },
