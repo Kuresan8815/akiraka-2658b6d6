@@ -1,82 +1,10 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Switch } from "@/components/ui/switch";
-import { Card } from "@/components/ui/card";
-import { Gift, Lightbulb, Store } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Json } from "@/integrations/supabase/types";
-
-interface NotificationPreferences {
-  notifications?: {
-    rewards?: boolean;
-    sustainability_tips?: boolean;
-    store_alerts?: boolean;
-  };
-}
-
-interface Profile {
-  preferences: Json | null;
-}
+import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
+import { PreferenceCard } from "./PreferenceCard";
+import { notificationTypes } from "@/config/notificationTypes";
+import { NotificationPreferences as NotificationPreferencesType } from "@/types/notifications";
 
 export const NotificationPreferences = () => {
-  const { toast } = useToast();
-
-  const { data: profile, isLoading } = useQuery({
-    queryKey: ["profile"],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No session");
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("preferences")
-        .eq("id", session.user.id)
-        .single();
-
-      if (error) throw error;
-      return data as Profile;
-    },
-  });
-
-  const updatePreferencesMutation = useMutation({
-    mutationFn: async (preferences: Json) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No session");
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({ preferences })
-        .eq("id", session.user.id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Notification preferences updated",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Error",
-        description: "Failed to update preferences",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const parsedPreferences = profile?.preferences as NotificationPreferences || { notifications: {} };
-
-  const updatePreference = (key: string, value: boolean) => {
-    const newPreferences = {
-      ...parsedPreferences,
-      notifications: {
-        ...parsedPreferences.notifications,
-        [key]: value,
-      },
-    };
-    updatePreferencesMutation.mutate(newPreferences as Json);
-  };
+  const { preferences, isLoading, updatePreference } = useNotificationPreferences();
 
   if (isLoading) {
     return (
@@ -86,45 +14,15 @@ export const NotificationPreferences = () => {
     );
   }
 
-  const notificationTypes = [
-    {
-      id: "rewards",
-      label: "Rewards Notifications",
-      description: "Get notified about new rewards and points",
-      icon: Gift,
-    },
-    {
-      id: "sustainability_tips",
-      label: "Sustainability Tips",
-      description: "Receive helpful tips for sustainable living",
-      icon: Lightbulb,
-    },
-    {
-      id: "store_alerts",
-      label: "Store Alerts",
-      description: "Updates about store events and promotions",
-      icon: Store,
-    },
-  ];
-
   return (
     <div className="space-y-4">
-      {notificationTypes.map(({ id, label, description, icon: Icon }) => (
-        <Card key={id} className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Icon className="h-5 w-5 text-gray-500" />
-              <div>
-                <h3 className="text-sm font-medium">{label}</h3>
-                <p className="text-sm text-gray-500">{description}</p>
-              </div>
-            </div>
-            <Switch
-              checked={parsedPreferences?.notifications?.[id as keyof typeof parsedPreferences.notifications] ?? true}
-              onCheckedChange={(checked) => updatePreference(id, checked)}
-            />
-          </div>
-        </Card>
+      {notificationTypes.map((type) => (
+        <PreferenceCard
+          key={type.id}
+          type={type}
+          checked={preferences?.notifications?.[type.id as keyof NotificationPreferencesType["notifications"]] ?? true}
+          onCheckedChange={(checked) => updatePreference(type.id, checked)}
+        />
       ))}
     </div>
   );
