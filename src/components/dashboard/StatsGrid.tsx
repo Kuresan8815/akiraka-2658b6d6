@@ -12,11 +12,13 @@ export const StatsGrid = ({ totalCarbonSaved, totalWaterSaved }: StatsGridProps)
       title="Carbon Footprint Saved"
       value={`${totalCarbonSaved.toFixed(1)} kg`}
       icon={Leaf}
+      description="Total CO₂ emissions reduced"
     />
     <MetricCard
       title="Water Usage Saved"
       value={`${totalWaterSaved.toFixed(0)} L`}
       icon={Droplet}
+      description="Total water conservation impact"
     />
   </div>
 );

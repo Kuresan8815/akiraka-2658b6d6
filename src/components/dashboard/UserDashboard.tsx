@@ -10,6 +10,8 @@ import { Achievements } from "./Achievements";
 import { DailyTip } from "./DailyTip";
 import { MonthlyScansChart } from "./MonthlyScansChart";
 import { MilestoneProgress } from "./MilestoneProgress";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 
 // Type guard to check if a value is an array
 const isArray = (value: unknown): value is Array<unknown> => Array.isArray(value);
@@ -70,6 +72,19 @@ export const UserDashboard = () => {
     },
   });
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      navigate("/login");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+      });
+    }
+  };
+
   if (!session) {
     return (
       <div className="text-center py-8">
@@ -98,24 +113,65 @@ export const UserDashboard = () => {
   return (
     <div className="container mx-auto p-4 space-y-6 animate-fade-up">
       <DashboardHeader profile={profile} session={session} />
-      <QuickActions />
-      <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
-      <DashboardProgress 
-        pointsEarned={rewards?.points_earned || 0}
-        pointsToNextMilestone={pointsToNextMilestone}
-      />
-      <Achievements achievements={achievements} />
-      <DailyTip />
-      <div className="grid gap-4 md:grid-cols-2">
-        <MonthlyScansChart data={[
-          { month: "Jan", scans: 10 },
-          { month: "Feb", scans: 15 },
-          { month: "Mar", scans: 20 },
-        ]} />
-        <MilestoneProgress
-          scannedProducts={scanHistory?.length || 0}
-          targetProducts={50}
+      
+      <div className="border-t border-gray-200 pt-6">
+        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Quick Actions</h2>
+        <QuickActions />
+      </div>
+
+      <div className="border-t border-gray-200 pt-6">
+        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Your Sustainability Impact</h2>
+        <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
+      </div>
+
+      <div className="border-t border-gray-200 pt-6">
+        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Progress</h2>
+        <DashboardProgress 
+          pointsEarned={rewards?.points_earned || 0}
+          pointsToNextMilestone={pointsToNextMilestone}
         />
+      </div>
+
+      <div className="border-t border-gray-200 pt-6">
+        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Achievements</h2>
+        <Achievements achievements={achievements} />
+      </div>
+
+      <div className="border-t border-gray-200 pt-6">
+        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Daily Eco Tip</h2>
+        <DailyTip />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 border-t border-gray-200 pt-6">
+        <div>
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Monthly Activity</h2>
+          <MonthlyScansChart data={[
+            { month: "Jan", scans: 10 },
+            { month: "Feb", scans: 15 },
+            { month: "Mar", scans: 20 },
+          ]} />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Milestone Progress</h2>
+          <MilestoneProgress
+            scannedProducts={scanHistory?.length || 0}
+            targetProducts={50}
+          />
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 pt-6 flex flex-col items-center">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-full max-w-xs"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Log Out
+        </Button>
+        <p className="text-sm text-gray-600 mt-4 text-center">
+          Thank you for being part of the sustainability revolution!
+        </p>
       </div>
     </div>
   );

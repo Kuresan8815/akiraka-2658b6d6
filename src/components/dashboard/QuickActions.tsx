@@ -9,24 +9,26 @@ export const QuickActions = () => {
     <div className="grid grid-cols-3 gap-4">
       <Button
         onClick={() => navigate("/scan")}
-        className="bg-eco-primary hover:bg-eco-secondary"
+        className="flex flex-col items-center justify-center h-24 bg-eco-primary hover:bg-eco-secondary transition-colors"
       >
-        <QrCode className="mr-2" />
-        Scan QR
+        <QrCode className="h-6 w-6 mb-2" />
+        <span className="text-xs">Scan QR</span>
       </Button>
       <Button
         variant="outline"
         onClick={() => navigate("/rewards")}
+        className="flex flex-col items-center justify-center h-24 border-eco-primary text-eco-primary hover:bg-eco-primary hover:text-white transition-colors"
       >
-        <Gift className="mr-2" />
-        Rewards
+        <Gift className="h-6 w-6 mb-2" />
+        <span className="text-xs">Rewards</span>
       </Button>
       <Button
         variant="outline"
         onClick={() => navigate("/history")}
+        className="flex flex-col items-center justify-center h-24 border-eco-primary text-eco-primary hover:bg-eco-primary hover:text-white transition-colors"
       >
-        <History className="mr-2" />
-        History
+        <History className="h-6 w-6 mb-2" />
+        <span className="text-xs">History</span>
       </Button>
     </div>
   );
