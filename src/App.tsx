@@ -10,6 +10,8 @@ import SignUp from "./pages/SignUp";
 import { QRScanner } from "./components/QRScanner";
 import { ProductDetails } from "./components/ProductDetails";
 import Notifications from "./pages/Notifications";
+import History from "./pages/History";
+import { RewardsDashboard } from "./components/dashboard/RewardsDashboard";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +53,22 @@ const App = () => (
             element={
               <AppLayout>
                 <Notifications />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <AppLayout>
+                <History />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/rewards"
+            element={
+              <AppLayout>
+                <RewardsDashboard />
               </AppLayout>
             }
           />
