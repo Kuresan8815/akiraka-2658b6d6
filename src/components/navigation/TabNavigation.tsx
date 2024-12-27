@@ -1,41 +1,37 @@
-import { Home, QrCode, Gift, Clock, User } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
-
-const tabs = [
-  { name: "Dashboard", icon: Home, path: "/" },
-  { name: "Scan", icon: QrCode, path: "/scan" },
-  { name: "Rewards", icon: Gift, path: "/rewards" },
-  { name: "History", icon: Clock, path: "/history" },
-  { name: "Profile", icon: User, path: "/profile" },
-];
+import { useLocation, useNavigate } from "react-router-dom";
+import { Home, QrCode, Gift, History, User } from "lucide-react";
 
 export const TabNavigation = () => {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const tabs = [
+    { icon: Home, label: "Home", path: "/" },
+    { icon: QrCode, label: "Scan", path: "/scan" },
+    { icon: Gift, label: "Rewards", path: "/rewards" },
+    { icon: History, label: "History", path: "/history" },
+    { icon: User, label: "Profile", path: "/profile" },
+  ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
       <div className="flex justify-around items-center h-16">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = location.pathname === tab.path;
-          
+        {tabs.map(({ icon: Icon, label, path }) => {
+          const isActive = location.pathname === path;
           return (
             <button
-              key={tab.name}
-              onClick={() => navigate(tab.path)}
+              key={path}
               className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${
                 isActive ? "text-eco-primary" : "text-gray-500"
               }`}
-              aria-label={tab.name}
-              aria-current={isActive ? "page" : undefined}
+              onClick={() => navigate(path)}
             >
-              <Icon className={`h-5 w-5 ${isActive ? "text-eco-primary" : "text-gray-500"}`} />
-              <span className="text-xs">{tab.name}</span>
+              <Icon className="h-5 w-5" />
+              <span className="text-xs">{label}</span>
             </button>
           );
         })}
       </div>
-    </div>
+    </nav>
   );
 };

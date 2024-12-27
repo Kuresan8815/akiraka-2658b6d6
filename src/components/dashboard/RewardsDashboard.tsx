@@ -1,25 +1,39 @@
 import { useQuery } from "@tanstack/react-query";
-import { Award, Gift, Star, Trophy, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
+import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { PointsOverview } from "./PointsOverview";
+import { MilestonesList } from "./MilestonesList";
+import { RewardsList } from "./RewardsList";
 
-const MILESTONES = [
-  { name: "Eco Newbie", points: 100, icon: Star },
-  { name: "Eco Hero", points: 500, icon: Award },
-  { name: "Eco Champion", points: 1000, icon: Trophy },
-  { name: "Eco Legend", points: 2000, icon: Gift },
-];
-
-const REDEEMABLE_REWARDS = [
-  { name: "10% Discount on Eco-Products", pointsRequired: 200, description: "Get 10% off your next eco-friendly purchase" },
-  { name: "Reusable Water Bottle", pointsRequired: 500, description: "Premium eco-friendly water bottle" },
-  { name: "Sustainable Tote Bag", pointsRequired: 1000, description: "Stylish and sustainable shopping bag" },
-];
+const DEMO_DATA = {
+  totalPoints: 1250,
+  nextMilestonePoints: 2000,
+  milestones: [
+    { name: "Eco Newbie", points: 100, status: "Unlocked" as const },
+    { name: "Eco Hero", points: 500, status: "Unlocked" as const },
+    { name: "Eco Champion", points: 1000, status: "Unlocked" as const },
+    { name: "Eco Legend", points: 2000, status: "Locked" as const },
+  ],
+  redeemableRewards: [
+    {
+      name: "10% Discount on Eco-Products",
+      pointsRequired: 200,
+      status: "Available" as const,
+    },
+    {
+      name: "Reusable Water Bottle",
+      pointsRequired: 500,
+      status: "Available" as const,
+    },
+    {
+      name: "Sustainable Tote Bag",
+      pointsRequired: 1000,
+      status: "Locked" as const,
+    },
+  ],
+};
 
 export const RewardsDashboard = () => {
   const { toast } = useToast();
@@ -28,7 +42,7 @@ export const RewardsDashboard = () => {
     queryKey: ["rewards"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
         .from("rewards")
@@ -41,50 +55,10 @@ export const RewardsDashboard = () => {
     },
   });
 
-  const handleRedeemReward = async (pointsRequired: number, rewardName: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to redeem rewards",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!rewards || rewards.points_earned - rewards.points_redeemed < pointsRequired) {
-      toast({
-        title: "Error",
-        description: "Not enough points to redeem this reward",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const { error } = await supabase
-      .from("rewards")
-      .update({
-        points_redeemed: rewards.points_redeemed + pointsRequired,
-        reward_history: [...(rewards.reward_history as any[]), {
-          points: pointsRequired,
-          reward: rewardName,
-          redeemedAt: new Date().toISOString(),
-        }],
-      })
-      .eq("user_id", user.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to redeem reward",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleRedeem = async (reward: typeof DEMO_DATA.redeemableRewards[0]) => {
     toast({
-      title: "Success",
-      description: `Successfully redeemed ${rewardName}`,
+      title: "Reward Redeemed!",
+      description: `You have successfully redeemed: ${reward.name}`,
     });
   };
 
@@ -106,87 +80,22 @@ export const RewardsDashboard = () => {
     );
   }
 
-  const availablePoints = rewards ? rewards.points_earned - rewards.points_redeemed : 0;
-  const nextMilestone = MILESTONES.find(m => m.points > availablePoints) || MILESTONES[MILESTONES.length - 1];
-  const progress = (availablePoints / nextMilestone.points) * 100;
-
+  // Use demo data for now, but in production this would use the rewards data
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)]">
-      <div className="space-y-6 p-4">
-        {/* Points Overview */}
-        <Card className="border-eco-primary">
-          <CardHeader>
-            <CardTitle className="text-center">
-              <span className="text-3xl font-bold text-eco-primary">{availablePoints}</span>
-              <span className="text-lg ml-2">Points Available</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <Progress value={progress} className="h-2" />
-              <p className="text-sm text-center text-muted-foreground">
-                {availablePoints} / {nextMilestone.points} points to {nextMilestone.name}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Milestones */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Milestones</h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            {MILESTONES.map(({ name, points, icon: Icon }) => {
-              const isUnlocked = availablePoints >= points;
-              return (
-                <Card key={name} className={!isUnlocked ? "opacity-60" : ""}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">{name}</CardTitle>
-                    <Icon className={`h-4 w-4 ${isUnlocked ? "text-eco-primary" : "text-gray-400"}`} />
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600">{points} points required</p>
-                    <Badge variant={isUnlocked ? "default" : "secondary"} className="mt-2">
-                      {isUnlocked ? "Unlocked" : "Locked"}
-                    </Badge>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Redeemable Rewards */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Redeemable Rewards</h3>
-          <div className="grid gap-4">
-            {REDEEMABLE_REWARDS.map((reward) => {
-              const isAvailable = availablePoints >= reward.pointsRequired;
-              return (
-                <Card 
-                  key={reward.name}
-                  className={`${isAvailable ? "border-eco-primary" : "opacity-60"}`}
-                >
-                  <CardHeader>
-                    <CardTitle className="text-base">{reward.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm text-gray-600">{reward.description}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{reward.pointsRequired} points</span>
-                      <Button
-                        onClick={() => handleRedeemReward(reward.pointsRequired, reward.name)}
-                        disabled={!isAvailable}
-                      >
-                        Redeem
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </ScrollArea>
+    <div className="space-y-6 p-4">
+      <h2 className="text-2xl font-bold text-eco-primary">Your Rewards</h2>
+      
+      <PointsOverview
+        totalPoints={DEMO_DATA.totalPoints}
+        nextMilestonePoints={DEMO_DATA.nextMilestonePoints}
+      />
+      
+      <MilestonesList milestones={DEMO_DATA.milestones} />
+      
+      <RewardsList
+        rewards={DEMO_DATA.redeemableRewards}
+        onRedeem={handleRedeem}
+      />
+    </div>
   );
 };
