@@ -20,7 +20,7 @@ const features = [
 
 export const Features = () => {
   return (
-    <div className="py-12 bg-white">
+    <div className="py-12">
       <div className="container mx-auto px-4">
         <h2 className="text-2xl font-bold text-center text-eco-primary mb-8">
           Core Features
@@ -29,7 +29,7 @@ export const Features = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-up bg-white"
+              className="p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-up bg-white/80 backdrop-blur-sm"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="w-12 h-12 bg-eco-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">

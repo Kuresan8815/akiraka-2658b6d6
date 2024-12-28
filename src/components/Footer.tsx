@@ -6,7 +6,7 @@ export const Footer = () => {
   const navigate = useNavigate();
 
   return (
-    <footer className="bg-white py-12 border-t">
+    <footer className="py-12 border-t bg-white/80 backdrop-blur-sm">
       <div className="container mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="text-2xl font-bold text-eco-primary mb-4">
