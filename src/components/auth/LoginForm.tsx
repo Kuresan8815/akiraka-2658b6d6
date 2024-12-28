@@ -67,6 +67,10 @@ export const LoginForm = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate("/");
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
@@ -109,7 +113,7 @@ export const LoginForm = () => {
         <Button
           variant="link"
           className="p-0 text-eco-primary"
-          onClick={() => navigate("/")}
+          onClick={handleBack}
         >
           Back to Home
         </Button>
