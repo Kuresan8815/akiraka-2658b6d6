@@ -12,6 +12,7 @@ import { ProductDetails } from "./components/ProductDetails";
 import Notifications from "./pages/Notifications";
 import History from "./pages/History";
 import { RewardsDashboard } from "./components/dashboard/RewardsDashboard";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,14 @@ const App = () => (
             element={
               <AppLayout>
                 <RewardsDashboard />
+              </AppLayout>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <AppLayout>
+                <Profile />
               </AppLayout>
             }
           />
