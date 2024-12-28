@@ -27,11 +27,9 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-eco-primary/10 to-white">
-      <main className="flex-grow">
-        <Hero />
-        <Features />
-      </main>
+    <div className="min-h-screen bg-gradient-to-b from-eco-primary/10 to-white">
+      <Hero />
+      <Features />
       <Footer />
     </div>
   );
