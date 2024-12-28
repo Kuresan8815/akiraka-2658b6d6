@@ -52,15 +52,15 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <div className="min-h-screen pb-16">
-      <header className="fixed top-0 left-0 right-0 z-10 bg-white border-b border-gray-200">
+      <header className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-r from-eco-primary to-eco-secondary border-b border-gray-200">
         <div className="flex justify-between items-center px-4 h-16">
-          <h1 className="text-lg font-semibold text-eco-primary">Akiraka</h1>
+          <h1 className="text-lg font-semibold text-white">Akiraka</h1>
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleLogout}
-              className="text-gray-600"
+              className="text-white hover:text-white hover:bg-white/20"
             >
               Logout
             </Button>

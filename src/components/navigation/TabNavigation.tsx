@@ -21,9 +21,11 @@ export const TabNavigation = () => {
           return (
             <button
               key={path}
-              className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${
-                isActive ? "text-eco-primary" : "text-gray-500"
-              }`}
+              className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors duration-200
+                ${isActive 
+                  ? "text-eco-primary border-t-2 border-eco-primary bg-green-50" 
+                  : "text-gray-500 hover:text-eco-secondary hover:bg-green-50/50"
+                }`}
               onClick={() => navigate(path)}
             >
               <Icon className="h-5 w-5" />
