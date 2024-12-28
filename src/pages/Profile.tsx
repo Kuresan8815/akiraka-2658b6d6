@@ -3,13 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/components/ui/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, ArrowRight, Camera, LogOut } from "lucide-react";
+import { ArrowLeft, ArrowRight, LogOut } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { ProfileForm } from "@/components/profile/ProfileForm";
+import { Profile as ProfileType, ProfileFormData } from "@/types/profile";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -35,7 +34,12 @@ export default function Profile() {
         .single();
 
       if (error) throw error;
-      return data;
+      
+      return {
+        ...data,
+        email: session?.user?.email,
+        preferences: data.preferences as ProfileType["preferences"] || { notifications: false, darkTheme: false }
+      } as ProfileType;
     },
   });
 
@@ -52,16 +56,16 @@ export default function Profile() {
     }
   };
 
-  const handleUpdateProfile = async (formData: FormData) => {
+  const handleUpdateProfile = async (formData: ProfileFormData) => {
     try {
       const { error } = await supabase
         .from("profiles")
         .update({
-          name: formData.get("name"),
-          sustainability_goals: formData.get("sustainabilityGoals"),
+          name: formData.name,
+          sustainability_goals: formData.sustainabilityGoals,
           preferences: {
-            notifications: formData.get("notifications") === "on",
-            darkTheme: formData.get("darkTheme") === "on",
+            notifications: formData.notifications,
+            darkTheme: formData.darkTheme,
           },
         })
         .eq("id", session?.user?.id);
@@ -111,123 +115,20 @@ export default function Profile() {
         </Button>
       </div>
 
-      <div className="flex flex-col items-center space-y-4">
-        <div className="relative">
-          <Avatar className="h-24 w-24">
-            <AvatarImage src={session?.user?.user_metadata?.avatar_url} />
-            <AvatarFallback>{profile?.name?.[0] || session?.user?.email?.[0]}</AvatarFallback>
-          </Avatar>
-          <Button
-            variant="secondary"
-            size="icon"
-            className="absolute bottom-0 right-0 rounded-full"
-            onClick={() => toast({
-              title: "Coming Soon",
-              description: "Avatar upload functionality will be available soon!",
-            })}
-          >
-            <Camera className="h-4 w-4" />
-          </Button>
-        </div>
-        <h2 className="text-2xl font-bold">{profile?.name || "Your Profile"}</h2>
-        <p className="text-gray-600">{session?.user?.email}</p>
-      </div>
+      <ProfileHeader
+        avatarUrl={session?.user?.user_metadata?.avatar_url}
+        name={profile?.name}
+        email={profile?.email}
+      />
 
       <Card className="p-6 space-y-6">
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            handleUpdateProfile(new FormData(e.currentTarget));
-          }}
-          className="space-y-6"
-        >
-          <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium">
-              Name
-            </label>
-            <Input
-              id="name"
-              name="name"
-              defaultValue={profile?.name || ""}
-              disabled={!isEditing}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <Input
-              id="email"
-              value={session?.user?.email || ""}
-              disabled
-              className="bg-gray-50"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="sustainabilityGoals" className="text-sm font-medium">
-              Sustainability Goals
-            </label>
-            <Textarea
-              id="sustainabilityGoals"
-              name="sustainabilityGoals"
-              defaultValue={profile?.sustainability_goals?.toString() || ""}
-              disabled={!isEditing}
-              className="min-h-[100px]"
-            />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Preferences</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <label htmlFor="notifications" className="text-sm">
-                  Enable Notifications
-                </label>
-                <Switch
-                  id="notifications"
-                  name="notifications"
-                  defaultChecked={profile?.preferences?.notifications}
-                  disabled={!isEditing}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label htmlFor="darkTheme" className="text-sm">
-                  Dark Theme
-                </label>
-                <Switch
-                  id="darkTheme"
-                  name="darkTheme"
-                  defaultChecked={profile?.preferences?.darkTheme}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-4">
-            {isEditing ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditing(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit">Save Changes</Button>
-              </>
-            ) : (
-              <Button
-                type="button"
-                onClick={() => setIsEditing(true)}
-              >
-                Edit Profile
-              </Button>
-            )}
-          </div>
-        </form>
+        <ProfileForm
+          profile={profile!}
+          isEditing={isEditing}
+          onSubmit={handleUpdateProfile}
+          onEdit={() => setIsEditing(true)}
+          onCancel={() => setIsEditing(false)}
+        />
       </Card>
 
       <Card className="p-6 space-y-4">
