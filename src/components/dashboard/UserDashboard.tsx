@@ -120,8 +120,10 @@ export const UserDashboard = () => {
       </div>
 
       <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Your Sustainability Impact</h2>
-        <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
+        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">My Sustainability Impact</h2>
+        <div className="transform hover:scale-105 transition-transform duration-200">
+          <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
+        </div>
       </div>
 
       <div className="border-t border-gray-200 pt-6">
@@ -152,7 +154,7 @@ export const UserDashboard = () => {
           ]} />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Milestone Progress</h2>
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Product Scanned Milestone</h2>
           <MilestoneProgress
             scannedProducts={scanHistory?.length || 0}
             targetProducts={50}
