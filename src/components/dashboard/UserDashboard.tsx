@@ -106,16 +106,16 @@ export const UserDashboard = () => {
         <Alert>
           <AlertDescription>
             We couldn't load your profile data. Please try signing out and back in.
-          </Alert>
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            className="mt-4"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
+          </AlertDescription>
         </Alert>
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="mt-4"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
+        </Button>
       </div>
     );
   }
