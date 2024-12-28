@@ -1,13 +1,9 @@
-import { Hero } from "@/components/Hero";
-import { Dashboard } from "@/components/Dashboard";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { Hero } from "@/components/Hero";
+import { Dashboard } from "@/components/Dashboard";
 
 const Index = () => {
-  const navigate = useNavigate();
-
   const { data: session, isLoading } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
@@ -15,16 +11,6 @@ const Index = () => {
       return session;
     },
   });
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") {
-        navigate("/");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [navigate]);
 
   if (isLoading) {
     return (
