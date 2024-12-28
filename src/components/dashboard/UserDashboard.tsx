@@ -12,9 +12,7 @@ import { MonthlyScansChart } from "./MonthlyScansChart";
 import { MilestoneProgress } from "./MilestoneProgress";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
-
-// Type guard to check if a value is an array
-const isArray = (value: unknown): value is Array<unknown> => Array.isArray(value);
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
@@ -36,7 +34,7 @@ export const UserDashboard = () => {
         .from("profiles")
         .select("*")
         .eq("id", session?.user?.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -51,7 +49,7 @@ export const UserDashboard = () => {
         .from("rewards")
         .select("*")
         .eq("user_id", session?.user?.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
@@ -101,13 +99,34 @@ export const UserDashboard = () => {
     );
   }
 
+  // If profile or rewards don't exist, show an error message
+  if (!profile || !rewards) {
+    return (
+      <div className="container mx-auto p-4">
+        <Alert>
+          <AlertDescription>
+            We couldn't load your profile data. Please try signing out and back in.
+          </Alert>
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="mt-4"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Sign Out
+          </Button>
+        </Alert>
+      </div>
+    );
+  }
+
   const totalCarbonSaved = scanHistory?.reduce((total, scan) => 
     total + (scan.products?.carbon_footprint || 0), 0) || 0;
 
   const totalWaterSaved = scanHistory?.reduce((total, scan) => 
     total + (scan.products?.water_usage || 0), 0) || 0;
 
-  const achievements = isArray(rewards?.reward_history) ? rewards.reward_history : [];
+  const achievements = Array.isArray(rewards?.reward_history) ? rewards.reward_history : [];
   const pointsToNextMilestone = 100 - (rewards?.points_earned % 100);
 
   return (
