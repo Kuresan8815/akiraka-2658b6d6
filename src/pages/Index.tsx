@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Hero } from "@/components/Hero";
+import { Features } from "@/components/Features";
+import { Footer } from "@/components/Footer";
 import { Dashboard } from "@/components/Dashboard";
 import { Loader } from "lucide-react";
 
@@ -29,7 +31,9 @@ const Index = () => {
     <div className="flex flex-col min-h-screen">
       <main className="flex-grow">
         <Hero />
+        <Features />
       </main>
+      <Footer />
     </div>
   );
 };
