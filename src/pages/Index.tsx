@@ -22,15 +22,21 @@ const Index = () => {
     );
   }
 
+  // If user is authenticated, show dashboard
   if (session) {
     return <UserDashboard />;
   }
 
+  // If user is not authenticated, show landing page
   return (
     <div className="min-h-screen bg-gradient-to-b from-eco-primary/10 to-white">
-      <Hero />
-      <Features />
-      <Footer />
+      <div className="flex flex-col min-h-screen">
+        <main className="flex-grow">
+          <Hero />
+          <Features />
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };

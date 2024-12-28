@@ -1,46 +1,47 @@
 import { QrCode, Gift, LineChart } from "lucide-react";
 
-const features = [
-  {
-    title: "Transparency Through QR Codes",
-    description: "Scan and see the lifecycle of your products.",
-    icon: QrCode,
-  },
-  {
-    title: "Earn Rewards",
-    description: "Get points for making sustainable choices.",
-    icon: Gift,
-  },
-  {
-    title: "Track Impact",
-    description: "Visualize your contribution to a greener planet.",
-    icon: LineChart,
-  },
-];
-
 export const Features = () => {
+  const features = [
+    {
+      icon: QrCode,
+      title: "Product Transparency",
+      description: "Scan and discover the environmental impact of products instantly"
+    },
+    {
+      icon: Gift,
+      title: "Earn Rewards",
+      description: "Get rewarded for making sustainable choices and tracking your impact"
+    },
+    {
+      icon: LineChart,
+      title: "Track Progress",
+      description: "Monitor your sustainability journey with detailed insights and metrics"
+    }
+  ];
+
   return (
-    <div className="py-12">
+    <div className="py-16 bg-white/50 backdrop-blur-sm">
       <div className="container mx-auto px-4">
-        <h2 className="text-2xl font-bold text-center text-eco-primary mb-8">
-          Core Features
-        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-up bg-white/80 backdrop-blur-sm"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="w-12 h-12 bg-eco-primary/10 rounded-full flex items-center justify-center mb-4 mx-auto">
-                <feature.icon className="w-6 h-6 text-eco-primary" />
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <div 
+                key={index}
+                className="flex flex-col items-center text-center p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow"
+              >
+                <div className="p-3 rounded-full bg-eco-primary/10 mb-4">
+                  <Icon className="h-6 w-6 text-eco-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-eco-primary mb-2">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600">
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-eco-primary text-center">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600 text-center">{feature.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
