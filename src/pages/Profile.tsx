@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight, LogOut } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileForm } from "@/components/profile/ProfileForm";
-import { Profile as ProfileType, ProfileFormData } from "@/types/profile";
+import { Profile as ProfileType, ProfileFormData, ProfilePreferences } from "@/types/profile";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -35,10 +35,27 @@ export default function Profile() {
 
       if (error) throw error;
       
+      // Parse the preferences with proper type checking
+      const defaultPreferences: ProfilePreferences = {
+        notifications: false,
+        darkTheme: false,
+      };
+
+      let parsedPreferences: ProfilePreferences;
+      try {
+        const rawPreferences = data.preferences as Record<string, unknown>;
+        parsedPreferences = {
+          notifications: typeof rawPreferences?.notifications === 'boolean' ? rawPreferences.notifications : defaultPreferences.notifications,
+          darkTheme: typeof rawPreferences?.darkTheme === 'boolean' ? rawPreferences.darkTheme : defaultPreferences.darkTheme,
+        };
+      } catch {
+        parsedPreferences = defaultPreferences;
+      }
+      
       return {
         ...data,
         email: session?.user?.email,
-        preferences: data.preferences as ProfileType["preferences"] || { notifications: false, darkTheme: false }
+        preferences: parsedPreferences
       } as ProfileType;
     },
   });
