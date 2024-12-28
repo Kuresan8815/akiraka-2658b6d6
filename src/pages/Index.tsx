@@ -4,7 +4,6 @@ import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { Footer } from "@/components/Footer";
 import { Dashboard } from "@/components/Dashboard";
-import { Loader } from "lucide-react";
 
 const Index = () => {
   const { data: session, isLoading } = useQuery({
@@ -18,7 +17,7 @@ const Index = () => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Loader className="h-8 w-8 animate-spin text-eco-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
       </div>
     );
   }
@@ -28,7 +27,7 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen -mt-16">
       <main className="flex-grow">
         <Hero />
         <Features />
