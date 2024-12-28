@@ -1,13 +1,26 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { AlertCircle, Droplets, Leaf } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { format, isAfter, isBefore, parseISO } from "date-fns";
+import { AlertCircle, Droplets, Leaf, CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 export default function History() {
+  const [dateRange, setDateRange] = useState<{
+    from?: Date;
+    to?: Date;
+  }>({});
+
   const { data: scanHistory, isLoading, error, refetch } = useQuery({
     queryKey: ["scan_history"],
     queryFn: async () => {
@@ -24,6 +37,20 @@ export default function History() {
       return data;
     },
   });
+
+  const filteredHistory = scanHistory?.filter((scan) => {
+    if (!dateRange.from && !dateRange.to) return true;
+    
+    const scanDate = parseISO(scan.scanned_at);
+    const isAfterStart = !dateRange.from || isAfter(scanDate, dateRange.from);
+    const isBeforeEnd = !dateRange.to || isBefore(scanDate, dateRange.to);
+    
+    return isAfterStart && isBeforeEnd;
+  });
+
+  const clearFilters = () => {
+    setDateRange({});
+  };
 
   if (error) {
     return (
@@ -46,38 +73,106 @@ export default function History() {
   return (
     <ScrollArea className="h-[calc(100vh-12rem)]">
       <div className="space-y-4 p-4">
-        <h2 className="text-2xl font-bold text-eco-primary mb-6">Scan History</h2>
-        {scanHistory?.map((scan) => (
-          <Card key={scan.id} className="border-eco-primary">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg">{scan.products?.name}</CardTitle>
-              <Badge variant={
-                scan.products?.certification_level === 'Gold' ? 'default' :
-                scan.products?.certification_level === 'Silver' ? 'secondary' :
-                'outline'
-              }>
-                {scan.products?.certification_level}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-500">
-                  Scanned on {format(new Date(scan.scanned_at), 'PPp')}
-                </p>
-                <div className="flex space-x-4">
-                  <div className="flex items-center">
-                    <Leaf className="h-4 w-4 text-eco-primary mr-2" />
-                    <span className="text-sm">{scan.products?.carbon_footprint} kg CO₂ saved</span>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-eco-primary">Scan History</h2>
+          <div className="flex space-x-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !dateRange.from && !dateRange.to && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {dateRange.from ? (
+                    dateRange.to ? (
+                      <>
+                        {format(dateRange.from, "LLL dd, y")} -{" "}
+                        {format(dateRange.to, "LLL dd, y")}
+                      </>
+                    ) : (
+                      format(dateRange.from, "LLL dd, y")
+                    )
+                  ) : (
+                    "Filter by date"
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                />
+              </PopoverContent>
+            </Popover>
+            {(dateRange.from || dateRange.to) && (
+              <Button
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {filteredHistory?.length === 0 ? (
+          <div className="flex flex-col items-center justify-center space-y-4 p-8 text-center">
+            <AlertCircle className="h-12 w-12 text-muted-foreground" />
+            <h3 className="text-lg font-semibold">No scans found</h3>
+            <p className="text-muted-foreground">
+              {dateRange.from || dateRange.to
+                ? "No scans found for the selected dates. Try adjusting your filter."
+                : "Start scanning products to build your history!"}
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredHistory?.map((scan) => (
+              <Card key={scan.id} className="border-eco-primary">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-lg">{scan.products?.name}</CardTitle>
+                  <Badge variant={
+                    scan.products?.certification_level === 'Gold' ? 'default' :
+                    scan.products?.certification_level === 'Silver' ? 'secondary' :
+                    'outline'
+                  }>
+                    {scan.products?.certification_level}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-500">
+                      Scanned on {format(new Date(scan.scanned_at), 'PPp')}
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                      <div className="flex items-center">
+                        <Leaf className="h-4 w-4 text-eco-primary mr-2" />
+                        <span className="text-sm">{scan.products?.carbon_footprint} kg CO₂ saved</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Droplets className="h-4 w-4 text-eco-primary mr-2" />
+                        <span className="text-sm">{scan.products?.water_usage} L saved</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Badge variant="outline" className="text-xs">
+                          Score: {scan.products?.sustainability_score}/100
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center">
-                    <Droplets className="h-4 w-4 text-eco-primary mr-2" />
-                    <span className="text-sm">{scan.products?.water_usage} L saved</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </ScrollArea>
   );
