@@ -14,12 +14,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 export default function History() {
-  const [dateRange, setDateRange] = useState<{
-    from?: Date;
-    to?: Date;
-  }>({});
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   const { data: scanHistory, isLoading, error, refetch } = useQuery({
     queryKey: ["scan_history"],
@@ -39,7 +37,7 @@ export default function History() {
   });
 
   const filteredHistory = scanHistory?.filter((scan) => {
-    if (!dateRange.from && !dateRange.to) return true;
+    if (!dateRange?.from && !dateRange?.to) return true;
     
     const scanDate = parseISO(scan.scanned_at);
     const isAfterStart = !dateRange.from || isAfter(scanDate, dateRange.from);
@@ -49,7 +47,7 @@ export default function History() {
   });
 
   const clearFilters = () => {
-    setDateRange({});
+    setDateRange(undefined);
   };
 
   if (error) {
@@ -82,11 +80,11 @@ export default function History() {
                   variant="outline"
                   className={cn(
                     "justify-start text-left font-normal",
-                    !dateRange.from && !dateRange.to && "text-muted-foreground"
+                    !dateRange?.from && !dateRange?.to && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dateRange.from ? (
+                  {dateRange?.from ? (
                     dateRange.to ? (
                       <>
                         {format(dateRange.from, "LLL dd, y")} -{" "}
@@ -104,14 +102,14 @@ export default function History() {
                 <Calendar
                   initialFocus
                   mode="range"
-                  defaultMonth={dateRange.from}
+                  defaultMonth={dateRange?.from}
                   selected={dateRange}
                   onSelect={setDateRange}
                   numberOfMonths={2}
                 />
               </PopoverContent>
             </Popover>
-            {(dateRange.from || dateRange.to) && (
+            {(dateRange?.from || dateRange?.to) && (
               <Button
                 variant="ghost"
                 className="text-muted-foreground"
@@ -128,7 +126,7 @@ export default function History() {
             <AlertCircle className="h-12 w-12 text-muted-foreground" />
             <h3 className="text-lg font-semibold">No scans found</h3>
             <p className="text-muted-foreground">
-              {dateRange.from || dateRange.to
+              {dateRange?.from || dateRange?.to
                 ? "No scans found for the selected dates. Try adjusting your filter."
                 : "Start scanning products to build your history!"}
             </p>
