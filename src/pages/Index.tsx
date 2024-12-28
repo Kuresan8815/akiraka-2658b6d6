@@ -16,7 +16,7 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-white">
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-eco-primary/10 to-white">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
       </div>
     );
@@ -27,7 +27,7 @@ const Index = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-eco-primary/10 to-white">
       <main className="flex-grow">
         <Hero />
         <Features />

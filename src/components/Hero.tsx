@@ -6,7 +6,7 @@ export const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-[60vh] flex flex-col justify-center bg-gradient-to-b from-eco-primary/10 to-white py-12 animate-fade-up">
+    <div className="min-h-[60vh] flex flex-col justify-center py-12 animate-fade-up">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center gap-6 text-center max-w-3xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-eco-primary">
