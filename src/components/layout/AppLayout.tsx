@@ -21,14 +21,18 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isLoading && !session) {
-      navigate("/login");
+      navigate("/");
     }
   }, [session, isLoading, navigate]);
 
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
-      navigate("/login");
+      toast({
+        title: "Success",
+        description: "You have been logged out successfully.",
+      });
+      navigate("/");
     } catch (error) {
       toast({
         title: "Error",

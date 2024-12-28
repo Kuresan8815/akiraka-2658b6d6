@@ -105,8 +105,14 @@ export const LoginForm = () => {
         {isLoading ? "Signing in..." : "Sign In"}
       </Button>
 
-      <p className="text-center text-sm text-gray-600">
-        Don't have an account?{" "}
+      <div className="flex justify-between items-center text-sm">
+        <Button
+          variant="link"
+          className="p-0 text-eco-primary"
+          onClick={() => navigate("/")}
+        >
+          Back to Home
+        </Button>
         <Button
           variant="link"
           className="p-0 text-eco-primary"
@@ -114,7 +120,7 @@ export const LoginForm = () => {
         >
           Sign Up
         </Button>
-      </p>
+      </div>
     </form>
   );
 };
