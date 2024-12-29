@@ -28,6 +28,9 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-b from-eco-primary/10 to-white overflow-hidden">
+      <header className="bg-eco-primary text-white py-4 px-6">
+        <h1 className="text-2xl font-bold">Akiraka</h1>
+      </header>
       <main className="flex-grow flex flex-col">
         <Hero />
         <Features />

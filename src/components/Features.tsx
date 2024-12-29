@@ -1,4 +1,4 @@
-import { QrCode, Gift, LineChart } from "lucide-react";
+import { QrCode, Gift, LineChart, ArrowRight } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/carousel";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Features = () => {
-  const [isComplete, setIsComplete] = useState(false);
+  const navigate = useNavigate();
   const features = [
     {
       icon: QrCode,
@@ -29,22 +30,18 @@ export const Features = () => {
     }
   ];
 
-  if (isComplete) {
-    return null;
-  }
-
   return (
     <div className="py-6 bg-white/50 backdrop-blur-sm h-[40vh] flex items-center">
       <div className="container mx-auto px-4 max-w-3xl">
-        <Carousel className="relative">
+        <Carousel className="relative mb-8">
           <CarouselContent>
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <CarouselItem key={index}>
                   <div className="flex flex-col items-center text-center p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
-                    <div className="p-3 rounded-full bg-eco-primary/10 mb-4">
-                      <Icon className="h-6 w-6 text-eco-primary" />
+                    <div className="p-6 rounded-full bg-eco-primary/10 mb-4">
+                      <Icon className="h-12 w-12 text-eco-primary" />
                     </div>
                     <h3 className="text-lg font-semibold text-eco-primary mb-2">
                       {feature.title}
@@ -61,13 +58,22 @@ export const Features = () => {
           <CarouselNext className="right-2" />
         </Carousel>
         
-        <div className="mt-4 flex justify-center">
+        <div className="flex flex-row gap-4 justify-center items-center">
           <Button 
-            variant="ghost" 
-            onClick={() => setIsComplete(true)}
-            className="text-gray-600 hover:text-eco-primary"
+            size="lg" 
+            className="min-w-[140px] bg-eco-primary hover:bg-eco-secondary"
+            onClick={() => navigate("/signup")}
           >
-            Skip Features
+            Sign Up
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+          <Button 
+            size="lg" 
+            variant="outline" 
+            className="min-w-[140px]"
+            onClick={() => navigate("/login")}
+          >
+            Log In
           </Button>
         </div>
       </div>
