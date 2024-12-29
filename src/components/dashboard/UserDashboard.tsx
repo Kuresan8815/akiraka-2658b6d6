@@ -130,70 +130,88 @@ export const UserDashboard = () => {
   const pointsToNextMilestone = 100 - (rewards?.points_earned % 100);
 
   return (
-    <div className="container mx-auto p-4 space-y-6 animate-fade-up">
-      <DashboardHeader profile={profile} session={session} />
-      
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Quick Actions</h2>
-        <QuickActions />
-      </div>
-
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">My Sustainability Impact</h2>
-        <div className="transform hover:scale-105 transition-transform duration-200">
-          <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
+    <>
+      <header className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-r from-eco-primary to-eco-secondary border-b border-gray-200">
+        <div className="flex justify-between items-center px-4 h-16">
+          <h1 className="text-lg font-semibold text-white">Akiraka</h1>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-white hover:text-white hover:bg-white/20"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Progress</h2>
-        <DashboardProgress 
-          pointsEarned={rewards?.points_earned || 0}
-          pointsToNextMilestone={pointsToNextMilestone}
-        />
-      </div>
-
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Achievements</h2>
-        <Achievements achievements={achievements} />
-      </div>
-
-      <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Daily Eco Tip</h2>
-        <DailyTip />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 border-t border-gray-200 pt-6">
-        <div>
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Monthly Activity</h2>
-          <MonthlyScansChart data={[
-            { month: "Jan", scans: 10 },
-            { month: "Feb", scans: 15 },
-            { month: "Mar", scans: 20 },
-          ]} />
+      <div className="container mx-auto p-4 space-y-6 animate-fade-up mt-16">
+        <DashboardHeader profile={profile} session={session} />
+        
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Quick Actions</h2>
+          <QuickActions />
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Product Scanned Milestone</h2>
-          <MilestoneProgress
-            scannedProducts={scanHistory?.length || 0}
-            targetProducts={50}
+
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">My Sustainability Impact</h2>
+          <div className="transform hover:scale-105 transition-transform duration-200">
+            <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Progress</h2>
+          <DashboardProgress 
+            pointsEarned={rewards?.points_earned || 0}
+            pointsToNextMilestone={pointsToNextMilestone}
           />
         </div>
-      </div>
 
-      <div className="border-t border-gray-200 pt-6 flex flex-col items-center">
-        <Button
-          variant="outline"
-          onClick={handleLogout}
-          className="w-full max-w-xs"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Log Out
-        </Button>
-        <p className="text-sm text-gray-600 mt-4 text-center">
-          Thank you for being part of the sustainability revolution!
-        </p>
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Achievements</h2>
+          <Achievements achievements={achievements} />
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Daily Eco Tip</h2>
+          <DailyTip />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 border-t border-gray-200 pt-6">
+          <div>
+            <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Monthly Activity</h2>
+            <MonthlyScansChart data={[
+              { month: "Jan", scans: 10 },
+              { month: "Feb", scans: 15 },
+              { month: "Mar", scans: 20 },
+            ]} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Product Scanned Milestone</h2>
+            <MilestoneProgress
+              scannedProducts={scanHistory?.length || 0}
+              targetProducts={50}
+            />
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200 pt-6 flex flex-col items-center">
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            className="w-full max-w-xs"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Log Out
+          </Button>
+          <p className="text-sm text-gray-600 mt-4 text-center">
+            Thank you for being part of the sustainability revolution!
+          </p>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
