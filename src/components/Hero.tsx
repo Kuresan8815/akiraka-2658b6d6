@@ -6,20 +6,16 @@ export const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-[70vh] flex flex-col justify-center py-12 px-4">
-      <div className="max-w-4xl mx-auto text-center space-y-8">
-        <h1 className="text-4xl md:text-6xl font-bold text-eco-primary animate-fade-up">
+    <div className="flex flex-col justify-center py-6">
+      <div className="max-w-4xl mx-auto text-center space-y-4">
+        <h1 className="text-3xl md:text-4xl font-bold text-eco-primary animate-fade-up">
           Track Your Sustainable Impact
-          <span className="block text-xl md:text-2xl font-normal mt-4 text-gray-600">
+          <span className="block text-lg md:text-xl font-normal mt-2 text-gray-600">
             Join thousands making conscious choices for a better planet
           </span>
         </h1>
         
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto animate-fade-up animation-delay-100">
-          Scan products, earn rewards, and make a real difference with every sustainable choice.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8 animate-fade-up animation-delay-200">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-fade-up animation-delay-200">
           <Button 
             size="lg" 
             className="w-full sm:w-auto min-w-[200px] bg-eco-primary hover:bg-eco-secondary"
