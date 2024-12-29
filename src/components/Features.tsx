@@ -20,12 +20,12 @@ export const Features = () => {
     {
       icon: Gift,
       title: "Earn Rewards",
-      description: "Get rewarded for making sustainable choices and tracking your impact"
+      description: "Get rewarded for making sustainable choices"
     },
     {
       icon: LineChart,
       title: "Track Progress",
-      description: "Monitor your sustainability journey with detailed insights and metrics"
+      description: "Monitor your sustainability journey with detailed insights"
     }
   ];
 
@@ -34,7 +34,7 @@ export const Features = () => {
   }
 
   return (
-    <div className="py-8 bg-white/50 backdrop-blur-sm">
+    <div className="py-6 bg-white/50 backdrop-blur-sm h-[40vh] flex items-center">
       <div className="container mx-auto px-4 max-w-3xl">
         <Carousel className="relative">
           <CarouselContent>
@@ -61,7 +61,7 @@ export const Features = () => {
           <CarouselNext className="right-2" />
         </Carousel>
         
-        <div className="mt-6 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <Button 
             variant="ghost" 
             onClick={() => setIsComplete(true)}

@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 
 export const Footer = () => {
+  const navigate = useNavigate();
+  
   return (
-    <footer className="py-4 border-t bg-white/80 backdrop-blur-sm">
+    <footer className="py-4 bg-white/80 backdrop-blur-sm border-t h-[20vh] flex items-center">
       <div className="container mx-auto px-4">
         <div className="flex justify-center gap-6 text-sm">
           <a 
