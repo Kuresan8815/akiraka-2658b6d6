@@ -13,6 +13,7 @@ import { MilestoneProgress } from "./MilestoneProgress";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TabNavigation } from "@/components/navigation/TabNavigation";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
@@ -130,7 +131,7 @@ export const UserDashboard = () => {
   const pointsToNextMilestone = 100 - (rewards?.points_earned % 100);
 
   return (
-    <>
+    <div className="min-h-screen pb-16">
       <header className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-r from-eco-primary to-eco-secondary border-b border-gray-200">
         <div className="flex justify-between items-center px-4 h-16">
           <h1 className="text-lg font-semibold text-white">Akiraka</h1>
@@ -212,6 +213,8 @@ export const UserDashboard = () => {
           </p>
         </div>
       </div>
-    </>
+
+      <TabNavigation />
+    </div>
   );
 };
