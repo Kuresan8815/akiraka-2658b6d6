@@ -69,7 +69,7 @@ export const Features = () => {
           </Button>
           <Button 
             size="lg" 
-            className="min-w-[140px] border border-eco-primary text-eco-primary hover:bg-eco-secondary hover:text-white"
+            className="min-w-[140px] bg-[#222222] text-white hover:bg-eco-secondary border-none"
             onClick={() => navigate("/login")}
           >
             Log In
