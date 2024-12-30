@@ -11,7 +11,7 @@ interface MetricCardProps {
 export const MetricCard = ({ title, value, icon: Icon, description }: MetricCardProps) => (
   <Card className="relative overflow-hidden bg-gradient-to-br from-white to-gray-50 shadow-[4px_4px_10px_rgba(0,0,0,0.1),-2px_-2px_10px_rgba(255,255,255,0.8)] border border-gray-100">
     <div className="p-4">
-      <div className="flex justify-between items-start mb-2 p-3 rounded-lg bg-eco-secondary/20 shadow-inner">
+      <div className="flex justify-between items-start mb-2 p-3 rounded-lg bg-eco-secondary/40 shadow-inner">
         <div>
           <CardTitle className="text-sm font-medium text-eco-primary">{title}</CardTitle>
           <Icon className="h-6 w-6 text-eco-primary mt-2" />
