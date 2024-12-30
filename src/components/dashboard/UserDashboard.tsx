@@ -4,15 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { DashboardHeader } from "./DashboardHeader";
 import { QuickActions } from "./QuickActions";
+import { StatsGrid } from "./StatsGrid";
+import { DashboardProgress } from "./DashboardProgress";
+import { Achievements } from "./Achievements";
+import { DailyTip } from "./DailyTip";
+import { MonthlyScansChart } from "./MonthlyScansChart";
+import { MilestoneProgress } from "./MilestoneProgress";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TabNavigation } from "@/components/navigation/TabNavigation";
-import { SustainabilityImpactWidget } from "./widgets/SustainabilityImpactWidget";
-import { MilestoneWidget } from "./widgets/MilestoneWidget";
-import { AchievementsWidget } from "./widgets/AchievementsWidget";
-import { DailyTipWidget } from "./widgets/DailyTipWidget";
-import { MonthlyActivityWidget } from "./widgets/MonthlyActivityWidget";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
@@ -99,6 +100,7 @@ export const UserDashboard = () => {
     );
   }
 
+  // If profile or rewards don't exist, show an error message
   if (!profile || !rewards) {
     return (
       <div className="container mx-auto p-4">
@@ -107,7 +109,11 @@ export const UserDashboard = () => {
             We couldn't load your profile data. Please try signing out and back in.
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={handleLogout} className="mt-4">
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="mt-4"
+        >
           <LogOut className="mr-2 h-4 w-4" />
           Sign Out
         </Button>
@@ -129,14 +135,16 @@ export const UserDashboard = () => {
       <header className="fixed top-0 left-0 right-0 z-10 bg-gradient-to-r from-eco-primary to-eco-secondary border-b border-gray-200">
         <div className="flex justify-between items-center px-4 h-16">
           <h1 className="text-lg font-semibold text-white">Akiraka</h1>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-white hover:text-white hover:bg-white/20"
-          >
-            Logout
-          </Button>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-white hover:text-white hover:bg-white/20"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -144,42 +152,51 @@ export const UserDashboard = () => {
         <DashboardHeader profile={profile} session={session} />
         
         <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Quick Actions</h2>
           <QuickActions />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Left Column */}
-          <div className="space-y-6">
-            <SustainabilityImpactWidget 
-              totalCarbonSaved={totalCarbonSaved}
-              totalWaterSaved={totalWaterSaved}
-            />
-            <MilestoneWidget 
-              pointsEarned={rewards?.points_earned || 0}
-              pointsToNextMilestone={pointsToNextMilestone}
-            />
-          </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
-            <AchievementsWidget achievements={achievements} />
-            <DailyTipWidget />
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">My Sustainability Impact</h2>
+          <div className="transform hover:scale-105 transition-transform duration-200">
+            <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
           </div>
         </div>
 
-        {/* Full Width Sections */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <MonthlyActivityWidget
-            data={[
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Progress</h2>
+          <DashboardProgress 
+            pointsEarned={rewards?.points_earned || 0}
+            pointsToNextMilestone={pointsToNextMilestone}
+          />
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Achievements</h2>
+          <Achievements achievements={achievements} />
+        </div>
+
+        <div className="border-t border-gray-200 pt-6">
+          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Daily Eco Tip</h2>
+          <DailyTip />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 border-t border-gray-200 pt-6">
+          <div>
+            <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Monthly Activity</h2>
+            <MonthlyScansChart data={[
               { month: "Jan", scans: 10 },
               { month: "Feb", scans: 15 },
               { month: "Mar", scans: 20 },
-            ]}
-          />
-          <MilestoneWidget
-            pointsEarned={scanHistory?.length || 0}
-            pointsToNextMilestone={50}
-          />
+            ]} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Product Scanned Milestone</h2>
+            <MilestoneProgress
+              scannedProducts={scanHistory?.length || 0}
+              targetProducts={50}
+            />
+          </div>
         </div>
 
         <div className="border-t border-gray-200 pt-6 flex flex-col items-center">
