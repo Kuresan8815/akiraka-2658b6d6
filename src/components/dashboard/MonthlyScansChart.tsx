@@ -6,9 +6,9 @@ interface MonthlyScansChartProps {
 }
 
 export const MonthlyScansChart = ({ data }: MonthlyScansChartProps) => (
-  <Card>
+  <Card className="bg-gradient-to-br from-white to-gray-50 shadow-[4px_4px_10px_rgba(0,0,0,0.1),-2px_-2px_10px_rgba(255,255,255,0.8)] border border-gray-100">
     <CardHeader>
-      <CardTitle className="text-lg">Monthly Scans</CardTitle>
+      <CardTitle className="text-lg text-eco-primary">Monthly Scans</CardTitle>
     </CardHeader>
     <CardContent>
       <div className="h-[200px]">

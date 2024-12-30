@@ -7,8 +7,8 @@ interface StatsGridProps {
 }
 
 export const StatsGrid = ({ totalCarbonSaved, totalWaterSaved }: StatsGridProps) => (
-  <div className="grid gap-4 md:grid-cols-2">
-    <div className="shadow-lg hover:shadow-xl transition-shadow duration-200 rounded-lg">
+  <div className="grid gap-6 md:grid-cols-2">
+    <div className="transform hover:scale-105 transition-all duration-200">
       <MetricCard
         title="Carbon Footprint Saved"
         value={`${totalCarbonSaved.toFixed(1)} kg`}
@@ -16,7 +16,7 @@ export const StatsGrid = ({ totalCarbonSaved, totalWaterSaved }: StatsGridProps)
         description="Total CO₂ emissions reduced"
       />
     </div>
-    <div className="shadow-lg hover:shadow-xl transition-shadow duration-200 rounded-lg">
+    <div className="transform hover:scale-105 transition-all duration-200">
       <MetricCard
         title="Water Usage Saved"
         value={`${totalWaterSaved.toFixed(0)} L`}
