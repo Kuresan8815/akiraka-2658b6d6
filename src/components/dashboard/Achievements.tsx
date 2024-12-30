@@ -6,7 +6,7 @@ interface AchievementsProps {
 
 export const Achievements = ({ achievements }: AchievementsProps) => (
   <Card className="bg-gradient-to-br from-white to-gray-50 shadow-[4px_4px_10px_rgba(0,0,0,0.1),-2px_-2px_10px_rgba(255,255,255,0.8)] border border-gray-100">
-    <CardHeader>
+    <CardHeader className="bg-eco-secondary/40 rounded-t-lg">
       <CardTitle className="text-lg text-eco-primary">Your Achievements</CardTitle>
     </CardHeader>
     <CardContent>

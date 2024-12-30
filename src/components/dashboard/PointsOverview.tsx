@@ -13,7 +13,7 @@ export const PointsOverview = ({ totalPoints, nextMilestonePoints }: PointsOverv
   return (
     <Card className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-eco-primary/10 to-eco-secondary/10 animate-pulse"></div>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative bg-eco-secondary/40">
         <CardTitle className="text-xl font-bold">Your Points</CardTitle>
         <Trophy className="h-6 w-6 text-eco-primary animate-bounce" />
       </CardHeader>
