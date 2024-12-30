@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TabNavigation } from "@/components/navigation/TabNavigation";
+import { SectionHeader } from "./SectionHeader";
 
 export const UserDashboard = () => {
   const navigate = useNavigate();
@@ -152,19 +153,19 @@ export const UserDashboard = () => {
         <DashboardHeader profile={profile} session={session} />
         
         <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Quick Actions</h2>
+          <SectionHeader>Quick Actions</SectionHeader>
           <QuickActions />
         </div>
 
         <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">My Sustainability Impact</h2>
+          <SectionHeader>My Sustainability Impact</SectionHeader>
           <div className="transform hover:scale-105 transition-transform duration-200">
             <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
           </div>
         </div>
 
         <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Progress</h2>
+          <SectionHeader>Progress</SectionHeader>
           <DashboardProgress 
             pointsEarned={rewards?.points_earned || 0}
             pointsToNextMilestone={pointsToNextMilestone}
@@ -172,18 +173,18 @@ export const UserDashboard = () => {
         </div>
 
         <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Achievements</h2>
+          <SectionHeader>Achievements</SectionHeader>
           <Achievements achievements={achievements} />
         </div>
 
         <div className="border-t border-gray-200 pt-6">
-          <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Daily Eco Tip</h2>
+          <SectionHeader>Daily Eco Tip</SectionHeader>
           <DailyTip />
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 border-t border-gray-200 pt-6">
           <div>
-            <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Monthly Activity</h2>
+            <SectionHeader>Monthly Activity</SectionHeader>
             <MonthlyScansChart data={[
               { month: "Jan", scans: 10 },
               { month: "Feb", scans: 15 },
@@ -191,7 +192,7 @@ export const UserDashboard = () => {
             ]} />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-eco-primary mb-4 uppercase">Product Scanned Milestone</h2>
+            <SectionHeader>Product Scanned Milestone</SectionHeader>
             <MilestoneProgress
               scannedProducts={scanHistory?.length || 0}
               targetProducts={50}
