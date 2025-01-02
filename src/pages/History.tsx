@@ -9,12 +9,20 @@ import { ProductDetailsModal } from "@/components/history/ProductDetailsModal";
 import { ScanHistoryList } from "@/components/history/ScanHistoryList";
 import { ErrorState } from "@/components/history/ErrorState";
 import { EmptyState } from "@/components/history/EmptyState";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function History() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const { toast } = useToast();
 
-  const { data: scanHistory, isLoading, error, refetch } = useQuery({
+  const { 
+    data: scanHistory, 
+    isLoading, 
+    error, 
+    refetch,
+    isRefetching 
+  } = useQuery({
     queryKey: ["scan_history"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -30,6 +38,22 @@ export default function History() {
       return data;
     },
   });
+
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast({
+        title: "Refreshed",
+        description: "Your scan history has been updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh scan history",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredHistory = scanHistory?.filter((scan) => {
     if (!dateRange?.from && !dateRange?.to) return true;
@@ -58,8 +82,8 @@ export default function History() {
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-12rem)]">
-      <div className="space-y-4 p-4">
+    <div className="p-4 max-w-4xl mx-auto">
+      <div className="space-y-4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-eco-primary">Scan History</h2>
           <DateRangeFilter
@@ -75,6 +99,8 @@ export default function History() {
           <ScanHistoryList
             filteredHistory={filteredHistory}
             onSelectProduct={setSelectedProduct}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefetching}
           />
         )}
 
@@ -84,6 +110,6 @@ export default function History() {
           onClose={() => setSelectedProduct(null)}
         />
       </div>
-    </ScrollArea>
+    </div>
   );
 }

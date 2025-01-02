@@ -1,24 +1,50 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ExternalLink, Leaf, Droplets } from "lucide-react";
+import { ExternalLink, Leaf, Droplets, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 
 interface ScanHistoryListProps {
   filteredHistory: any[];
   onSelectProduct: (product: any) => void;
+  onRefresh: () => void;
+  isRefreshing?: boolean;
 }
 
-export const ScanHistoryList = ({ filteredHistory, onSelectProduct }: ScanHistoryListProps) => {
+export const ScanHistoryList = ({ 
+  filteredHistory, 
+  onSelectProduct, 
+  onRefresh,
+  isRefreshing 
+}: ScanHistoryListProps) => {
   return (
     <div className="space-y-4">
+      <div className="flex justify-end mb-2">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          className="text-eco-primary hover:text-eco-primary/80"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </Button>
+      </div>
+
       {filteredHistory?.map((scan) => (
         <Card
           key={scan.id}
-          className="border-eco-primary cursor-pointer transition-transform hover:scale-[1.02]"
+          className="border-eco-primary cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
           onClick={() => onSelectProduct(scan.products)}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative bg-eco-secondary/40 rounded-t-lg">
-            <CardTitle className="text-lg">{scan.products?.name}</CardTitle>
+            <div className="space-y-1">
+              <CardTitle className="text-lg">{scan.products?.name}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {scan.products?.origin || "Sustainable Manufacturer"}
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               <Badge
                 variant={
@@ -52,11 +78,12 @@ export const ScanHistoryList = ({ filteredHistory, onSelectProduct }: ScanHistor
                     {scan.products?.water_usage} L saved
                   </span>
                 </div>
-                <div className="flex items-center">
-                  <Badge variant="outline" className="text-xs">
-                    Score: {scan.products?.sustainability_score}/100
-                  </Badge>
-                </div>
+                <Badge 
+                  variant="outline" 
+                  className="text-xs bg-green-50"
+                >
+                  Score: {scan.products?.sustainability_score}/100
+                </Badge>
               </div>
             </div>
           </CardContent>
