@@ -1,15 +1,18 @@
-import { ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export const Hero = () => {
+  const navigate = useNavigate();
+  
   return (
-    <div className="flex flex-col items-center justify-center h-[40vh]">
-      <div className="max-w-4xl mx-auto text-center space-y-6 px-4">
-        <h1 className="text-3xl md:text-4xl font-bold text-white animate-fade-up">
-          Track Your Sustainable Journey
-          <span className="block text-lg md:text-xl font-normal mt-2 text-gray-100">
-            Make informed choices for a better planet
-          </span>
+    <div className="w-full min-h-[40vh] flex items-center justify-center px-4 py-12">
+      <div className="max-w-3xl mx-auto text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 animate-fade-up">
+          Track Your Product's Environmental Impact
         </h1>
+        <p className="text-lg md:text-xl text-white/90 mb-8 animate-fade-up" style={{ animationDelay: "0.2s" }}>
+          Scan, learn, and make sustainable choices for a better tomorrow
+        </p>
       </div>
     </div>
   );

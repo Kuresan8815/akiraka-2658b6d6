@@ -7,7 +7,6 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Button } from "./ui/button";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export const Features = () => {
@@ -31,7 +30,7 @@ export const Features = () => {
   ];
 
   return (
-    <div className="py-6 bg-white/50 backdrop-blur-sm h-[40vh] flex items-center">
+    <div className="py-6 bg-white/50 backdrop-blur-sm flex items-center">
       <div className="container mx-auto px-4 max-w-3xl">
         <Carousel className="relative mb-8">
           <CarouselContent>
