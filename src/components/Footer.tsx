@@ -4,9 +4,9 @@ export const Footer = () => {
   const navigate = useNavigate();
   
   return (
-    <footer className="py-2 bg-white/80 backdrop-blur-sm border-t flex items-center">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-center gap-6 text-sm">
+    <footer className="py-1 bg-white/80 backdrop-blur-sm border-t flex-shrink-0">
+      <div className="container mx-auto px-3">
+        <div className="flex justify-center gap-4 text-xs sm:text-sm">
           <a 
             href="#" 
             className="text-gray-600 hover:text-eco-primary transition-colors"

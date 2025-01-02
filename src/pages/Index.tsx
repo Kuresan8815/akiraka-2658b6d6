@@ -16,7 +16,7 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gradient-to-b from-eco-primary/10 to-white">
+      <div className="flex justify-center items-center h-[100dvh] bg-gradient-to-b from-eco-primary/10 to-white">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
       </div>
     );
@@ -27,14 +27,12 @@ const Index = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-[100dvh] w-full overflow-hidden flex flex-col">
       {/* Background Image with Overlay */}
       <div 
-        className="fixed inset-0 z-0"
+        className="fixed inset-0 z-0 bg-cover bg-center"
         style={{
           backgroundImage: 'url(https://images.unsplash.com/photo-1482938289607-e9573fc25ebb)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
         }}
       >
         {/* Gradient overlay for better text readability */}
@@ -42,11 +40,11 @@ const Index = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col h-screen">
-        <header className="bg-eco-primary/90 backdrop-blur-sm text-white py-3 px-6">
-          <h1 className="text-2xl font-bold">Akiraka</h1>
+      <div className="relative z-10 flex flex-col h-full">
+        <header className="bg-eco-primary/90 backdrop-blur-sm text-white py-2 px-4">
+          <h1 className="text-xl font-bold">Akiraka</h1>
         </header>
-        <main className="flex-grow flex flex-col justify-between">
+        <main className="flex-1 flex flex-col justify-between">
           <Hero />
           <Features />
           <Footer />

@@ -30,22 +30,22 @@ export const Features = () => {
   ];
 
   return (
-    <div className="py-4 bg-white/50 backdrop-blur-sm flex items-center">
-      <div className="container mx-auto px-4 max-w-3xl">
-        <Carousel className="relative mb-6">
+    <div className="py-2 bg-white/50 backdrop-blur-sm flex items-center flex-shrink-0">
+      <div className="container mx-auto px-3 max-w-3xl">
+        <Carousel className="relative mb-4">
           <CarouselContent>
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <CarouselItem key={index}>
-                  <div className="flex flex-col items-center text-center p-4 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
-                    <div className="p-4 rounded-full bg-eco-primary/10 mb-2">
-                      <Icon className="h-8 w-8 text-eco-primary" />
+                  <div className="flex flex-col items-center text-center p-3 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
+                    <div className="p-3 rounded-full bg-eco-primary/10 mb-2">
+                      <Icon className="h-6 w-6 text-eco-primary" />
                     </div>
-                    <h3 className="text-base font-semibold text-eco-primary mb-1">
+                    <h3 className="text-sm font-semibold text-eco-primary mb-1">
                       {feature.title}
                     </h3>
-                    <p className="text-sm text-gray-600 max-w-md mx-auto">
+                    <p className="text-xs sm:text-sm text-gray-600 max-w-md mx-auto">
                       {feature.description}
                     </p>
                   </div>
@@ -53,22 +53,22 @@ export const Features = () => {
               );
             })}
           </CarouselContent>
-          <CarouselPrevious className="left-2" />
-          <CarouselNext className="right-2" />
+          <CarouselPrevious className="left-1" />
+          <CarouselNext className="right-1" />
         </Carousel>
         
-        <div className="flex flex-row gap-4 justify-center items-center">
+        <div className="flex flex-row gap-3 justify-center items-center">
           <Button 
-            size="lg" 
-            className="min-w-[140px] bg-eco-primary hover:bg-eco-secondary"
+            size="sm"
+            className="min-w-[120px] bg-eco-primary hover:bg-eco-secondary"
             onClick={() => navigate("/signup")}
           >
             Sign Up
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <Button 
-            size="lg" 
-            className="min-w-[140px] bg-[#222222] text-white hover:bg-eco-secondary border-none"
+            size="sm"
+            className="min-w-[120px] bg-[#222222] text-white hover:bg-eco-secondary border-none"
             onClick={() => navigate("/login")}
           >
             Log In
