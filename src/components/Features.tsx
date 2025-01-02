@@ -30,22 +30,22 @@ export const Features = () => {
   ];
 
   return (
-    <div className="py-6 bg-white/50 backdrop-blur-sm flex items-center">
+    <div className="py-4 bg-white/50 backdrop-blur-sm flex items-center">
       <div className="container mx-auto px-4 max-w-3xl">
-        <Carousel className="relative mb-8">
+        <Carousel className="relative mb-6">
           <CarouselContent>
             {features.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <CarouselItem key={index}>
-                  <div className="flex flex-col items-center text-center p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
-                    <div className="p-6 rounded-full bg-eco-primary/10 mb-4">
-                      <Icon className="h-12 w-12 text-eco-primary" />
+                  <div className="flex flex-col items-center text-center p-4 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm">
+                    <div className="p-4 rounded-full bg-eco-primary/10 mb-2">
+                      <Icon className="h-8 w-8 text-eco-primary" />
                     </div>
-                    <h3 className="text-lg font-semibold text-eco-primary mb-2">
+                    <h3 className="text-base font-semibold text-eco-primary mb-1">
                       {feature.title}
                     </h3>
-                    <p className="text-gray-600 max-w-md mx-auto">
+                    <p className="text-sm text-gray-600 max-w-md mx-auto">
                       {feature.description}
                     </p>
                   </div>

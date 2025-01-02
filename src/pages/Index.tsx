@@ -27,7 +27,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* Background Image with Overlay */}
       <div 
         className="fixed inset-0 z-0"
@@ -42,15 +42,15 @@ const Index = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col min-h-screen">
-        <header className="bg-eco-primary/90 backdrop-blur-sm text-white py-4 px-6">
+      <div className="relative z-10 flex flex-col h-screen">
+        <header className="bg-eco-primary/90 backdrop-blur-sm text-white py-3 px-6">
           <h1 className="text-2xl font-bold">Akiraka</h1>
         </header>
-        <main className="flex-grow flex flex-col">
+        <main className="flex-grow flex flex-col justify-between">
           <Hero />
           <Features />
+          <Footer />
         </main>
-        <Footer />
       </div>
     </div>
   );
