@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Leaf, Droplets, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { ProductDetailsModal } from "../ProductDetailsModal";
 
 interface ScanHistoryListProps {
   filteredHistory: any[];
@@ -32,7 +33,14 @@ export const ScanHistoryList = ({
   onRefresh,
   isRefreshing 
 }: ScanHistoryListProps) => {
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const scansToDisplay = filteredHistory.length > 0 ? filteredHistory : [SAMPLE_SCAN];
+
+  const handleProductClick = (product: any) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -51,13 +59,13 @@ export const ScanHistoryList = ({
       </div>
 
       {scansToDisplay.map((scan) => (
-        <Link 
+        <div
           key={scan.id}
-          to={`/scan/${scan.products?.qr_code_id}`}
-          className="block"
+          onClick={() => handleProductClick(scan.products)}
+          className="block cursor-pointer"
         >
           <Card
-            className="border-eco-primary cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
+            className="border-eco-primary transition-all duration-200 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative bg-eco-secondary/40 rounded-t-lg">
               <div className="space-y-1">
@@ -109,8 +117,14 @@ export const ScanHistoryList = ({
               </div>
             </CardContent>
           </Card>
-        </Link>
+        </div>
       ))}
+
+      <ProductDetailsModal 
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };
