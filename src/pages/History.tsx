@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { DateRangeFilter } from "@/components/history/DateRangeFilter";
-import { ProductDetailsModal } from "@/components/history/ProductDetailsModal";
 import { ErrorState } from "@/components/history/ErrorState";
-import { LatestScan } from "@/components/history/LatestScan";
-import { PreviousScans } from "@/components/history/PreviousScans";
+import { ScanHistoryList } from "@/components/history/ScanHistoryList";
 import { useToast } from "@/components/ui/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
 
 export default function History() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [selectedProduct, setSelectedProduct] = useState(null);
   const { toast } = useToast();
 
   const {
@@ -19,8 +16,6 @@ export default function History() {
     error,
     refetch,
     isRefetching,
-    lastScan,
-    previousScans
   } = useScanHistory(dateRange);
 
   const handleRefresh = async () => {
@@ -67,19 +62,11 @@ export default function History() {
           />
         </div>
 
-        {lastScan && <LatestScan />}
-
-        <PreviousScans
-          scans={previousScans}
-          onSelectProduct={setSelectedProduct}
+        <ScanHistoryList
+          filteredHistory={scanHistory || []}
+          onSelectProduct={() => {}}
           onRefresh={handleRefresh}
           isRefreshing={isRefetching}
-        />
-
-        <ProductDetailsModal
-          product={selectedProduct}
-          isOpen={!!selectedProduct}
-          onClose={() => setSelectedProduct(null)}
         />
       </div>
     </div>
