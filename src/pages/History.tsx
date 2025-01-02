@@ -8,7 +8,7 @@ import { DateRangeFilter } from "@/components/history/DateRangeFilter";
 import { ProductDetailsModal } from "@/components/history/ProductDetailsModal";
 import { ScanHistoryList } from "@/components/history/ScanHistoryList";
 import { ErrorState } from "@/components/history/ErrorState";
-import { EmptyState } from "@/components/history/EmptyState";
+import { ProductDetails } from "@/components/ProductDetails";
 import { useToast } from "@/components/ui/use-toast";
 
 export default function History() {
@@ -81,6 +81,8 @@ export default function History() {
     );
   }
 
+  const lastScan = filteredHistory?.[0];
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <div className="space-y-4">
@@ -93,16 +95,22 @@ export default function History() {
           />
         </div>
 
-        {filteredHistory?.length === 0 ? (
-          <EmptyState dateRange={dateRange} />
-        ) : (
+        {lastScan && (
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold text-eco-primary mb-4">Latest Scan</h3>
+            <ProductDetails />
+          </div>
+        )}
+
+        <div className="mt-8">
+          <h3 className="text-lg font-semibold text-eco-primary mb-4">Previous Scans</h3>
           <ScanHistoryList
-            filteredHistory={filteredHistory}
+            filteredHistory={filteredHistory?.slice(1) || []}
             onSelectProduct={setSelectedProduct}
             onRefresh={handleRefresh}
             isRefreshing={isRefetching}
           />
-        )}
+        </div>
 
         <ProductDetailsModal
           product={selectedProduct}
