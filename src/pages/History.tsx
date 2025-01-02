@@ -1,43 +1,27 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { isAfter, isBefore, parseISO } from "date-fns";
 import { DateRange } from "react-day-picker";
 import { DateRangeFilter } from "@/components/history/DateRangeFilter";
 import { ProductDetailsModal } from "@/components/history/ProductDetailsModal";
-import { ScanHistoryList } from "@/components/history/ScanHistoryList";
 import { ErrorState } from "@/components/history/ErrorState";
-import { ProductDetails } from "@/components/ProductDetails";
+import { LatestScan } from "@/components/history/LatestScan";
+import { PreviousScans } from "@/components/history/PreviousScans";
 import { useToast } from "@/components/ui/use-toast";
+import { useScanHistory } from "@/hooks/useScanHistory";
 
 export default function History() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedProduct, setSelectedProduct] = useState(null);
   const { toast } = useToast();
 
-  const { 
-    data: scanHistory, 
-    isLoading, 
-    error, 
+  const {
+    scanHistory,
+    isLoading,
+    error,
     refetch,
-    isRefetching 
-  } = useQuery({
-    queryKey: ["scan_history"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data, error } = await supabase
-        .from("scan_history")
-        .select("*, products(*)")
-        .eq("user_id", user.id)
-        .order("scanned_at", { ascending: false });
-
-      if (error) throw error;
-      return data;
-    },
-  });
+    isRefetching,
+    lastScan,
+    previousScans
+  } = useScanHistory(dateRange);
 
   const handleRefresh = async () => {
     try {
@@ -55,16 +39,6 @@ export default function History() {
     }
   };
 
-  const filteredHistory = scanHistory?.filter((scan) => {
-    if (!dateRange?.from && !dateRange?.to) return true;
-    
-    const scanDate = parseISO(scan.scanned_at);
-    const isAfterStart = !dateRange.from || isAfter(scanDate, dateRange.from);
-    const isBeforeEnd = !dateRange.to || isBefore(scanDate, dateRange.to);
-    
-    return isAfterStart && isBeforeEnd;
-  });
-
   const clearFilters = () => {
     setDateRange(undefined);
   };
@@ -81,8 +55,6 @@ export default function History() {
     );
   }
 
-  const lastScan = filteredHistory?.[0];
-
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <div className="space-y-4">
@@ -95,22 +67,14 @@ export default function History() {
           />
         </div>
 
-        {lastScan && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-eco-primary mb-4">Latest Scan</h3>
-            <ProductDetails />
-          </div>
-        )}
+        {lastScan && <LatestScan />}
 
-        <div className="mt-8">
-          <h3 className="text-lg font-semibold text-eco-primary mb-4">Previous Scans</h3>
-          <ScanHistoryList
-            filteredHistory={filteredHistory?.slice(1) || []}
-            onSelectProduct={setSelectedProduct}
-            onRefresh={handleRefresh}
-            isRefreshing={isRefetching}
-          />
-        </div>
+        <PreviousScans
+          scans={previousScans}
+          onSelectProduct={setSelectedProduct}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefetching}
+        />
 
         <ProductDetailsModal
           product={selectedProduct}
