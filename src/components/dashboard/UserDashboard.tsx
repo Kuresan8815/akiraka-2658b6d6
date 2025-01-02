@@ -128,7 +128,24 @@ export const UserDashboard = () => {
   const totalWaterSaved = scanHistory?.reduce((total, scan) => 
     total + (scan.products?.water_usage || 0), 0) || 0;
 
-  const achievements = Array.isArray(rewards?.reward_history) ? rewards.reward_history : [];
+  const sampleAchievements = [
+    {
+      name: "Eco Explorer",
+      description: "Scan eco-friendly products",
+      progress: 75
+    },
+    {
+      name: "Water Warrior",
+      description: "Save water through sustainable choices",
+      progress: 60
+    },
+    {
+      name: "Carbon Crusher",
+      description: "Reduce carbon footprint",
+      progress: 45
+    }
+  ];
+
   const pointsToNextMilestone = 100 - (rewards?.points_earned % 100);
 
   return (
@@ -160,21 +177,24 @@ export const UserDashboard = () => {
         <div className="border-t border-gray-200 pt-6">
           <SectionHeader>My Sustainability Impact</SectionHeader>
           <div className="transform hover:scale-105 transition-transform duration-200">
-            <StatsGrid totalCarbonSaved={totalCarbonSaved} totalWaterSaved={totalWaterSaved} />
+            <StatsGrid 
+              totalCarbonSaved={totalCarbonSaved || 125.5} 
+              totalWaterSaved={totalWaterSaved || 2500} 
+            />
           </div>
         </div>
 
         <div className="border-t border-gray-200 pt-6">
           <SectionHeader>Progress</SectionHeader>
           <DashboardProgress 
-            pointsEarned={rewards?.points_earned || 0}
-            pointsToNextMilestone={pointsToNextMilestone}
+            pointsEarned={rewards?.points_earned || 75}
+            pointsToNextMilestone={pointsToNextMilestone || 25}
           />
         </div>
 
         <div className="border-t border-gray-200 pt-6">
           <SectionHeader>Achievements</SectionHeader>
-          <Achievements achievements={achievements} />
+          <Achievements achievements={sampleAchievements} />
         </div>
 
         <div className="border-t border-gray-200 pt-6">
@@ -194,7 +214,7 @@ export const UserDashboard = () => {
           <div>
             <SectionHeader>Product Scanned Milestone</SectionHeader>
             <MilestoneProgress
-              scannedProducts={scanHistory?.length || 0}
+              scannedProducts={scanHistory?.length || 35}
               targetProducts={50}
             />
           </div>

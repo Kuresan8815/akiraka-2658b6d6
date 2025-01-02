@@ -11,9 +11,9 @@ export const StatsGrid = ({ totalCarbonSaved, totalWaterSaved }: StatsGridProps)
     <div className="transform hover:scale-105 transition-all duration-200">
       <MetricCard
         title="Carbon Footprint Saved"
-        value={`${totalCarbonSaved.toFixed(1)} kg`}
+        value={`${totalCarbonSaved.toFixed(1)} kg CO₂e`}
         icon={Leaf}
-        description="Total CO₂ emissions reduced"
+        description="Total CO₂ emissions reduced through eco-friendly choices"
       />
     </div>
     <div className="transform hover:scale-105 transition-all duration-200">
@@ -21,7 +21,7 @@ export const StatsGrid = ({ totalCarbonSaved, totalWaterSaved }: StatsGridProps)
         title="Water Usage Saved"
         value={`${totalWaterSaved.toFixed(0)} L`}
         icon={Droplet}
-        description="Total water conservation impact"
+        description="Total water conservation impact from sustainable products"
       />
     </div>
   </div>
