@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { format, isAfter, isBefore, parseISO } from "date-fns";
-import { AlertCircle, Droplets, Leaf, CalendarIcon } from "lucide-react";
+import { AlertCircle, Droplets, Leaf, CalendarIcon, ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   Popover,
   PopoverContent,
@@ -134,40 +135,49 @@ export default function History() {
         ) : (
           <div className="space-y-4">
             {filteredHistory?.map((scan) => (
-              <Card key={scan.id} className="border-eco-primary">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-lg">{scan.products?.name}</CardTitle>
-                  <Badge variant={
-                    scan.products?.certification_level === 'Gold' ? 'default' :
-                    scan.products?.certification_level === 'Silver' ? 'secondary' :
-                    'outline'
-                  }>
-                    {scan.products?.certification_level}
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-500">
-                      Scanned on {format(new Date(scan.scanned_at), 'PPp')}
-                    </p>
-                    <div className="flex flex-wrap gap-4">
-                      <div className="flex items-center">
-                        <Leaf className="h-4 w-4 text-eco-primary mr-2" />
-                        <span className="text-sm">{scan.products?.carbon_footprint} kg CO₂ saved</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Droplets className="h-4 w-4 text-eco-primary mr-2" />
-                        <span className="text-sm">{scan.products?.water_usage} L saved</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Badge variant="outline" className="text-xs">
-                          Score: {scan.products?.sustainability_score}/100
-                        </Badge>
+              <Link 
+                to={`/product/${scan.products?.qr_code_id}`} 
+                key={scan.id}
+                className="block transition-transform hover:scale-[1.02]"
+              >
+                <Card className="border-eco-primary">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative bg-eco-secondary/40 rounded-t-lg">
+                    <CardTitle className="text-lg">{scan.products?.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={
+                        scan.products?.certification_level === 'Gold' ? 'default' :
+                        scan.products?.certification_level === 'Silver' ? 'secondary' :
+                        'outline'
+                      }>
+                        {scan.products?.certification_level}
+                      </Badge>
+                      <ExternalLink className="h-4 w-4 text-eco-primary" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500">
+                        Scanned on {format(new Date(scan.scanned_at), 'PPp')}
+                      </p>
+                      <div className="flex flex-wrap gap-4">
+                        <div className="flex items-center">
+                          <Leaf className="h-4 w-4 text-eco-primary mr-2" />
+                          <span className="text-sm">{scan.products?.carbon_footprint} kg CO₂ saved</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Droplets className="h-4 w-4 text-eco-primary mr-2" />
+                          <span className="text-sm">{scan.products?.water_usage} L saved</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Badge variant="outline" className="text-xs">
+                            Score: {scan.products?.sustainability_score}/100
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}
