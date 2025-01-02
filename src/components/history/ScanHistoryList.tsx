@@ -12,12 +12,28 @@ interface ScanHistoryListProps {
   isRefreshing?: boolean;
 }
 
+const SAMPLE_SCAN = {
+  id: "sample",
+  scanned_at: new Date().toISOString(),
+  products: {
+    qr_code_id: "demo",
+    name: "Eco-Friendly Water Bottle",
+    origin: "Sustainable Factory, Sweden",
+    certification_level: "Gold",
+    carbon_footprint: 0.5,
+    water_usage: 2,
+    sustainability_score: 85,
+  }
+};
+
 export const ScanHistoryList = ({ 
   filteredHistory, 
   onSelectProduct, 
   onRefresh,
   isRefreshing 
 }: ScanHistoryListProps) => {
+  const scansToDisplay = filteredHistory.length > 0 ? filteredHistory : [SAMPLE_SCAN];
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-2">
@@ -34,7 +50,7 @@ export const ScanHistoryList = ({
         </Button>
       </div>
 
-      {filteredHistory?.map((scan) => (
+      {scansToDisplay.map((scan) => (
         <Link 
           key={scan.id}
           to={`/scan/${scan.products?.qr_code_id}`}
