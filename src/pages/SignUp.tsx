@@ -51,11 +51,6 @@ const SignUp = () => {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: {
-            name, // Store name in user metadata
-          },
-        },
       });
 
       if (authError) {
@@ -86,17 +81,18 @@ const SignUp = () => {
 
         if (profileError) {
           console.error("Profile creation error:", profileError);
+          // Even if profile creation fails, the user account is created
           toast({
             title: "Warning",
             description: "Account created but profile setup failed. Please try updating your profile later.",
             variant: "destructive",
           });
+        } else {
+          toast({
+            title: "Success!",
+            description: "Account created successfully. You can now sign in.",
+          });
         }
-
-        toast({
-          title: "Success!",
-          description: "Account created successfully. You can now sign in.",
-        });
         
         // Clear the form
         setEmail("");
