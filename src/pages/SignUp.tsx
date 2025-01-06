@@ -47,31 +47,57 @@ const SignUp = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Sign up the user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            name,
+            name, // Store name in user metadata
           },
         },
       });
 
-      if (error) {
-        console.error("Signup error:", error);
+      if (authError) {
+        console.error("Signup error:", authError);
         toast({
           title: "Error",
-          description: error.message || "Something went wrong. Please try again.",
+          description: authError.message || "Something went wrong. Please try again.",
           variant: "destructive",
         });
         return;
       }
 
-      if (data?.user) {
+      if (authData?.user) {
+        // Create initial profile data
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: authData.user.id,
+              name: name,
+              sustainability_goals: [],
+              preferences: {
+                notifications: true,
+                darkTheme: false
+              }
+            }
+          ]);
+
+        if (profileError) {
+          console.error("Profile creation error:", profileError);
+          toast({
+            title: "Warning",
+            description: "Account created but profile setup failed. Please try updating your profile later.",
+            variant: "destructive",
+          });
+        }
+
         toast({
           title: "Success!",
           description: "Account created successfully. You can now sign in.",
         });
+        
         // Clear the form
         setEmail("");
         setPassword("");
