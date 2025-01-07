@@ -16,20 +16,110 @@ interface SustainabilityImpactChartProps {
   dateRange: DateRange | undefined;
 }
 
+interface SustainabilityMetric {
+  year: string;
+  greenhouseEmissions: number;
+  energyConsumption: number;
+  waterConsumption: number;
+  landUse: number;
+  wasteManagement: number;
+}
+
 export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactChartProps) => {
   const { data: impactData, isLoading } = useQuery({
     queryKey: ["sustainability-impact", dateRange],
     queryFn: async () => {
       // Return dummy data showing yearly impact
       return [
-        { year: "2020", carbonReduction: 15000, waterSaved: 25000 },
-        { year: "2021", carbonReduction: 22000, waterSaved: 35000 },
-        { year: "2022", carbonReduction: 35000, waterSaved: 48000 },
-        { year: "2023", carbonReduction: 45000, waterSaved: 62000 },
-        { year: "2024", carbonReduction: 58000, waterSaved: 75000 }
+        {
+          year: "2020",
+          greenhouseEmissions: 15000,
+          energyConsumption: 25000,
+          waterConsumption: 35000,
+          landUse: 1200,
+          wasteManagement: 8000,
+        },
+        {
+          year: "2021",
+          greenhouseEmissions: 12000,
+          energyConsumption: 22000,
+          waterConsumption: 32000,
+          landUse: 1000,
+          wasteManagement: 7000,
+        },
+        {
+          year: "2022",
+          greenhouseEmissions: 10000,
+          energyConsumption: 20000,
+          waterConsumption: 30000,
+          landUse: 800,
+          wasteManagement: 6000,
+        },
+        {
+          year: "2023",
+          greenhouseEmissions: 8000,
+          energyConsumption: 18000,
+          waterConsumption: 28000,
+          landUse: 600,
+          wasteManagement: 5000,
+        },
+        {
+          year: "2024",
+          greenhouseEmissions: 6000,
+          energyConsumption: 15000,
+          waterConsumption: 25000,
+          landUse: 400,
+          wasteManagement: 4000,
+        }
       ];
     },
   });
+
+  const formatTooltipValue = (value: number, name: string) => {
+    switch (name) {
+      case "greenhouseEmissions":
+        return `${value} kg CO₂e`;
+      case "energyConsumption":
+        return `${value} kWh`;
+      case "waterConsumption":
+        return `${value} L`;
+      case "landUse":
+        return `${value} m²`;
+      case "wasteManagement":
+        return `${value} kg`;
+      default:
+        return value;
+    }
+  };
+
+  const getMetricName = (key: string) => {
+    const names: { [key: string]: string } = {
+      greenhouseEmissions: "Greenhouse Emissions",
+      energyConsumption: "Energy Consumption",
+      waterConsumption: "Water Consumption",
+      landUse: "Land Use",
+      wasteManagement: "Waste Management",
+    };
+    return names[key] || key;
+  };
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
+          <p className="font-bold text-eco-primary">{`Year: ${label}`}</p>
+          {payload.map((entry: any, index: number) => (
+            <p key={index} className="text-sm">
+              <span style={{ color: entry.color }}>
+                {getMetricName(entry.dataKey)}: {formatTooltipValue(entry.value, entry.dataKey)}
+              </span>
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
     <Card>
@@ -37,7 +127,7 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
         <CardTitle className="text-lg text-eco-primary">Yearly Sustainability Impact</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-[400px]">
           {isLoading ? (
             <p>Loading impact data...</p>
           ) : (
@@ -46,17 +136,32 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Bar 
-                  dataKey="carbonReduction" 
-                  name="Carbon Reduction (kg)" 
+                  dataKey="greenhouseEmissions" 
+                  name="Greenhouse Emissions (kg CO₂e)" 
                   fill="#2F5233" 
                 />
                 <Bar 
-                  dataKey="waterSaved" 
-                  name="Water Saved (L)" 
+                  dataKey="energyConsumption" 
+                  name="Energy Consumption (kWh)" 
                   fill="#4F7942" 
+                />
+                <Bar 
+                  dataKey="waterConsumption" 
+                  name="Water Consumption (L)" 
+                  fill="#6B8E23" 
+                />
+                <Bar 
+                  dataKey="landUse" 
+                  name="Land Use (m²)" 
+                  fill="#8B4513" 
+                />
+                <Bar 
+                  dataKey="wasteManagement" 
+                  name="Waste Management (kg)" 
+                  fill="#A0522D" 
                 />
               </BarChart>
             </ResponsiveContainer>
