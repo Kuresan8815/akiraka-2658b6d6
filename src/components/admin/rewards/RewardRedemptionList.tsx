@@ -17,8 +17,8 @@ interface RewardRedemption {
   points_spent: number;
   status: string;
   redeemed_at: string;
-  profiles: { name: string } | null;
-  reward_tiers: { name: string } | null;
+  profiles: { name: string | null } | null;
+  reward_tiers: { name: string | null } | null;
 }
 
 export const RewardRedemptionList = () => {
@@ -35,7 +35,7 @@ export const RewardRedemptionList = () => {
         .order("redeemed_at", { ascending: false });
 
       if (error) throw error;
-      return data as RewardRedemption[];
+      return data as unknown as RewardRedemption[];
     },
   });
 

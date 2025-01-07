@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { useToast } from '@/components/ui/use-toast';
-import { Profile as ProfileType } from '@/types/profile';
+import { Profile as ProfileType, ProfilePreferences } from '@/types/profile';
 
 export const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -22,9 +22,25 @@ export const Profile = () => {
         .eq('id', user.id)
         .single();
       
+      if (!data) throw new Error('No profile found');
+
+      // Parse the preferences with proper type checking
+      const defaultPreferences: ProfilePreferences = {
+        notifications: false,
+        darkTheme: false,
+      };
+
+      const preferences = data.preferences as Record<string, unknown> || {};
+      const parsedPreferences: ProfilePreferences = {
+        notifications: typeof preferences.notifications === 'boolean' ? preferences.notifications : defaultPreferences.notifications,
+        darkTheme: typeof preferences.darkTheme === 'boolean' ? preferences.darkTheme : defaultPreferences.darkTheme,
+      };
+      
       return {
         ...data,
         email: user.email,
+        preferences: parsedPreferences,
+        sustainability_goals: Array.isArray(data.sustainability_goals) ? data.sustainability_goals : [],
       } as ProfileType;
     },
   });
@@ -33,7 +49,14 @@ export const Profile = () => {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update(formData)
+        .update({
+          name: formData.name,
+          sustainability_goals: formData.sustainabilityGoals,
+          preferences: {
+            notifications: formData.notifications,
+            darkTheme: formData.darkTheme,
+          },
+        })
         .eq('id', profile?.id);
 
       if (error) throw error;
