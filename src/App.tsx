@@ -29,12 +29,48 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
+          {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          
+          {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminRoute />}>
+            <Route index element={
+              <AdminLayout role="admin">
+                <AdminDashboard />
+              </AdminLayout>
+            } />
+            <Route path="users" element={
+              <AdminLayout role="admin">
+                <AdminUsers />
+              </AdminLayout>
+            } />
+            <Route path="products" element={
+              <AdminLayout role="admin">
+                <AdminProducts />
+              </AdminLayout>
+            } />
+            <Route path="analytics" element={
+              <AdminLayout role="admin">
+                <AdminAnalytics />
+              </AdminLayout>
+            } />
+            <Route path="rewards" element={
+              <AdminLayout role="admin">
+                <AdminRewards />
+              </AdminLayout>
+            } />
+            <Route path="settings" element={
+              <AdminLayout role="admin">
+                <AdminSettings />
+              </AdminLayout>
+            } />
+          </Route>
 
+          {/* Protected User Routes */}
           <Route path="/" element={<PrivateRoute />}>
             <Route index element={<UserDashboard />} />
             <Route path="onboarding" element={<Onboarding />} />
@@ -42,57 +78,6 @@ function App() {
             <Route path="product/:id" element={<ProductDetails />} />
             <Route path="profile" element={<Profile />} />
             <Route path="rewards" element={<Rewards />} />
-          </Route>
-
-          <Route path="/admin" element={<AdminRoute />}>
-            <Route
-              index
-              element={
-                <AdminLayout role="admin">
-                  <AdminDashboard />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="users"
-              element={
-                <AdminLayout role="admin">
-                  <AdminUsers />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="products"
-              element={
-                <AdminLayout role="admin">
-                  <AdminProducts />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="analytics"
-              element={
-                <AdminLayout role="admin">
-                  <AdminAnalytics />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="rewards"
-              element={
-                <AdminLayout role="admin">
-                  <AdminRewards />
-                </AdminLayout>
-              }
-            />
-            <Route
-              path="settings"
-              element={
-                <AdminLayout role="admin">
-                  <AdminSettings />
-                </AdminLayout>
-              }
-            />
           </Route>
         </Routes>
       </Router>
