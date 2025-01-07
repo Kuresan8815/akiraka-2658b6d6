@@ -1,104 +1,104 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AppLayout } from "./components/layout/AppLayout";
-import { AdminLayout } from "./components/admin/AdminLayout";
-import { AdminDashboard } from "./components/admin/AdminDashboard";
-import { AnalyticsDashboard } from "./components/admin/analytics/AnalyticsDashboard";
-import Index from "./pages/Index";
-import Login from "./pages/Login";
-import SignUp from "./pages/SignUp";
-import AdminLogin from "./pages/admin/Login";
-import { QRScanner } from "./components/QRScanner";
-import { ProductDetails } from "./components/ProductDetails";
-import Notifications from "./pages/Notifications";
-import History from "./pages/History";
-import { RewardsDashboard } from "./components/dashboard/RewardsDashboard";
-import Profile from "./pages/Profile";
+import { Toaster } from "@/components/ui/toaster";
+import { AdminLayout } from "@/components/admin/AdminLayout";
+import { AdminDashboard } from "@/pages/admin/Dashboard";
+import { AdminUsers } from "@/pages/admin/Users";
+import { AdminProducts } from "@/pages/admin/Products";
+import { AdminAnalytics } from "@/pages/admin/Analytics";
+import { AdminSettings } from "@/pages/admin/Settings";
+import { AdminLogin } from "@/pages/admin/Login";
+import { AdminRewards } from "@/pages/admin/Rewards";
+import { UserDashboard } from "@/components/dashboard/UserDashboard";
+import { Login } from "@/pages/auth/Login";
+import { Register } from "@/pages/auth/Register";
+import { ForgotPassword } from "@/pages/auth/ForgotPassword";
+import { ResetPassword } from "@/pages/auth/ResetPassword";
+import { Onboarding } from "@/pages/onboarding/Onboarding";
+import { Scan } from "@/pages/scan/Scan";
+import { ProductDetails } from "@/pages/products/ProductDetails";
+import { Profile } from "@/pages/profile/Profile";
+import { Rewards } from "@/pages/rewards/Rewards";
+import { PrivateRoute } from "@/components/auth/PrivateRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<SignUp />} />
-          <Route path="/" element={<Index />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route
-            path="/admin"
-            element={
-              <AdminLayout role="admin">
-                <AdminDashboard />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/admin/analytics"
-            element={
-              <AdminLayout role="admin">
-                <AnalyticsDashboard />
-              </AdminLayout>
-            }
-          />
-          <Route
-            path="/scan"
-            element={
-              <AppLayout>
-                <QRScanner />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/product/:qrCodeId"
-            element={
-              <AppLayout>
-                <ProductDetails />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <AppLayout>
-                <Notifications />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/history"
-            element={
-              <AppLayout>
-                <History />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/rewards"
-            element={
-              <AppLayout>
-                <RewardsDashboard />
-              </AppLayout>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <AppLayout>
-                <Profile />
-              </AppLayout>
-            }
-          />
+
+          <Route path="/" element={<PrivateRoute />}>
+            <Route index element={<UserDashboard />} />
+            <Route path="onboarding" element={<Onboarding />} />
+            <Route path="scan" element={<Scan />} />
+            <Route path="product/:id" element={<ProductDetails />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="rewards" element={<Rewards />} />
+          </Route>
+
+          <Route path="/admin" element={<AdminRoute />}>
+            <Route
+              index
+              element={
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="users"
+              element={
+                <AdminLayout>
+                  <AdminUsers />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="products"
+              element={
+                <AdminLayout>
+                  <AdminProducts />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="analytics"
+              element={
+                <AdminLayout>
+                  <AdminAnalytics />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="rewards"
+              element={
+                <AdminLayout>
+                  <AdminRewards />
+                </AdminLayout>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <AdminLayout>
+                  <AdminSettings />
+                </AdminLayout>
+              }
+            />
+          </Route>
         </Routes>
-      </TooltipProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
-);
+      </Router>
+      <Toaster />
+    </QueryClientProvider>
+  );
+}
 
 export default App;
