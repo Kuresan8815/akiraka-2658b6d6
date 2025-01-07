@@ -8,6 +8,12 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 
+interface TopProduct {
+  id: string;
+  name: string;
+  scan_count: number;
+}
+
 export const TopProductsWidget = () => {
   const { data: topProducts, isLoading } = useQuery({
     queryKey: ["top-products"],
@@ -20,7 +26,7 @@ export const TopProductsWidget = () => {
         return [];
       }
 
-      return data || [];
+      return data as TopProduct[];
     },
   });
 
@@ -34,7 +40,7 @@ export const TopProductsWidget = () => {
           <p>Loading top products...</p>
         ) : (
           <div className="space-y-4">
-            {topProducts?.map((product: any, index: number) => (
+            {topProducts?.map((product: TopProduct, index: number) => (
               <div key={product.id} className="space-y-2">
                 <div className="flex justify-between">
                   <p className="font-medium">{product.name}</p>

@@ -210,6 +210,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_top_products: {
+        Args: {
+          limit_count: number
+        }
+        Returns: {
+          id: string
+          name: string
+          scan_count: number
+        }[]
+      }
       get_user_dashboard_stats: {
         Args: {
           user_id_param: string

@@ -10,9 +10,9 @@ export const AdminDashboard = () => {
   const { data: dashboardStats, isLoading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
-      const { data: totalScans } = await supabase
+      const { count: totalScans } = await supabase
         .from("scan_history")
-        .select("id", { count: "exact" });
+        .select("*", { count: 'exact', head: true });
 
       const { data: totalPoints } = await supabase
         .from("rewards")
@@ -25,7 +25,7 @@ export const AdminDashboard = () => {
         .gte("month", new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString());
 
       return {
-        totalScans: totalScans?.count || 0,
+        totalScans: totalScans || 0,
         totalPoints: totalPoints?.reduce((acc, curr) => acc + curr.points_earned, 0) || 0,
         activeUsers: new Set(activeUsers?.map(u => u.user_id)).size || 0
       };

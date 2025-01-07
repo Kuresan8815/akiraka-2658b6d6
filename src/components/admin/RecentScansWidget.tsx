@@ -8,6 +8,16 @@ import {
 } from "@/components/ui/card";
 import { format } from "date-fns";
 
+interface ScanHistoryItem {
+  id: string;
+  scanned_at: string;
+  products: {
+    name: string;
+    certification_level: string;
+  } | null;
+  user_id: string;
+}
+
 export const RecentScansWidget = () => {
   const { data: recentScans, isLoading } = useQuery({
     queryKey: ["recent-scans"],
@@ -16,15 +26,33 @@ export const RecentScansWidget = () => {
         .from("scan_history")
         .select(`
           *,
-          products (name, certification_level),
-          profiles (name)
+          products (name, certification_level)
         `)
         .order("scanned_at", { ascending: false })
         .limit(5);
 
       if (error) throw error;
-      return data;
+      return data as ScanHistoryItem[];
     },
+  });
+
+  const { data: userNames } = useQuery({
+    queryKey: ["user-names"],
+    queryFn: async () => {
+      if (!recentScans) return {};
+      
+      const userIds = recentScans.map(scan => scan.user_id);
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", userIds);
+      
+      return data?.reduce((acc, profile) => ({
+        ...acc,
+        [profile.id]: profile.name
+      }), {}) || {};
+    },
+    enabled: !!recentScans,
   });
 
   return (
@@ -43,9 +71,9 @@ export const RecentScansWidget = () => {
                 className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
               >
                 <div>
-                  <p className="font-medium">{scan.products?.name}</p>
+                  <p className="font-medium">{scan.products?.name || "Unknown Product"}</p>
                   <p className="text-sm text-gray-500">
-                    by {scan.profiles?.name || "Anonymous"}
+                    by {userNames?.[scan.user_id] || "Anonymous"}
                   </p>
                 </div>
                 <div className="text-right">
