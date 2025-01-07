@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { AdminLayout } from "./components/admin/AdminLayout";
+import { AdminDashboard } from "./components/admin/AdminDashboard";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -33,8 +34,7 @@ const App = () => (
             path="/admin/*"
             element={
               <AdminLayout role="admin">
-                {/* Admin routes will be added here in the next implementation */}
-                <div>Admin Dashboard Content</div>
+                <AdminDashboard />
               </AdminLayout>
             }
           />
