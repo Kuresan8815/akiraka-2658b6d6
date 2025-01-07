@@ -16,6 +16,7 @@ interface AnalyticsData {
   total_carbon_saved: number;
   total_water_saved: number;
   avg_sustainability_score: number;
+  avg_purchase_per_user: number;
 }
 
 export const AnalyticsDashboard = () => {
@@ -34,7 +35,8 @@ export const AnalyticsDashboard = () => {
         avg_scans_per_user: 4.8,
         total_carbon_saved: 25890,
         total_water_saved: 158900,
-        avg_sustainability_score: 85.4
+        avg_sustainability_score: 85.4,
+        avg_purchase_per_user: 127.50
       };
     },
   });
@@ -50,6 +52,7 @@ export const AnalyticsDashboard = () => {
       ["Total Carbon Saved (kg)", analyticsData.total_carbon_saved],
       ["Total Water Saved (L)", analyticsData.total_water_saved],
       ["Average Sustainability Score", analyticsData.avg_sustainability_score],
+      ["Average Purchase per User ($)", analyticsData.avg_purchase_per_user],
     ]
       .map((row) => row.join(","))
       .join("\n");
@@ -86,7 +89,7 @@ export const AnalyticsDashboard = () => {
         <div>Loading analytics data...</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <AnalyticsMetricCard
               title="Total Scans"
               value={analyticsData?.total_scans?.toLocaleString() || "0"}
@@ -101,6 +104,11 @@ export const AnalyticsDashboard = () => {
               title="Avg. Scans per User"
               value={analyticsData?.avg_scans_per_user?.toLocaleString() || "0"}
               description="Average scans per user"
+            />
+            <AnalyticsMetricCard
+              title="Avg. Purchase per User"
+              value={`$${analyticsData?.avg_purchase_per_user?.toLocaleString() || "0"}`}
+              description="Average purchase amount per user"
             />
           </div>
 
