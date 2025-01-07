@@ -21,20 +21,19 @@ export const MonthlyUsersChart = () => {
   const { data: monthlyUsers, isLoading } = useQuery({
     queryKey: ["monthly-users"],
     queryFn: async () => {
-      // Demo data for development
       return [
-        { month: "Jan", users: 120 },
-        { month: "Feb", users: 150 },
-        { month: "Mar", users: 200 },
-        { month: "Apr", users: 180 },
-        { month: "May", users: 220 },
-        { month: "Jun", users: 250 },
-        { month: "Jul", users: 280 },
-        { month: "Aug", users: 310 },
-        { month: "Sep", users: 290 },
-        { month: "Oct", users: 320 },
-        { month: "Nov", users: 342 },
-        { month: "Dec", users: 360 }
+        { month: "Jan", users: 50 },
+        { month: "Feb", users: 75 },
+        { month: "Mar", users: 90 },
+        { month: "Apr", users: 110 },
+        { month: "May", users: 130 },
+        { month: "Jun", users: 145 },
+        { month: "Jul", users: 160 },
+        { month: "Aug", users: 170 },
+        { month: "Sep", users: 180 },
+        { month: "Oct", users: 185 },
+        { month: "Nov", users: 195 },
+        { month: "Dec", users: 200 }
       ];
     },
   });

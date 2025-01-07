@@ -10,11 +10,10 @@ export const AdminDashboard = () => {
   const { data: dashboardStats, isLoading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
-      // Demo data for development
       return {
-        totalScans: 1247,
-        totalPoints: 15680,
-        activeUsers: 342
+        totalScans: 500,
+        totalPoints: 10000,
+        activeUsers: 200
       };
     },
   });
