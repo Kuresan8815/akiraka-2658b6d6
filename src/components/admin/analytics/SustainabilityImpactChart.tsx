@@ -35,43 +35,43 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
       return [
         {
           year: "2020",
-          greenhouseEmissions: 15000,
-          energyConsumption: 25000,
-          waterConsumption: 35000,
-          landUse: 1200,
-          wasteManagement: 8000,
+          greenhouseEmissions: 15000,  // Starting high, will decrease (improvement)
+          energyConsumption: 18000,    // Starting low, will increase (challenge)
+          waterConsumption: 35000,     // Starting high, will decrease (improvement)
+          landUse: 1200,               // Relatively stable with small variations
+          wasteManagement: 8000,       // Starting high, will decrease (improvement)
         },
         {
           year: "2021",
-          greenhouseEmissions: 12000,
-          energyConsumption: 22000,
+          greenhouseEmissions: 13500,
+          energyConsumption: 20000,
           waterConsumption: 32000,
-          landUse: 1000,
-          wasteManagement: 7000,
+          landUse: 1150,
+          wasteManagement: 7200,
         },
         {
           year: "2022",
-          greenhouseEmissions: 10000,
-          energyConsumption: 20000,
-          waterConsumption: 30000,
-          landUse: 800,
-          wasteManagement: 6000,
+          greenhouseEmissions: 11000,
+          energyConsumption: 23000,
+          waterConsumption: 28000,
+          landUse: 1180,
+          wasteManagement: 6100,
         },
         {
           year: "2023",
-          greenhouseEmissions: 8000,
-          energyConsumption: 18000,
-          waterConsumption: 28000,
-          landUse: 600,
-          wasteManagement: 5000,
+          greenhouseEmissions: 9500,
+          energyConsumption: 25000,
+          waterConsumption: 26000,
+          landUse: 1100,
+          wasteManagement: 5300,
         },
         {
           year: "2024",
-          greenhouseEmissions: 6000,
-          energyConsumption: 15000,
-          waterConsumption: 25000,
-          landUse: 400,
-          wasteManagement: 4000,
+          greenhouseEmissions: 8000,    // Showing improvement
+          energyConsumption: 28000,     // Showing challenge area
+          waterConsumption: 24000,      // Showing improvement
+          landUse: 1160,                // Slight variation
+          wasteManagement: 4500,        // Showing improvement
         }
       ];
     },
