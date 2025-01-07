@@ -53,7 +53,9 @@ const AdminLogin = () => {
         title: "Success",
         description: "Welcome to the admin dashboard",
       });
-      navigate("/admin");
+      
+      // Explicitly navigate to the admin dashboard
+      navigate("/admin", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in. Please check your credentials.");
