@@ -19,9 +19,15 @@ export const ProductDetails = () => {
     },
   });
 
+  if (!product) return null;
+
   return (
     <div className="container mx-auto p-4">
-      <ProductDetailsModal product={product} isOpen={true} onClose={() => {}} />
+      <ProductDetailsModal 
+        product={product} 
+        isOpen={true} 
+        onClose={() => {}} 
+      />
     </div>
   );
 };

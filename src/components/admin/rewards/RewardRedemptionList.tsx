@@ -1,12 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+interface RewardRedemption {
+  id: string;
+  user_id: string;
+  tier_id: string;
+  points_spent: number;
+  status: string;
+  redeemed_at: string;
+  profiles: { name: string } | null;
+  reward_tiers: { name: string } | null;
+}
+
 export const RewardRedemptionList = () => {
-  const { data: redemptions, isLoading } = useQuery({
-    queryKey: ["rewardRedemptions"],
+  const { data: redemptions } = useQuery({
+    queryKey: ["reward-redemptions"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reward_redemptions")
@@ -18,27 +35,13 @@ export const RewardRedemptionList = () => {
         .order("redeemed_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as RewardRedemption[];
     },
   });
 
-  const handleUpdateStatus = async (id: string, status: string) => {
-    await supabase
-      .from("reward_redemptions")
-      .update({ status })
-      .eq("id", id);
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Recent Redemptions</h3>
-      </div>
-
+      <h2 className="text-lg font-semibold">Recent Redemptions</h2>
       <Table>
         <TableHeader>
           <TableRow>
@@ -46,14 +49,14 @@ export const RewardRedemptionList = () => {
             <TableHead>Reward</TableHead>
             <TableHead>Points</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead>Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {redemptions?.map((redemption) => (
             <TableRow key={redemption.id}>
               <TableCell>
-                {(redemption.profiles as any)?.name || "Unknown User"}
+                {redemption.profiles?.name || "Unknown User"}
               </TableCell>
               <TableCell>
                 {redemption.reward_tiers?.name || "Unknown Reward"}
@@ -73,24 +76,7 @@ export const RewardRedemptionList = () => {
                 </Badge>
               </TableCell>
               <TableCell>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateStatus(redemption.id, "approved")}
-                    disabled={redemption.status !== "pending"}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleUpdateStatus(redemption.id, "rejected")}
-                    disabled={redemption.status !== "pending"}
-                  >
-                    Reject
-                  </Button>
-                </div>
+                {new Date(redemption.redeemed_at).toLocaleDateString()}
               </TableCell>
             </TableRow>
           ))}

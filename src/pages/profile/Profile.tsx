@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { useToast } from '@/components/ui/use-toast';
+import { Profile as ProfileType } from '@/types/profile';
 
 export const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -21,7 +22,10 @@ export const Profile = () => {
         .eq('id', user.id)
         .single();
       
-      return data;
+      return {
+        ...data,
+        email: user.email,
+      } as ProfileType;
     },
   });
 

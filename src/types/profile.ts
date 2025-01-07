@@ -1,5 +1,3 @@
-import { Json } from "@/integrations/supabase/types";
-
 export interface ProfilePreferences {
   notifications: boolean;
   darkTheme: boolean;
