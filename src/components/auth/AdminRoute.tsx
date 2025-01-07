@@ -1,8 +1,12 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export const AdminRoute = () => {
+interface AdminRouteProps {
+  children: React.ReactNode;
+}
+
+export const AdminRoute = ({ children }: AdminRouteProps) => {
   const { data: adminUser, isLoading } = useQuery({
     queryKey: ['admin-user'],
     queryFn: async () => {
@@ -23,5 +27,5 @@ export const AdminRoute = () => {
     return <div>Loading...</div>;
   }
 
-  return adminUser ? <Outlet /> : <Navigate to="/admin/login" />;
+  return adminUser ? children : <Navigate to="/admin/login" />;
 };
