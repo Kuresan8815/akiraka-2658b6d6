@@ -10,7 +10,11 @@ export const RewardRedemptionList = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("reward_redemptions")
-        .select("*, profiles(name), reward_tiers(name)")
+        .select(`
+          *,
+          profiles:user_id (name),
+          reward_tiers (name)
+        `)
         .order("redeemed_at", { ascending: false });
 
       if (error) throw error;
@@ -49,7 +53,7 @@ export const RewardRedemptionList = () => {
           {redemptions?.map((redemption) => (
             <TableRow key={redemption.id}>
               <TableCell>
-                {redemption.profiles?.name || "Unknown User"}
+                {(redemption.profiles as any)?.name || "Unknown User"}
               </TableCell>
               <TableCell>
                 {redemption.reward_tiers?.name || "Unknown Reward"}
@@ -59,10 +63,10 @@ export const RewardRedemptionList = () => {
                 <Badge
                   variant={
                     redemption.status === "approved"
-                      ? "success"
+                      ? "default"
                       : redemption.status === "rejected"
                       ? "destructive"
-                      : "default"
+                      : "outline"
                   }
                 >
                   {redemption.status}
