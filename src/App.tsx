@@ -31,9 +31,11 @@ function App() {
           
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminRoute />}>
-            <AdminRoutes />
-          </Route>
+          <Route path="/admin/*" element={
+            <AdminRoute>
+              <AdminRoutes />
+            </AdminRoute>
+          } />
 
           {/* Protected User Routes */}
           <Route path="/" element={<PrivateRoute />}>

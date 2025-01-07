@@ -5,11 +5,11 @@ import { AdminProducts } from "@/pages/admin/Products";
 import { AdminAnalytics } from "@/pages/admin/Analytics";
 import { AdminSettings } from "@/pages/admin/Settings";
 import { AdminRewards } from "@/pages/admin/Rewards";
-import { Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 export const AdminRoutes = () => {
   return (
-    <>
+    <Routes>
       <Route index element={
         <AdminLayout role="admin">
           <AdminDashboard />
@@ -40,6 +40,6 @@ export const AdminRoutes = () => {
           <AdminSettings />
         </AdminLayout>
       } />
-    </>
+    </Routes>
   );
 };
