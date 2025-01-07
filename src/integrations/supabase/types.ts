@@ -182,23 +182,27 @@ export type Database = {
           },
         ]
       }
-    }
-    Views: {
-      monthly_scanning_activity: {
-        Row: {
-          month: string | null
-          scan_count: number | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
       sustainability_impact_metrics: {
         Row: {
           avg_sustainability_score: number | null
           months_active: number | null
           total_carbon_impact: number | null
           total_water_impact: number | null
-          user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          avg_sustainability_score?: number | null
+          months_active?: number | null
+          total_carbon_impact?: number | null
+          total_water_impact?: number | null
+          user_id: string
+        }
+        Update: {
+          avg_sustainability_score?: number | null
+          months_active?: number | null
+          total_carbon_impact?: number | null
+          total_water_impact?: number | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -208,6 +212,30 @@ export type Database = {
           avg_daily_scans: number | null
           last_activity: string | null
           total_interactions: number | null
+          user_id: string
+        }
+        Insert: {
+          active_days?: number | null
+          avg_daily_scans?: number | null
+          last_activity?: string | null
+          total_interactions?: number | null
+          user_id: string
+        }
+        Update: {
+          active_days?: number | null
+          avg_daily_scans?: number | null
+          last_activity?: string | null
+          total_interactions?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      monthly_scanning_activity: {
+        Row: {
+          month: string | null
+          scan_count: number | null
           user_id: string | null
         }
         Relationships: []

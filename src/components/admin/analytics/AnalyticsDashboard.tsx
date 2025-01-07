@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { UserEngagementChart } from "./UserEngagementChart";
@@ -28,15 +27,15 @@ export const AnalyticsDashboard = () => {
   const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["analytics", dateRange],
     queryFn: async () => {
-      if (!dateRange?.from || !dateRange?.to) return null;
-      
-      const { data, error } = await supabase.rpc('get_analytics_data', {
-        start_date: dateRange.from.toISOString(),
-        end_date: dateRange.to.toISOString()
-      });
-      
-      if (error) throw error;
-      return data[0]; // Get the first (and only) row from the result
+      // Return dummy data for demonstration
+      return {
+        total_scans: 15742,
+        unique_users: 3256,
+        avg_scans_per_user: 4.8,
+        total_carbon_saved: 25890,
+        total_water_saved: 158900,
+        avg_sustainability_score: 85.4
+      };
     },
   });
 
