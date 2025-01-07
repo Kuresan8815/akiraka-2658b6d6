@@ -17,9 +17,11 @@ export const ProfileForm = ({ profile, isEditing, onSubmit, onEdit, onCancel }: 
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    const sustainabilityGoals = formData.get("sustainabilityGoals") as string;
+    
     onSubmit({
       name: formData.get("name") as string || "",
-      sustainabilityGoals: formData.get("sustainabilityGoals") as string || "",
+      sustainabilityGoals: sustainabilityGoals ? sustainabilityGoals.split(',').map(goal => goal.trim()) : [],
       notifications: formData.get("notifications") === "on",
       darkTheme: formData.get("darkTheme") === "on",
     });
@@ -58,9 +60,10 @@ export const ProfileForm = ({ profile, isEditing, onSubmit, onEdit, onCancel }: 
         <Textarea
           id="sustainabilityGoals"
           name="sustainabilityGoals"
-          defaultValue={profile.sustainability_goals || ""}
+          defaultValue={profile.sustainability_goals?.join(', ') || ""}
           disabled={!isEditing}
           className="min-h-[100px]"
+          placeholder="Enter your goals separated by commas"
         />
       </div>
 
