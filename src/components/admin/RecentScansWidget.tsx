@@ -25,7 +25,9 @@ export const RecentScansWidget = () => {
       const { data, error } = await supabase
         .from("scan_history")
         .select(`
-          *,
+          id,
+          scanned_at,
+          user_id,
           products (name, certification_level)
         `)
         .order("scanned_at", { ascending: false })
@@ -37,22 +39,21 @@ export const RecentScansWidget = () => {
   });
 
   const { data: userNames } = useQuery({
-    queryKey: ["user-names"],
+    queryKey: ["user-names", recentScans?.map(scan => scan.user_id)],
     queryFn: async () => {
-      if (!recentScans) return {};
+      if (!recentScans?.length) return {};
       
-      const userIds = recentScans.map(scan => scan.user_id);
       const { data } = await supabase
         .from("profiles")
         .select("id, name")
-        .in("id", userIds);
+        .in("id", recentScans.map(scan => scan.user_id));
       
       return data?.reduce((acc, profile) => ({
         ...acc,
         [profile.id]: profile.name
-      }), {}) || {};
+      }), {} as Record<string, string | null>) || {};
     },
-    enabled: !!recentScans,
+    enabled: !!recentScans?.length,
   });
 
   return (

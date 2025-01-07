@@ -30,6 +30,8 @@ export const TopProductsWidget = () => {
     },
   });
 
+  const maxScanCount = topProducts?.[0]?.scan_count || 1;
+
   return (
     <Card>
       <CardHeader>
@@ -40,7 +42,7 @@ export const TopProductsWidget = () => {
           <p>Loading top products...</p>
         ) : (
           <div className="space-y-4">
-            {topProducts?.map((product: TopProduct, index: number) => (
+            {topProducts?.map((product) => (
               <div key={product.id} className="space-y-2">
                 <div className="flex justify-between">
                   <p className="font-medium">{product.name}</p>
@@ -49,11 +51,7 @@ export const TopProductsWidget = () => {
                   </span>
                 </div>
                 <Progress
-                  value={
-                    (product.scan_count /
-                      (topProducts[0]?.scan_count || 1)) *
-                    100
-                  }
+                  value={(product.scan_count / maxScanCount) * 100}
                   className="h-2"
                 />
               </div>
