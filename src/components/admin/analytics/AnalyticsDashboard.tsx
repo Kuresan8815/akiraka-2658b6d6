@@ -10,13 +10,22 @@ import { UserEngagementChart } from "./UserEngagementChart";
 import { SustainabilityImpactChart } from "./SustainabilityImpactChart";
 import { AnalyticsMetricCard } from "./AnalyticsMetricCard";
 
+interface AnalyticsData {
+  total_scans: number;
+  unique_users: number;
+  avg_scans_per_user: number;
+  total_carbon_saved: number;
+  total_water_saved: number;
+  avg_sustainability_score: number;
+}
+
 export const AnalyticsDashboard = () => {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().setMonth(new Date().getMonth() - 1)),
     to: new Date(),
   });
 
-  const { data: analyticsData, isLoading } = useQuery({
+  const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["analytics", dateRange],
     queryFn: async () => {
       if (!dateRange?.from || !dateRange?.to) return null;
@@ -27,7 +36,7 @@ export const AnalyticsDashboard = () => {
       });
       
       if (error) throw error;
-      return data;
+      return data[0]; // Get the first (and only) row from the result
     },
   });
 
