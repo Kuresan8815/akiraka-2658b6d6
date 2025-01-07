@@ -123,6 +123,77 @@ export type Database = {
         }
         Relationships: []
       }
+      reward_redemptions: {
+        Row: {
+          id: string
+          points_spent: number
+          redeemed_at: string | null
+          status: string
+          tier_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          points_spent: number
+          redeemed_at?: string | null
+          status?: string
+          tier_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          points_spent?: number
+          redeemed_at?: string | null
+          status?: string
+          tier_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_redemptions_tier_id_fkey"
+            columns: ["tier_id"]
+            isOneToOne: false
+            referencedRelation: "reward_tiers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reward_tiers: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          points_required: number
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          reward_value: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          points_required: number
+          reward_type: Database["public"]["Enums"]["reward_type"]
+          reward_value: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          points_required?: number
+          reward_type?: Database["public"]["Enums"]["reward_type"]
+          reward_value?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       rewards: {
         Row: {
           created_at: string
@@ -316,6 +387,7 @@ export type Database = {
     }
     Enums: {
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
+      reward_type: "discount" | "voucher" | "product" | "service"
       user_role: "admin" | "business_user"
     }
     CompositeTypes: {

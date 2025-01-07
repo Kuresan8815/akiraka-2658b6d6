@@ -6,7 +6,8 @@ import {
   Package, 
   BarChart, 
   Settings,
-  LogOut 
+  LogOut,
+  Gift 
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -64,6 +65,13 @@ export const AdminSidebar = ({ role }: { role: string }) => {
           <Button variant="ghost" className="w-full justify-start">
             <BarChart className="mr-2 h-4 w-4" />
             Analytics
+          </Button>
+        </Link>
+
+        <Link to="/admin/rewards">
+          <Button variant="ghost" className="w-full justify-start">
+            <Gift className="mr-2 h-4 w-4" />
+            Rewards & Loyalty
           </Button>
         </Link>
 
