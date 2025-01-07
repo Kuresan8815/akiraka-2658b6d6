@@ -3,7 +3,12 @@ import { AdminSidebar } from "./AdminSidebar";
 import { AdminDashboard } from "./AdminDashboard";
 import { supabase } from "@/integrations/supabase/client";
 
-export const AdminLayout = () => {
+interface AdminLayoutProps {
+  children: React.ReactNode;
+  role: string;
+}
+
+export const AdminLayout = ({ children, role }: AdminLayoutProps) => {
   const { data: adminUser } = useQuery({
     queryKey: ["admin-user"],
     queryFn: async () => {
@@ -24,7 +29,7 @@ export const AdminLayout = () => {
     <div className="flex h-screen bg-gray-100">
       <AdminSidebar role={adminUser?.role || 'business_user'} />
       <main className="flex-1 overflow-y-auto">
-        <AdminDashboard />
+        {children}
       </main>
     </div>
   );
