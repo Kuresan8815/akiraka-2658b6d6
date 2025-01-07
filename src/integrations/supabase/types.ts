@@ -204,6 +204,12 @@ export type Database = {
       }
     }
     Functions: {
+      create_admin_user: {
+        Args: {
+          user_id: string
+        }
+        Returns: undefined
+      }
       get_user_dashboard_stats: {
         Args: {
           user_id_param: string
