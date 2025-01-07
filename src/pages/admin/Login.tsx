@@ -22,33 +22,35 @@ const AdminLogin = () => {
 
     try {
       // First, attempt to sign in
-      const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) throw signInError;
 
-      if (user) {
-        // Check if user is an admin
-        const { data: adminData, error: adminError } = await supabase
-          .from("admin_users")
-          .select("role")
-          .eq("id", user.id)
-          .single();
-
-        if (adminError || !adminData) {
-          // If not an admin, sign them out
-          await supabase.auth.signOut();
-          throw new Error("Unauthorized access. Admin privileges required.");
-        }
-
-        toast({
-          title: "Success",
-          description: "Welcome to the admin dashboard",
-        });
-        navigate("/admin");
+      if (!authData.user) {
+        throw new Error("No user data returned after login");
       }
+
+      // Check if user is an admin
+      const { data: adminData, error: adminError } = await supabase
+        .from("admin_users")
+        .select("role")
+        .eq("id", authData.user.id)
+        .single();
+
+      if (adminError || !adminData) {
+        // If not an admin, sign them out
+        await supabase.auth.signOut();
+        throw new Error("Unauthorized access. Admin privileges required.");
+      }
+
+      toast({
+        title: "Success",
+        description: "Welcome to the admin dashboard",
+      });
+      navigate("/admin");
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in. Please check your credentials.");
