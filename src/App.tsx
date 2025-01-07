@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { AdminLayout } from "./components/admin/AdminLayout";
 import { AdminDashboard } from "./components/admin/AdminDashboard";
+import { AnalyticsDashboard } from "./components/admin/analytics/AnalyticsDashboard";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
@@ -31,10 +32,18 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route
-            path="/admin/*"
+            path="/admin"
             element={
               <AdminLayout role="admin">
                 <AdminDashboard />
+              </AdminLayout>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminLayout role="admin">
+                <AnalyticsDashboard />
               </AdminLayout>
             }
           />
