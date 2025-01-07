@@ -36,7 +36,7 @@ export const AnalyticsDashboard = () => {
         total_carbon_saved: 25890,
         total_water_saved: 158900,
         avg_sustainability_score: 85.4,
-        avg_purchase_per_user: 127.50
+        avg_purchase_per_user: 3000 // Updated to 3000 yen
       };
     },
   });
@@ -52,7 +52,7 @@ export const AnalyticsDashboard = () => {
       ["Total Carbon Saved (kg)", analyticsData.total_carbon_saved],
       ["Total Water Saved (L)", analyticsData.total_water_saved],
       ["Average Sustainability Score", analyticsData.avg_sustainability_score],
-      ["Average Purchase per User ($)", analyticsData.avg_purchase_per_user],
+      ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user],
     ]
       .map((row) => row.join(","))
       .join("\n");
@@ -107,7 +107,7 @@ export const AnalyticsDashboard = () => {
             />
             <AnalyticsMetricCard
               title="Avg. Purchase per User"
-              value={`$${analyticsData?.avg_purchase_per_user?.toLocaleString() || "0"}`}
+              value={`¥${analyticsData?.avg_purchase_per_user?.toLocaleString() || "0"}`}
               description="Average purchase amount per user"
             />
           </div>
