@@ -29,8 +29,8 @@ export const RewardRedemptionList = () => {
         .from("reward_redemptions")
         .select(`
           *,
-          profiles:profiles!reward_redemptions_user_id_fkey(name),
-          reward_tiers(name)
+          profiles (name),
+          reward_tiers (name)
         `)
         .order("redeemed_at", { ascending: false });
 
