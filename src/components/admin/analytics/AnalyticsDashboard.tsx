@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Download } from "lucide-react";
 import { UserEngagementChart } from "./UserEngagementChart";
 import { SustainabilityImpactChart } from "./SustainabilityImpactChart";
 import { AnalyticsMetricCard } from "./AnalyticsMetricCard";
+import { PreferredBrandsWidget } from "../PreferredBrandsWidget";
 
 interface AnalyticsData {
   total_scans: number;
@@ -107,6 +107,10 @@ export const AnalyticsDashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <UserEngagementChart dateRange={dateRange} />
             <SustainabilityImpactChart dateRange={dateRange} />
+          </div>
+
+          <div className="mt-6">
+            <PreferredBrandsWidget />
           </div>
         </>
       )}
