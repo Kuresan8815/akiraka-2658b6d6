@@ -5,19 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setIsLoading(true);
 
     try {
+      // First, attempt to sign in
       const { data: { user }, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -26,6 +30,7 @@ const AdminLogin = () => {
       if (signInError) throw signInError;
 
       if (user) {
+        // Check if user is an admin
         const { data: adminData, error: adminError } = await supabase
           .from("admin_users")
           .select("role")
@@ -33,7 +38,9 @@ const AdminLogin = () => {
           .single();
 
         if (adminError || !adminData) {
-          throw new Error("Unauthorized access");
+          // If not an admin, sign them out
+          await supabase.auth.signOut();
+          throw new Error("Unauthorized access. Admin privileges required.");
         }
 
         toast({
@@ -43,6 +50,8 @@ const AdminLogin = () => {
         navigate("/admin");
       }
     } catch (error: any) {
+      console.error("Login error:", error);
+      setError(error.message || "Failed to sign in. Please check your credentials.");
       toast({
         title: "Error",
         description: error.message || "Failed to sign in",
@@ -59,6 +68,11 @@ const AdminLogin = () => {
         <h1 className="text-2xl font-bold text-center text-eco-primary mb-6">
           Admin Login
         </h1>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <div className="relative">
