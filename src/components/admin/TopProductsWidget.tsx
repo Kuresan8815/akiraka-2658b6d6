@@ -18,22 +18,21 @@ export const TopProductsWidget = () => {
   const { data: topProducts, isLoading } = useQuery({
     queryKey: ["top-products"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_top_products', { limit_count: 5 });
-
-      if (error) {
-        console.error("Error fetching top products:", error);
-        return [];
-      }
-
-      return data as TopProduct[];
+      // Demo data for development
+      return [
+        { id: "1", name: "Eco-Friendly Water Bottle", scan_count: 245 },
+        { id: "2", name: "Biodegradable Coffee Pods", scan_count: 198 },
+        { id: "3", name: "Reusable Shopping Bags", scan_count: 167 },
+        { id: "4", name: "Bamboo Toothbrush", scan_count: 134 },
+        { id: "5", name: "Solar-Powered Charger", scan_count: 112 }
+      ] as TopProduct[];
     },
   });
 
   const maxScanCount = topProducts?.[0]?.scan_count || 1;
 
   return (
-    <Card>
+    <Card className="animate-fade-up">
       <CardHeader>
         <CardTitle className="text-lg text-eco-primary">Top Products</CardTitle>
       </CardHeader>

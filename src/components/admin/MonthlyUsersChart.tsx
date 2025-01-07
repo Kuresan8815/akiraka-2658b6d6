@@ -21,23 +21,26 @@ export const MonthlyUsersChart = () => {
   const { data: monthlyUsers, isLoading } = useQuery({
     queryKey: ["monthly-users"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("monthly_scanning_activity")
-        .select("month, scan_count")
-        .order("month", { ascending: true })
-        .limit(12);
-
-      if (error) throw error;
-
-      return data.map((item) => ({
-        month: format(new Date(item.month), "MMM"),
-        users: item.scan_count,
-      }));
+      // Demo data for development
+      return [
+        { month: "Jan", users: 120 },
+        { month: "Feb", users: 150 },
+        { month: "Mar", users: 200 },
+        { month: "Apr", users: 180 },
+        { month: "May", users: 220 },
+        { month: "Jun", users: 250 },
+        { month: "Jul", users: 280 },
+        { month: "Aug", users: 310 },
+        { month: "Sep", users: 290 },
+        { month: "Oct", users: 320 },
+        { month: "Nov", users: 342 },
+        { month: "Dec", users: 360 }
+      ];
     },
   });
 
   return (
-    <Card>
+    <Card className="animate-fade-up">
       <CardHeader>
         <CardTitle className="text-lg text-eco-primary">Monthly Active Users</CardTitle>
       </CardHeader>
