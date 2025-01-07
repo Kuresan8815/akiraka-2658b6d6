@@ -32,7 +32,7 @@ const App = () => (
           <Route
             path="/admin/*"
             element={
-              <AdminLayout>
+              <AdminLayout role="admin">
                 {/* Admin routes will be added here in the next implementation */}
                 <div>Admin Dashboard Content</div>
               </AdminLayout>
