@@ -48,7 +48,7 @@ function App() {
             <Route
               index
               element={
-                <AdminLayout>
+                <AdminLayout role="admin">
                   <AdminDashboard />
                 </AdminLayout>
               }
@@ -56,7 +56,7 @@ function App() {
             <Route
               path="users"
               element={
-                <AdminLayout>
+                <AdminLayout role="admin">
                   <AdminUsers />
                 </AdminLayout>
               }
@@ -64,7 +64,7 @@ function App() {
             <Route
               path="products"
               element={
-                <AdminLayout>
+                <AdminLayout role="admin">
                   <AdminProducts />
                 </AdminLayout>
               }
@@ -72,7 +72,7 @@ function App() {
             <Route
               path="analytics"
               element={
-                <AdminLayout>
+                <AdminLayout role="admin">
                   <AdminAnalytics />
                 </AdminLayout>
               }
@@ -80,7 +80,7 @@ function App() {
             <Route
               path="rewards"
               element={
-                <AdminLayout>
+                <AdminLayout role="admin">
                   <AdminRewards />
                 </AdminLayout>
               }
@@ -88,7 +88,7 @@ function App() {
             <Route
               path="settings"
               element={
-                <AdminLayout>
+                <AdminLayout role="admin">
                   <AdminSettings />
                 </AdminLayout>
               }
