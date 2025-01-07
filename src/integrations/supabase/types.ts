@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -166,6 +187,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_admin: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
+      is_business_user: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       mark_notifications_as_read: {
         Args: {
           notification_ids: string[]
@@ -175,6 +208,7 @@ export type Database = {
     }
     Enums: {
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
+      user_role: "admin" | "business_user"
     }
     CompositeTypes: {
       [_ in never]: never
