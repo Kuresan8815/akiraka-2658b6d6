@@ -33,23 +33,20 @@ const AdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user is an admin
-      const { data: adminData, error: adminError } = await supabase
-        .from("admin_users")
-        .select("role")
-        .eq("id", authData.user.id)
-        .single();
+      // Check if user is an admin using the is_admin function
+      const { data: isAdminResult, error: adminCheckError } = await supabase
+        .rpc('is_admin', {
+          user_id: authData.user.id
+        });
 
-      if (adminError || !adminData) {
-        // If not an admin, sign them out and throw error
-        await supabase.auth.signOut();
-        throw new Error("Unauthorized access. Admin privileges required.");
+      if (adminCheckError) {
+        throw adminCheckError;
       }
 
-      // Verify the role is actually admin
-      if (adminData.role !== 'admin') {
+      if (!isAdminResult) {
+        // If not an admin, sign them out
         await supabase.auth.signOut();
-        throw new Error("Insufficient privileges. Admin access required.");
+        throw new Error("Unauthorized access. Admin privileges required.");
       }
 
       toast({
