@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -29,7 +30,8 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
   const { data: impactData, isLoading } = useQuery({
     queryKey: ["sustainability-impact", dateRange],
     queryFn: async () => {
-      // Return dummy data showing yearly impact
+      // In a real application, this would fetch from your Supabase database
+      // For now, we'll use dummy data to demonstrate the functionality
       return [
         {
           year: "2020",
@@ -132,38 +134,58 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
             <p>Loading impact data...</p>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={impactData}>
+              <LineChart data={impactData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="year" />
                 <YAxis />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Bar 
+                <Line 
+                  type="monotone"
                   dataKey="greenhouseEmissions" 
                   name="Greenhouse Emissions (kg CO₂e)" 
-                  fill="#2F5233" 
+                  stroke="#2F5233" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
-                <Bar 
+                <Line 
+                  type="monotone"
                   dataKey="energyConsumption" 
                   name="Energy Consumption (kWh)" 
-                  fill="#4F7942" 
+                  stroke="#4F7942" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
-                <Bar 
+                <Line 
+                  type="monotone"
                   dataKey="waterConsumption" 
                   name="Water Consumption (L)" 
-                  fill="#6B8E23" 
+                  stroke="#6B8E23" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
-                <Bar 
+                <Line 
+                  type="monotone"
                   dataKey="landUse" 
                   name="Land Use (m²)" 
-                  fill="#8B4513" 
+                  stroke="#8B4513" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
-                <Bar 
+                <Line 
+                  type="monotone"
                   dataKey="wasteManagement" 
                   name="Waste Management (kg)" 
-                  fill="#A0522D" 
+                  stroke="#A0522D" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                 />
-              </BarChart>
+              </LineChart>
             </ResponsiveContainer>
           )}
         </div>
