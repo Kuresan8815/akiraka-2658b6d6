@@ -192,6 +192,26 @@ export type Database = {
         }
         Relationships: []
       }
+      sustainability_impact_metrics: {
+        Row: {
+          avg_sustainability_score: number | null
+          months_active: number | null
+          total_carbon_impact: number | null
+          total_water_impact: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      user_engagement_metrics: {
+        Row: {
+          active_days: number | null
+          avg_daily_scans: number | null
+          last_activity: string | null
+          total_interactions: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
       user_sustainability_metrics: {
         Row: {
           avg_sustainability_score: number | null
@@ -209,6 +229,20 @@ export type Database = {
           user_id: string
         }
         Returns: undefined
+      }
+      get_analytics_data: {
+        Args: {
+          start_date: string
+          end_date: string
+        }
+        Returns: {
+          total_scans: number
+          unique_users: number
+          avg_scans_per_user: number
+          total_carbon_saved: number
+          total_water_saved: number
+          avg_sustainability_score: number
+        }[]
       }
       get_top_products: {
         Args: {
