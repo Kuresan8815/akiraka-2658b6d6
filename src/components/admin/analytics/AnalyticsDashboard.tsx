@@ -4,10 +4,8 @@ import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { UserEngagementChart } from "./UserEngagementChart";
-import { SustainabilityImpactChart } from "./SustainabilityImpactChart";
-import { AnalyticsMetricCard } from "./AnalyticsMetricCard";
-import { PreferredBrandsWidget } from "../PreferredBrandsWidget";
+import { AnalyticsMetricsGrid } from "./AnalyticsMetricsGrid";
+import { AnalyticsChartsGrid } from "./AnalyticsChartsGrid";
 
 interface AnalyticsData {
   total_scans: number;
@@ -28,7 +26,6 @@ export const AnalyticsDashboard = () => {
   const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["analytics", dateRange],
     queryFn: async () => {
-      // Return dummy data for demonstration
       return {
         total_scans: 15742,
         unique_users: 3256,
@@ -89,37 +86,8 @@ export const AnalyticsDashboard = () => {
         <div>Loading analytics data...</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <AnalyticsMetricCard
-              title="Total Scans"
-              value={analyticsData?.total_scans?.toLocaleString() || "0"}
-              description="Total product scans in selected period"
-            />
-            <AnalyticsMetricCard
-              title="Unique Users"
-              value={analyticsData?.unique_users?.toLocaleString() || "0"}
-              description="Number of active users"
-            />
-            <AnalyticsMetricCard
-              title="Avg. Scans per User"
-              value={analyticsData?.avg_scans_per_user?.toLocaleString() || "0"}
-              description="Average scans per user"
-            />
-            <AnalyticsMetricCard
-              title="Avg. Purchase per User"
-              value={`¥${analyticsData?.avg_purchase_per_user?.toLocaleString() || "0"}`}
-              description="Average purchase amount per user"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <UserEngagementChart dateRange={dateRange} />
-            <SustainabilityImpactChart dateRange={dateRange} />
-          </div>
-
-          <div className="mt-6">
-            <PreferredBrandsWidget />
-          </div>
+          <AnalyticsMetricsGrid analyticsData={analyticsData} />
+          <AnalyticsChartsGrid dateRange={dateRange} />
         </>
       )}
     </div>
