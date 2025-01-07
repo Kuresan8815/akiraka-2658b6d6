@@ -184,9 +184,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      monthly_scanning_activity: {
+        Row: {
+          month: string | null
+          scan_count: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      user_sustainability_metrics: {
+        Row: {
+          avg_sustainability_score: number | null
+          total_carbon_saved: number | null
+          total_scans: number | null
+          total_water_saved: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      get_user_dashboard_stats: {
+        Args: {
+          user_id_param: string
+        }
+        Returns: {
+          total_scans: number
+          total_carbon_saved: number
+          total_water_saved: number
+          avg_sustainability_score: number
+          points_earned: number
+          points_redeemed: number
+        }[]
+      }
       is_admin: {
         Args: {
           user_id: string
