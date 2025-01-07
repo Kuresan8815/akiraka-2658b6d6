@@ -57,7 +57,7 @@ export const RewardRedemptionList = () => {
           {redemptions?.map((redemption) => (
             <TableRow key={redemption.id}>
               <TableCell>{redemption.profiles?.name || "Unknown User"}</TableCell>
-              <TableCell>{redemption.reward_tiers.name}</TableCell>
+              <TableCell>{redemption.reward_tiers?.name}</TableCell>
               <TableCell>{redemption.points_spent}</TableCell>
               <TableCell>
                 <Badge
