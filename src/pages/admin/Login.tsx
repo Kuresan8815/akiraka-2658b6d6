@@ -41,9 +41,15 @@ const AdminLogin = () => {
         .single();
 
       if (adminError || !adminData) {
-        // If not an admin, sign them out
+        // If not an admin, sign them out and throw error
         await supabase.auth.signOut();
         throw new Error("Unauthorized access. Admin privileges required.");
+      }
+
+      // Verify the role is actually admin
+      if (adminData.role !== 'admin') {
+        await supabase.auth.signOut();
+        throw new Error("Insufficient privileges. Admin access required.");
       }
 
       toast({
