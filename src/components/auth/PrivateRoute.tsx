@@ -1,8 +1,12 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export const PrivateRoute = () => {
+interface PrivateRouteProps {
+  children: React.ReactNode;
+}
+
+export const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const { data: session, isLoading } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
@@ -15,5 +19,5 @@ export const PrivateRoute = () => {
     return <div>Loading...</div>;
   }
 
-  return session ? <Outlet /> : <Navigate to="/login" />;
+  return session ? children : <Navigate to="/login" />;
 };
