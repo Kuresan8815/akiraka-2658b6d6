@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { Navigate } from "react-router-dom";
 import { Hero } from "@/components/Hero";
 import { Features } from "@/components/Features";
 import { Footer } from "@/components/Footer";
-import { UserDashboard } from "@/components/dashboard/UserDashboard";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -23,7 +23,7 @@ const Index = () => {
   }
 
   if (session) {
-    return <UserDashboard />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
