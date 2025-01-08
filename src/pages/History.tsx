@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DateRange } from "react-day-picker";
+import { useNavigate } from "react-router-dom";
 import { DateRangeFilter } from "@/components/history/DateRangeFilter";
 import { ErrorState } from "@/components/history/ErrorState";
 import { EmptyState } from "@/components/history/EmptyState";
@@ -7,7 +8,9 @@ import { LatestScan } from "@/components/history/LatestScan";
 import { PreviousScans } from "@/components/history/PreviousScans";
 import { useToast } from "@/hooks/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
-import { Product, ScanHistoryItem } from "@/types/product";
+import { Product } from "@/types/product";
+import { ScanHistoryItem } from "@/types/scan";
+import { supabase } from "@/integrations/supabase/client";
 
 // Type guard to validate certification level
 const isValidCertificationLevel = (level: string): level is Product["certification_level"] => {
@@ -33,6 +36,27 @@ const validateScanData = (scan: any): ScanHistoryItem => {
 export default function History() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/login');
+      }
+    };
+    
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate('/login');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const {
     scanHistory,
