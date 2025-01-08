@@ -13,6 +13,7 @@ import { Scan } from "@/pages/scan/Scan";
 import { ProductDetails } from "@/pages/products/ProductDetails";
 import { Profile } from "@/pages/profile/Profile";
 import { Rewards } from "@/pages/rewards/Rewards";
+import History from "@/pages/History";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import Index from "@/pages/Index";
@@ -51,6 +52,7 @@ function App() {
                   <Route path="product/:id" element={<ProductDetails />} />
                   <Route path="profile" element={<Profile />} />
                   <Route path="rewards" element={<Rewards />} />
+                  <Route path="history" element={<History />} />
                 </Routes>
               </AppLayout>
             </PrivateRoute>

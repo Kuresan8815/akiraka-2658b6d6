@@ -2,7 +2,9 @@ import { useState } from "react";
 import { DateRange } from "react-day-picker";
 import { DateRangeFilter } from "@/components/history/DateRangeFilter";
 import { ErrorState } from "@/components/history/ErrorState";
-import { ScanHistoryList } from "@/components/history/ScanHistoryList";
+import { EmptyState } from "@/components/history/EmptyState";
+import { LatestScan } from "@/components/history/LatestScan";
+import { PreviousScans } from "@/components/history/PreviousScans";
 import { useToast } from "@/components/ui/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
 
@@ -16,6 +18,8 @@ export default function History() {
     error,
     refetch,
     isRefetching,
+    lastScan,
+    previousScans
   } = useScanHistory(dateRange);
 
   const handleRefresh = async () => {
@@ -50,6 +54,10 @@ export default function History() {
     );
   }
 
+  if (!scanHistory?.length) {
+    return <EmptyState dateRange={dateRange} />;
+  }
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <div className="space-y-4">
@@ -62,8 +70,10 @@ export default function History() {
           />
         </div>
 
-        <ScanHistoryList
-          filteredHistory={scanHistory || []}
+        {lastScan && <LatestScan />}
+
+        <PreviousScans
+          scans={previousScans || []}
           onSelectProduct={() => {}}
           onRefresh={handleRefresh}
           isRefreshing={isRefetching}
