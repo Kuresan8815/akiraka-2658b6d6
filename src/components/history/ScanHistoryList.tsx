@@ -10,16 +10,17 @@ interface ScanHistoryListProps {
   isRefreshing?: boolean;
 }
 
-const SAMPLE_SCAN = {
-  id: "sample",
+const DEMO_SCAN = {
+  id: "demo",
   scanned_at: new Date().toISOString(),
   products: {
-    qr_code_id: "demo",
+    id: "demo",
     name: "Eco-Friendly Water Bottle",
-    origin: "Sustainable Factory, Sweden",
     certification_level: "Gold",
     carbon_footprint: 0.5,
     water_usage: 2,
+    origin: "Sustainable Factory, Sweden",
+    qr_code_id: "demo",
     sustainability_score: 85,
   }
 };
@@ -32,12 +33,14 @@ export const ScanHistoryList = ({
 }: ScanHistoryListProps) => {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const scansToDisplay = filteredHistory.length > 0 ? filteredHistory : [SAMPLE_SCAN];
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
   };
+
+  // Always show the demo scan
+  const scansToDisplay = [DEMO_SCAN, ...filteredHistory];
 
   return (
     <div className="space-y-4">
