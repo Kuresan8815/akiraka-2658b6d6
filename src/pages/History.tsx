@@ -7,6 +7,28 @@ import { LatestScan } from "@/components/history/LatestScan";
 import { PreviousScans } from "@/components/history/PreviousScans";
 import { useToast } from "@/hooks/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
+import { Product, ScanHistoryItem } from "@/types/product";
+
+// Type guard to validate certification level
+const isValidCertificationLevel = (level: string): level is Product["certification_level"] => {
+  return ["Bronze", "Silver", "Gold"].includes(level);
+};
+
+// Function to validate and transform scan data
+const validateScanData = (scan: any): ScanHistoryItem => {
+  const certLevel = scan.products.certification_level;
+  if (!isValidCertificationLevel(certLevel)) {
+    console.warn(`Invalid certification level: ${certLevel}, defaulting to Bronze`);
+  }
+
+  return {
+    ...scan,
+    products: {
+      ...scan.products,
+      certification_level: isValidCertificationLevel(certLevel) ? certLevel : "Bronze"
+    }
+  };
+};
 
 export default function History() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -58,6 +80,10 @@ export default function History() {
     return <EmptyState dateRange={dateRange} />;
   }
 
+  // Validate scan data before passing to components
+  const validatedLastScan = lastScan ? validateScanData(lastScan) : undefined;
+  const validatedPreviousScans = previousScans?.map(validateScanData) || [];
+
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <div className="space-y-4">
@@ -70,10 +96,10 @@ export default function History() {
           />
         </div>
 
-        {lastScan && <LatestScan scan={lastScan} />}
+        {validatedLastScan && <LatestScan scan={validatedLastScan} />}
 
         <PreviousScans
-          scans={previousScans || []}
+          scans={validatedPreviousScans}
           onSelectProduct={() => {}}
           onRefresh={handleRefresh}
           isRefreshing={isRefetching}
