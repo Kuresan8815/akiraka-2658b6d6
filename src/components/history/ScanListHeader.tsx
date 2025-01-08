@@ -8,8 +8,7 @@ interface ScanListHeaderProps {
 
 export const ScanListHeader = ({ onRefresh, isRefreshing }: ScanListHeaderProps) => {
   return (
-    <div className="flex justify-between items-center mb-2">
-      <h3 className="text-lg font-semibold text-eco-primary">Recent Scans</h3>
+    <div className="flex justify-end items-center mb-2">
       <Button 
         variant="ghost" 
         size="sm" 
