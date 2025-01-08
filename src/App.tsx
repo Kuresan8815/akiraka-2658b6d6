@@ -16,6 +16,7 @@ import { Rewards } from "@/pages/rewards/Rewards";
 import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import Index from "@/pages/Index";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 const queryClient = new QueryClient();
 
@@ -40,13 +41,15 @@ function App() {
           } />
 
           {/* Protected User Routes */}
-          <Route path="/dashboard" element={<PrivateRoute />}>
-            <Route index element={<UserDashboard />} />
-            <Route path="onboarding" element={<Onboarding />} />
-            <Route path="scan" element={<Scan />} />
-            <Route path="product/:id" element={<ProductDetails />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="rewards" element={<Rewards />} />
+          <Route element={<PrivateRoute />}>
+            <Route element={<AppLayout />}>
+              <Route path="/dashboard" element={<UserDashboard />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/scan" element={<Scan />} />
+              <Route path="/product/:id" element={<ProductDetails />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/rewards" element={<Rewards />} />
+            </Route>
           </Route>
 
           {/* Catch all redirect */}
