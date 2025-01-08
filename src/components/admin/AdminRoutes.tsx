@@ -5,12 +5,12 @@ import { AdminProducts } from "@/pages/admin/Products";
 import { AdminAnalytics } from "@/pages/admin/Analytics";
 import { AdminSettings } from "@/pages/admin/Settings";
 import { AdminRewards } from "@/pages/admin/Rewards";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 export const AdminRoutes = () => {
   return (
     <Routes>
-      <Route index element={
+      <Route path="/" element={
         <AdminLayout role="admin">
           <AdminDashboard />
         </AdminLayout>
@@ -40,6 +40,8 @@ export const AdminRoutes = () => {
           <AdminSettings />
         </AdminLayout>
       } />
+      {/* Add a catch-all route for admin paths */}
+      <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
   );
 };
