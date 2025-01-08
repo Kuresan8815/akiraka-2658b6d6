@@ -4,15 +4,18 @@ import { useNavigate } from "react-router-dom";
 import { DateRangeFilter } from "@/components/history/DateRangeFilter";
 import { ErrorState } from "@/components/history/ErrorState";
 import { EmptyState } from "@/components/history/EmptyState";
-import { LatestScan } from "@/components/history/LatestScan";
-import { PreviousScans } from "@/components/history/PreviousScans";
 import { useToast } from "@/hooks/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import { Product } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
-import { ProductDetails } from "@/components/ProductDetails";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ChevronDown, ChevronUp, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-// Sample product data
+// Sample product data for when no scans exist
 const SAMPLE_PRODUCT: Product = {
   id: "sample",
   name: "Eco-Friendly Water Bottle",
@@ -29,27 +32,78 @@ const isValidCertificationLevel = (level: string): level is Product["certificati
   return ["Bronze", "Silver", "Gold"].includes(level);
 };
 
-// Function to validate and transform scan data
-const validateScanData = (scan: any) => {
-  const certLevel = scan.products.certification_level;
-  if (!isValidCertificationLevel(certLevel)) {
-    console.warn(`Invalid certification level: ${certLevel}, defaulting to Bronze`);
-  }
+interface ScanItemProps {
+  scan: any;
+  isExpanded: boolean;
+  onToggle: () => void;
+}
 
-  return {
-    ...scan,
-    products: {
-      ...scan.products,
-      certification_level: isValidCertificationLevel(certLevel) ? certLevel : "Bronze"
-    }
-  };
+const ScanItem = ({ scan, isExpanded, onToggle }: ScanItemProps) => {
+  return (
+    <Card className="mb-4 hover:shadow-md transition-shadow">
+      <CardHeader 
+        className="cursor-pointer flex flex-row items-center justify-between"
+        onClick={onToggle}
+      >
+        <div className="flex-1">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">{scan.products?.name}</CardTitle>
+            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+          </div>
+          <div className="flex items-center text-sm text-gray-500 mt-1">
+            <Clock className="h-4 w-4 mr-1" />
+            {format(new Date(scan.scanned_at), "PPp")}
+          </div>
+        </div>
+      </CardHeader>
+      {isExpanded && (
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Certification Level:</span>
+              <Badge variant="outline">{scan.products?.certification_level}</Badge>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Origin:</span>
+              <span className="text-sm">{scan.products?.origin}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Sustainability Score:</span>
+              <span className="text-sm">{scan.products?.sustainability_score}/100</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Carbon Footprint:</span>
+              <span className="text-sm">{scan.products?.carbon_footprint} kg CO₂</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Water Usage:</span>
+              <span className="text-sm">{scan.products?.water_usage} L</span>
+            </div>
+          </div>
+        </CardContent>
+      )}
+    </Card>
+  );
 };
 
 export default function History() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [expandedScans, setExpandedScans] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const toggleScan = (scanId: string) => {
+    setExpandedScans(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(scanId)) {
+        newSet.delete(scanId);
+      } else {
+        newSet.add(scanId);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -88,42 +142,13 @@ export default function History() {
     isLoading,
     error,
     refetch,
-    isRefetching,
-    lastScan,
-    previousScans
   } = useScanHistory(dateRange);
-
-  const handleRefresh = async () => {
-    try {
-      await refetch();
-      toast({
-        title: "Refreshed",
-        description: "Your scan history has been updated",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to refresh scan history",
-        variant: "destructive",
-      });
-    }
-  };
 
   const clearFilters = () => {
     setDateRange(undefined);
   };
 
-  // Don't render anything while checking auth
-  if (isAuthChecking) {
-    return (
-      <div className="flex justify-center items-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
-      </div>
-    );
-  }
-
-  // Only show loading state after auth is confirmed
-  if (isLoading) {
+  if (isAuthChecking || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
@@ -136,26 +161,14 @@ export default function History() {
   }
 
   if (!scanHistory?.length) {
-    return (
-      <div className="p-4 max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-eco-primary">Sample Scan</h2>
-        </div>
-        <ProductDetails product={SAMPLE_PRODUCT} />
-        <EmptyState dateRange={dateRange} />
-      </div>
-    );
+    return <EmptyState dateRange={dateRange} />;
   }
-
-  // Validate scan data before passing to components
-  const validatedLastScan = lastScan ? validateScanData(lastScan) : undefined;
-  const validatedPreviousScans = previousScans?.map(validateScanData) || [];
 
   return (
     <div className="p-4 max-w-4xl mx-auto">
       <div className="space-y-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-eco-primary">Scan History</h2>
+          <h2 className="text-2xl font-bold text-eco-primary">Recent Scans</h2>
           <DateRangeFilter
             dateRange={dateRange}
             setDateRange={setDateRange}
@@ -163,14 +176,16 @@ export default function History() {
           />
         </div>
 
-        {validatedLastScan && <LatestScan scan={validatedLastScan} />}
-
-        <PreviousScans
-          scans={validatedPreviousScans}
-          onSelectProduct={() => {}}
-          onRefresh={handleRefresh}
-          isRefreshing={isRefetching}
-        />
+        <div className="space-y-4">
+          {scanHistory.map((scan) => (
+            <ScanItem
+              key={scan.id}
+              scan={scan}
+              isExpanded={expandedScans.has(scan.id)}
+              onToggle={() => toggleScan(scan.id)}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
