@@ -9,7 +9,6 @@ import { PreviousScans } from "@/components/history/PreviousScans";
 import { useToast } from "@/hooks/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import { Product } from "@/types/product";
-import { ScanHistoryItem } from "@/types/scan";
 import { supabase } from "@/integrations/supabase/client";
 
 // Type guard to validate certification level
@@ -18,7 +17,7 @@ const isValidCertificationLevel = (level: string): level is Product["certificati
 };
 
 // Function to validate and transform scan data
-const validateScanData = (scan: any): ScanHistoryItem => {
+const validateScanData = (scan: any) => {
   const certLevel = scan.products.certification_level;
   if (!isValidCertificationLevel(certLevel)) {
     console.warn(`Invalid certification level: ${certLevel}, defaulting to Bronze`);
@@ -39,7 +38,6 @@ export default function History() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -47,7 +45,9 @@ export default function History() {
         if (error) throw error;
         if (!session) {
           navigate('/login');
+          return;
         }
+        setIsAuthChecking(false);
       } catch (error: any) {
         console.error('Auth error:', error);
         toast({
@@ -56,8 +56,6 @@ export default function History() {
           variant: "destructive",
         });
         navigate('/login');
-      } finally {
-        setIsAuthChecking(false);
       }
     };
     
@@ -102,7 +100,17 @@ export default function History() {
     setDateRange(undefined);
   };
 
-  if (isAuthChecking || isLoading) {
+  // Don't render anything while checking auth
+  if (isAuthChecking) {
+    return (
+      <div className="flex justify-center items-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
+      </div>
+    );
+  }
+
+  // Only show loading state after auth is confirmed
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>

@@ -13,19 +13,20 @@ export const useScanHistory = (dateRange: DateRange | undefined) => {
   } = useQuery({
     queryKey: ["scan_history"],
     queryFn: async () => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      if (!user) throw new Error("Not authenticated");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
         .from("scan_history")
         .select("*, products(*)")
-        .eq("user_id", user.id)
+        .eq("user_id", session.user.id)
         .order("scanned_at", { ascending: false });
 
       if (error) throw error;
       return data;
     },
+    retry: false,
   });
 
   const filteredHistory = scanHistory?.filter((scan) => {
