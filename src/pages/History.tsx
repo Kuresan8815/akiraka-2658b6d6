@@ -35,15 +35,29 @@ const validateScanData = (scan: any): ScanHistoryItem => {
 
 export default function History() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!session) {
+          navigate('/login');
+        }
+      } catch (error: any) {
+        console.error('Auth error:', error);
+        toast({
+          title: "Authentication Error",
+          description: "Please sign in to view your scan history",
+          variant: "destructive",
+        });
         navigate('/login');
+      } finally {
+        setIsAuthChecking(false);
       }
     };
     
@@ -56,7 +70,7 @@ export default function History() {
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const {
     scanHistory,
@@ -88,16 +102,16 @@ export default function History() {
     setDateRange(undefined);
   };
 
-  if (error) {
-    return <ErrorState onRetry={refetch} />;
-  }
-
-  if (isLoading) {
+  if (isAuthChecking || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[200px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
       </div>
     );
+  }
+
+  if (error) {
+    return <ErrorState onRetry={refetch} />;
   }
 
   if (!scanHistory?.length) {

@@ -13,7 +13,8 @@ export const useScanHistory = (dateRange: DateRange | undefined) => {
   } = useQuery({
     queryKey: ["scan_history"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
