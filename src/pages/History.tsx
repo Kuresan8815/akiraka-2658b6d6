@@ -5,7 +5,7 @@ import { ErrorState } from "@/components/history/ErrorState";
 import { EmptyState } from "@/components/history/EmptyState";
 import { LatestScan } from "@/components/history/LatestScan";
 import { PreviousScans } from "@/components/history/PreviousScans";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
 
 export default function History() {
@@ -70,7 +70,7 @@ export default function History() {
           />
         </div>
 
-        {lastScan && <LatestScan />}
+        {lastScan && <LatestScan scan={lastScan} />}
 
         <PreviousScans
           scans={previousScans || []}
