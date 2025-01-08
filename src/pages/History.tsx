@@ -10,6 +10,19 @@ import { useToast } from "@/hooks/use-toast";
 import { useScanHistory } from "@/hooks/useScanHistory";
 import { Product } from "@/types/product";
 import { supabase } from "@/integrations/supabase/client";
+import { ProductDetails } from "@/components/ProductDetails";
+
+// Sample product data
+const SAMPLE_PRODUCT: Product = {
+  id: "sample",
+  name: "Eco-Friendly Water Bottle",
+  certification_level: "Gold",
+  carbon_footprint: 0.5,
+  water_usage: 2,
+  origin: "Sustainable Factory, Sweden",
+  qr_code_id: "demo",
+  sustainability_score: 85,
+};
 
 // Type guard to validate certification level
 const isValidCertificationLevel = (level: string): level is Product["certification_level"] => {
@@ -123,7 +136,15 @@ export default function History() {
   }
 
   if (!scanHistory?.length) {
-    return <EmptyState dateRange={dateRange} />;
+    return (
+      <div className="p-4 max-w-4xl mx-auto space-y-6">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-eco-primary">Sample Scan</h2>
+        </div>
+        <ProductDetails product={SAMPLE_PRODUCT} />
+        <EmptyState dateRange={dateRange} />
+      </div>
+    );
   }
 
   // Validate scan data before passing to components
