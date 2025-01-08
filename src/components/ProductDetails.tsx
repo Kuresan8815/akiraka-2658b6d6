@@ -17,13 +17,19 @@ const DEMO_PRODUCT = {
   sustainability_score: 85,
 };
 
-export const ProductDetails = () => {
+interface ProductDetailsProps {
+  product?: any;
+}
+
+export const ProductDetails = ({ product: providedProduct }: ProductDetailsProps) => {
   const { qrCodeId } = useParams();
   const { toast } = useToast();
 
-  const { data: product, isLoading } = useQuery({
+  const { data: fetchedProduct, isLoading } = useQuery({
     queryKey: ["product", qrCodeId],
     queryFn: async () => {
+      if (providedProduct) return providedProduct;
+
       const { data, error } = await supabase
         .from("products")
         .select("*")
@@ -59,6 +65,8 @@ export const ProductDetails = () => {
     },
   });
 
+  const displayProduct = providedProduct || fetchedProduct;
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -67,7 +75,7 @@ export const ProductDetails = () => {
     );
   }
 
-  if (!product) {
+  if (!displayProduct) {
     return (
       <div className="p-4 text-center">
         <p className="text-red-500">Product not found</p>
@@ -79,23 +87,23 @@ export const ProductDetails = () => {
     Bronze: "bg-orange-500",
     Silver: "bg-gray-400",
     Gold: "bg-yellow-500",
-  }[product.certification_level];
+  }[displayProduct.certification_level];
 
   return (
     <div className="p-4 max-w-md mx-auto space-y-4">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl text-eco-primary">
-            {product.name}
+            {displayProduct.name}
           </CardTitle>
           <div className="flex flex-col gap-2">
             <Badge className={certificationColor}>
               <Award className="mr-1 h-3 w-3" />
-              {product.certification_level} Certified
+              {displayProduct.certification_level} Certified
             </Badge>
             <Badge className="bg-green-500">
               <Leaf className="mr-1 h-3 w-3" />
-              Sustainability Score: {product.sustainability_score}/100
+              Sustainability Score: {displayProduct.sustainability_score}/100
             </Badge>
           </div>
         </CardHeader>
@@ -105,7 +113,7 @@ export const ProductDetails = () => {
             <div>
               <p className="text-sm font-medium">Carbon Footprint</p>
               <p className="text-sm text-gray-600">
-                {product.carbon_footprint} kg CO₂
+                {displayProduct.carbon_footprint} kg CO₂
               </p>
             </div>
           </div>
@@ -115,7 +123,7 @@ export const ProductDetails = () => {
             <div>
               <p className="text-sm font-medium">Water Usage</p>
               <p className="text-sm text-gray-600">
-                {product.water_usage} liters
+                {displayProduct.water_usage} liters
               </p>
             </div>
           </div>
@@ -124,7 +132,7 @@ export const ProductDetails = () => {
             <Factory className="text-eco-primary" />
             <div>
               <p className="text-sm font-medium">Origin</p>
-              <p className="text-sm text-gray-600">{product.origin}</p>
+              <p className="text-sm text-gray-600">{displayProduct.origin}</p>
             </div>
           </div>
         </CardContent>
