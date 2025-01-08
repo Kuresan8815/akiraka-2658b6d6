@@ -1,12 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Award, Droplets, Factory, Leaf } from "lucide-react";
-import { Badge } from "./ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Card } from "./ui/card";
 import { useToast } from "./ui/use-toast";
+import { Product } from "@/types/product";
+import { ProductHeader } from "./product/ProductHeader";
+import { ProductMetrics } from "./product/ProductMetrics";
 
-const DEMO_PRODUCT = {
+const DEMO_PRODUCT: Product = {
   id: "demo",
   name: "Eco-Friendly Water Bottle",
   certification_level: "Gold",
@@ -18,7 +19,7 @@ const DEMO_PRODUCT = {
 };
 
 interface ProductDetailsProps {
-  product?: any;
+  product?: Product;
 }
 
 export const ProductDetails = ({ product: providedProduct }: ProductDetailsProps) => {
@@ -61,7 +62,7 @@ export const ProductDetails = ({ product: providedProduct }: ProductDetailsProps
         });
       }
 
-      return data;
+      return data as Product;
     },
   });
 
@@ -92,50 +93,11 @@ export const ProductDetails = ({ product: providedProduct }: ProductDetailsProps
   return (
     <div className="p-4 max-w-md mx-auto space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-xl text-eco-primary">
-            {displayProduct.name}
-          </CardTitle>
-          <div className="flex flex-col gap-2">
-            <Badge className={certificationColor}>
-              <Award className="mr-1 h-3 w-3" />
-              {displayProduct.certification_level} Certified
-            </Badge>
-            <Badge className="bg-green-500">
-              <Leaf className="mr-1 h-3 w-3" />
-              Sustainability Score: {displayProduct.sustainability_score}/100
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Leaf className="text-eco-primary" />
-            <div>
-              <p className="text-sm font-medium">Carbon Footprint</p>
-              <p className="text-sm text-gray-600">
-                {displayProduct.carbon_footprint} kg CO₂
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Droplets className="text-eco-primary" />
-            <div>
-              <p className="text-sm font-medium">Water Usage</p>
-              <p className="text-sm text-gray-600">
-                {displayProduct.water_usage} liters
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Factory className="text-eco-primary" />
-            <div>
-              <p className="text-sm font-medium">Origin</p>
-              <p className="text-sm text-gray-600">{displayProduct.origin}</p>
-            </div>
-          </div>
-        </CardContent>
+        <ProductHeader 
+          product={displayProduct} 
+          certificationColor={certificationColor} 
+        />
+        <ProductMetrics product={displayProduct} />
       </Card>
     </div>
   );

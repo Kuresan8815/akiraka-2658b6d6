@@ -1,16 +1,25 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProductDetails } from "@/components/ProductDetails";
+import { Product } from "@/types/product";
 
 interface LatestScanProps {
-  scan?: any;
+  scan?: {
+    products: Product;
+    scanned_at: string;
+  };
 }
 
 export const LatestScan = ({ scan }: LatestScanProps) => {
   if (!scan) return null;
-  
+
   return (
-    <div className="mb-8">
-      <h3 className="text-lg font-semibold text-eco-primary mb-4">Latest Scan</h3>
-      <ProductDetails product={scan.products} />
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Latest Scan</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ProductDetails product={scan.products} />
+      </CardContent>
+    </Card>
   );
 };
