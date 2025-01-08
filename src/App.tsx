@@ -41,14 +41,14 @@ function App() {
           } />
 
           {/* Protected User Routes */}
-          <Route element={<PrivateRoute />}>
+          <Route path="/" element={<PrivateRoute />}>
             <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<UserDashboard />} />
-              <Route path="/onboarding" element={<Onboarding />} />
-              <Route path="/scan" element={<Scan />} />
-              <Route path="/product/:id" element={<ProductDetails />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/rewards" element={<Rewards />} />
+              <Route path="dashboard" element={<UserDashboard />} />
+              <Route path="onboarding" element={<Onboarding />} />
+              <Route path="scan" element={<Scan />} />
+              <Route path="product/:id" element={<ProductDetails />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="rewards" element={<Rewards />} />
             </Route>
           </Route>
 
