@@ -22,17 +22,19 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       return session;
     },
     retry: false,
-    onError: (error) => {
-      console.error("Auth error:", error);
-      // Clear any stale session data
-      supabase.auth.signOut().then(() => {
-        navigate("/");
-        toast({
-          title: "Session Expired",
-          description: "Please sign in again to continue.",
-          variant: "destructive",
+    meta: {
+      onError: (error: Error) => {
+        console.error("Auth error:", error);
+        // Clear any stale session data
+        supabase.auth.signOut().then(() => {
+          navigate("/");
+          toast({
+            title: "Session Expired",
+            description: "Please sign in again to continue.",
+            variant: "destructive",
+          });
         });
-      });
+      },
     },
   });
 
@@ -40,7 +42,7 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+      if (event === "SIGNED_OUT") {
         navigate("/");
       } else if (!session && !isLoading) {
         navigate("/");
