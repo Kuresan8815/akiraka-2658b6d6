@@ -11,19 +11,56 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: session, isLoading } = useQuery({
+  const { data: session, isLoading, error } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Session error:", error);
+        throw error;
+      }
       return session;
+    },
+    retry: false,
+    onError: (error) => {
+      console.error("Auth error:", error);
+      // Clear any stale session data
+      supabase.auth.signOut().then(() => {
+        navigate("/");
+        toast({
+          title: "Session Expired",
+          description: "Please sign in again to continue.",
+          variant: "destructive",
+        });
+      });
     },
   });
 
   useEffect(() => {
-    if (!isLoading && !session) {
-      navigate("/");
-    }
-  }, [session, isLoading, navigate]);
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+        navigate("/");
+      } else if (!session && !isLoading) {
+        navigate("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, isLoading]);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return null;
+  }
 
   const handleLogout = async () => {
     try {
@@ -41,18 +78,6 @@ export const AppLayout = ({ children }: { children: React.ReactNode }) => {
       });
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-eco-primary"></div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return null;
-  }
 
   return (
     <div className="min-h-screen pb-16">
