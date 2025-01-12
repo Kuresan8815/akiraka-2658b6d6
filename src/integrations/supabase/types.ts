@@ -60,34 +60,49 @@ export type Database = {
       products: {
         Row: {
           carbon_footprint: number
+          category: string | null
           certification_level: string
           created_at: string
           id: string
+          image_url: string | null
+          manufacture_date: string | null
+          material_composition: string | null
           name: string
           origin: string
           qr_code_id: string
+          recyclability_percentage: number | null
           sustainability_score: number
           water_usage: number
         }
         Insert: {
           carbon_footprint: number
+          category?: string | null
           certification_level: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          manufacture_date?: string | null
+          material_composition?: string | null
           name: string
           origin: string
           qr_code_id: string
+          recyclability_percentage?: number | null
           sustainability_score?: number
           water_usage: number
         }
         Update: {
           carbon_footprint?: number
+          category?: string | null
           certification_level?: string
           created_at?: string
           id?: string
+          image_url?: string | null
+          manufacture_date?: string | null
+          material_composition?: string | null
           name?: string
           origin?: string
           qr_code_id?: string
+          recyclability_percentage?: number | null
           sustainability_score?: number
           water_usage?: number
         }

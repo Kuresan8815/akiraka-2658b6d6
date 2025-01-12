@@ -4,14 +4,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash, Search, Filter } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Eye, Pencil, Trash, Search, Filter, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { AddProductForm } from '@/components/admin/products/AddProductForm';
 
 export const AdminProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScore, setFilterScore] = useState<number | ''>('');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['admin-products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -41,7 +44,28 @@ export const AdminProducts = () => {
 
   return (
     <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold mb-6">Product Management</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Product Management</h1>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Product
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Product</DialogTitle>
+            </DialogHeader>
+            <AddProductForm 
+              onSuccess={() => {
+                setIsAddDialogOpen(false);
+                refetch();
+              }} 
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
       
       {/* Search and Filter Bar */}
       <div className="flex gap-4 mb-6">
@@ -73,10 +97,21 @@ export const AdminProducts = () => {
         {filteredProducts?.map((product) => (
           <Card key={product.id} className="hover:shadow-lg transition-shadow">
             <CardContent className="p-4">
+              {product.image_url && (
+                <div className="aspect-video w-full mb-4 rounded-lg overflow-hidden">
+                  <img 
+                    src={product.image_url} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-semibold text-lg">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground">{product.certification_level}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {product.category || product.certification_level}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="icon">
@@ -100,6 +135,14 @@ export const AdminProducts = () => {
                   <span className="text-muted-foreground">Sustainability Score</span>
                   <span className="font-medium">{product.sustainability_score}/100</span>
                 </div>
+                {product.manufacture_date && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Manufactured</span>
+                    <span className="font-medium">
+                      {format(new Date(product.manufacture_date), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Added</span>
                   <span className="font-medium">
