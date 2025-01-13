@@ -33,19 +33,21 @@ export const AdminProducts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as Product[];
     },
   });
 
   const handleDelete = async (id: string) => {
     try {
+      if (!selectedProduct) return;
+
       // Create audit log entry first
       const { error: auditError } = await supabase
         .from("product_audit_logs")
         .insert({
           product_id: id,
           action: "delete",
-          changes: selectedProduct,
+          changes: JSON.stringify(selectedProduct)
         });
 
       if (auditError) throw auditError;

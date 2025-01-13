@@ -1,10 +1,10 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Leaf, Droplets, AlertCircle, FileText, Barcode, Database, QrCode } from "lucide-react";
+import { Leaf, Droplets, AlertCircle, FileText, Barcode, Database, QrCode, List } from "lucide-react";
 import { format } from "date-fns";
 import { Card, CardContent } from "./ui/card";
 import { ProductAuditLog } from "./admin/products/ProductAuditLog";
-import QRCode from "qrcode.react";
+import { QRCode } from "qrcode.react";
 
 interface ProductDetailsModalProps {
   product: any;

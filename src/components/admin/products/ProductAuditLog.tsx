@@ -16,7 +16,7 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
         .from("product_audit_logs")
         .select(`
           *,
-          created_by:profiles(name)
+          profiles:created_by(name)
         `)
         .eq("product_id", productId)
         .order("created_at", { ascending: false });
@@ -56,7 +56,7 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
                 </span>
                 <span className="flex items-center gap-1">
                   <User className="h-3 w-3" />
-                  {log.created_by?.name || "Unknown user"}
+                  {log.profiles?.name || "Unknown user"}
                 </span>
               </div>
               {log.blockchain_tx_id && (

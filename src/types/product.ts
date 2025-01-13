@@ -14,4 +14,5 @@ export interface Product {
   image_url?: string;
   blockchain_hash?: string;
   blockchain_tx_id?: string;
+  created_at: string;
 }
