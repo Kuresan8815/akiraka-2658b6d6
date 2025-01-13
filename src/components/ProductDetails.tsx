@@ -16,6 +16,7 @@ const DEMO_PRODUCT: Product = {
   origin: "Sustainable Factory, Sweden",
   qr_code_id: "demo",
   sustainability_score: 85,
+  created_at: new Date().toISOString(),
 };
 
 interface ProductDetailsProps {

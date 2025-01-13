@@ -4,7 +4,7 @@ import { Leaf, Droplets, AlertCircle, FileText, Barcode, Database, QrCode, List 
 import { format } from "date-fns";
 import { Card, CardContent } from "./ui/card";
 import { ProductAuditLog } from "./admin/products/ProductAuditLog";
-import { QRCode } from "qrcode.react";
+import QRCodeReact from "qrcode.react";
 
 interface ProductDetailsModalProps {
   product: any;
@@ -175,7 +175,7 @@ export const ProductDetailsModal = ({ product, isOpen, onClose }: ProductDetails
                   </div>
 
                   <div className="mt-2">
-                    <QRCode value={verificationUrl} size={128} />
+                    <QRCodeReact value={verificationUrl} size={128} />
                   </div>
                 </div>
 
