@@ -6,6 +6,17 @@ interface ProductAuditLogProps {
   productId: string;
 }
 
+interface AuditLog {
+  id: string;
+  action: string;
+  changes: any;
+  created_at: string;
+  created_by: string | null;
+  profiles?: {
+    name: string | null;
+  } | null;
+}
+
 export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
   const { data: auditLogs, isLoading } = useQuery({
     queryKey: ["product-audit-logs", productId],
@@ -14,7 +25,7 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
         .from("product_audit_logs")
         .select(`
           *,
-          profiles:created_by (
+          profiles (
             name
           )
         `)
@@ -22,7 +33,7 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as AuditLog[];
     },
   });
 
