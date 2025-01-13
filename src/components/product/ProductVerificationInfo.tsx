@@ -1,7 +1,7 @@
 import { Database, QrCode, List } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProductAuditLog } from "../admin/products/ProductAuditLog";
-import { QRCode } from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 import { Product } from "@/types/product";
 
 interface ProductVerificationInfoProps {
@@ -42,7 +42,7 @@ export const ProductVerificationInfo = ({ product, verificationUrl }: ProductVer
             </div>
 
             <div className="mt-2">
-              <QRCode value={verificationUrl} size={128} />
+              <QRCodeSVG value={verificationUrl} size={128} />
             </div>
           </div>
 
