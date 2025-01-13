@@ -57,8 +57,48 @@ export type Database = {
         }
         Relationships: []
       }
+      product_audit_logs: {
+        Row: {
+          action: string
+          blockchain_tx_id: string | null
+          changes: Json | null
+          created_at: string
+          created_by: string | null
+          id: string
+          product_id: string | null
+        }
+        Insert: {
+          action: string
+          blockchain_tx_id?: string | null
+          changes?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          product_id?: string | null
+        }
+        Update: {
+          action?: string
+          blockchain_tx_id?: string | null
+          changes?: Json | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_audit_logs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
+          blockchain_hash: string | null
+          blockchain_tx_id: string | null
           carbon_footprint: number
           category: string | null
           certification_level: string
@@ -75,6 +115,8 @@ export type Database = {
           water_usage: number
         }
         Insert: {
+          blockchain_hash?: string | null
+          blockchain_tx_id?: string | null
           carbon_footprint: number
           category?: string | null
           certification_level: string
@@ -91,6 +133,8 @@ export type Database = {
           water_usage: number
         }
         Update: {
+          blockchain_hash?: string | null
+          blockchain_tx_id?: string | null
           carbon_footprint?: number
           category?: string | null
           certification_level?: string

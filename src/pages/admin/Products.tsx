@@ -5,14 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Eye, Pencil, Trash, Search, Filter, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { AddProductForm } from '@/components/admin/products/AddProductForm';
+import { EditProductForm } from '@/components/admin/products/EditProductForm';
+import { ProductDetailsModal } from '@/components/ProductDetailsModal';
+import { useToast } from "@/components/ui/use-toast";
+import { Product } from '@/types/product';
 
 export const AdminProducts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterScore, setFilterScore] = useState<number | ''>('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const { toast } = useToast();
 
   const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['admin-products'],
@@ -27,16 +37,49 @@ export const AdminProducts = () => {
     },
   });
 
+  const handleDelete = async (id: string) => {
+    try {
+      // Create audit log entry first
+      const { error: auditError } = await supabase
+        .from("product_audit_logs")
+        .insert({
+          product_id: id,
+          action: "delete",
+          changes: selectedProduct,
+        });
+
+      if (auditError) throw auditError;
+
+      // Then delete the product
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+
+      setIsDeleteDialogOpen(false);
+      refetch();
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredProducts = products?.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterScore === '' || product.sustainability_score >= filterScore;
     return matchesSearch && matchesFilter;
   });
-
-  const handleDelete = async (id: string) => {
-    // Implement delete functionality
-    console.log('Delete product:', id);
-  };
 
   if (isLoading) {
     return <div className="p-6">Loading products...</div>;
@@ -114,16 +157,33 @@ export const AdminProducts = () => {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="icon">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setIsViewDialogOpen(true);
+                    }}
+                  >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    onClick={() => handleDelete(product.id)}
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setIsDeleteDialogOpen(true);
+                    }}
                   >
                     <Trash className="h-4 w-4" />
                   </Button>
@@ -154,6 +214,59 @@ export const AdminProducts = () => {
           </Card>
         ))}
       </div>
+
+      {/* View Dialog */}
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          isOpen={isViewDialogOpen}
+          onClose={() => {
+            setIsViewDialogOpen(false);
+            setSelectedProduct(null);
+          }}
+        />
+      )}
+
+      {/* Edit Dialog */}
+      {selectedProduct && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Product</DialogTitle>
+            </DialogHeader>
+            <EditProductForm
+              product={selectedProduct}
+              onSuccess={() => {
+                setIsEditDialogOpen(false);
+                setSelectedProduct(null);
+                refetch();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product
+              and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => selectedProduct && handleDelete(selectedProduct.id)}
+              className="bg-red-500 hover:bg-red-600"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

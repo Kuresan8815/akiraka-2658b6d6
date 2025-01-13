@@ -7,4 +7,11 @@ export interface Product {
   origin: string;
   qr_code_id: string;
   sustainability_score: number;
+  category?: string;
+  material_composition?: string;
+  recyclability_percentage?: number;
+  manufacture_date?: string;
+  image_url?: string;
+  blockchain_hash?: string;
+  blockchain_tx_id?: string;
 }
