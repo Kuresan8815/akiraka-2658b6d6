@@ -25,7 +25,7 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
         .from("product_audit_logs")
         .select(`
           *,
-          profiles (
+          profiles:created_by (
             name
           )
         `)
