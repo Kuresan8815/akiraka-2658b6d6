@@ -13,7 +13,7 @@ interface AuditLog {
   changes: Json;
   created_at: string;
   created_by: string | null;
-  user_profile?: {
+  user_profile: {
     name: string | null;
   } | null;
 }
@@ -30,15 +30,13 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
           changes,
           created_at,
           created_by,
-          user_profile:profiles!product_audit_logs_created_by_fkey (
-            name
-          )
+          user_profile:profiles(name)
         `)
         .eq("product_id", productId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as AuditLog[];
+      return data as unknown as AuditLog[];
     },
   });
 
