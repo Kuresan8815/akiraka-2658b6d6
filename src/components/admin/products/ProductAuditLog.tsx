@@ -12,7 +12,7 @@ interface AuditLog {
   changes: any;
   created_at: string;
   created_by: string | null;
-  profiles?: {
+  profiles: {
     name: string | null;
   } | null;
 }
@@ -24,8 +24,12 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
       const { data, error } = await supabase
         .from("product_audit_logs")
         .select(`
-          *,
-          profiles:created_by (
+          id,
+          action,
+          changes,
+          created_at,
+          created_by,
+          profiles!product_audit_logs_created_by_fkey (
             name
           )
         `)
