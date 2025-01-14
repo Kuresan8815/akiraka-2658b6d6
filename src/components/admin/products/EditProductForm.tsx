@@ -29,6 +29,17 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
     },
   });
 
+  const createBlockchainTransaction = async (changes: any) => {
+    try {
+      // Simulate blockchain transaction - in a real app, this would interact with a blockchain
+      const txHash = `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      return txHash;
+    } catch (error) {
+      console.error("Error creating blockchain transaction:", error);
+      throw error;
+    }
+  };
+
   const onSubmit = async (data: any) => {
     try {
       setIsLoading(true);
@@ -36,10 +47,24 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       // Get the old product data for comparison
       const oldData = { ...product };
       
-      // Update the product
+      // Create blockchain transaction
+      const blockchainTxId = await createBlockchainTransaction({
+        type: "update",
+        productId: product.id,
+        changes: {
+          before: oldData,
+          after: data
+        }
+      });
+      
+      // Update the product with blockchain reference
       const { error: updateError } = await supabase
         .from("products")
-        .update(data)
+        .update({
+          ...data,
+          blockchain_tx_id: blockchainTxId,
+          blockchain_hash: blockchainTxId // In a real app, this would be a proper hash
+        })
         .eq("id", product.id);
 
       if (updateError) throw updateError;
@@ -54,6 +79,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
             before: oldData,
             after: data,
           },
+          blockchain_tx_id: blockchainTxId
         });
 
       if (auditError) throw auditError;
