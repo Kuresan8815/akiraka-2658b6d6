@@ -28,18 +28,31 @@ export const ProfileContainer = () => {
     queryKey: ["profile", session?.user?.id],
     enabled: !!session?.user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: profileData, error } = await supabase
         .from("profiles")
         .select("*, users:auth.users(email)")
         .eq("id", session?.user?.id)
         .single();
 
       if (error) throw error;
+
+      // Extract email from the joined users table
+      const email = profileData.users?.email || '';
       
-      return {
-        ...data,
-        email: data.users.email,
-      } as ProfileType;
+      // Create a properly typed profile object
+      const typedProfile: ProfileType = {
+        id: profileData.id,
+        name: profileData.name,
+        email: email,
+        avatar_url: profileData.avatar_url,
+        sustainability_goals: profileData.sustainability_goals,
+        preferences: profileData.preferences as ProfilePreferences,
+        created_at: profileData.created_at,
+        updated_at: profileData.updated_at,
+        has_completed_onboarding: profileData.has_completed_onboarding
+      };
+      
+      return typedProfile;
     },
   });
 
@@ -76,10 +89,16 @@ export const ProfileContainer = () => {
     if (!session?.user?.id) return;
 
     try {
+      // Convert ProfilePreferences to a plain object that matches the Json type
+      const preferencesJson: { [key: string]: boolean } = {
+        notifications: preferences.notifications,
+        darkTheme: preferences.darkTheme
+      };
+
       const { error } = await supabase
         .from("profiles")
         .update({
-          preferences: preferences as Json,
+          preferences: preferencesJson as Json,
         })
         .eq("id", session.user.id);
 
