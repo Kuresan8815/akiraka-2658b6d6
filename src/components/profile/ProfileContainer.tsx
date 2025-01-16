@@ -30,23 +30,33 @@ export const ProfileContainer = () => {
     queryFn: async () => {
       const { data: profileData, error } = await supabase
         .from("profiles")
-        .select("*, users:auth.users(email)")
+        .select(`
+          id,
+          name,
+          avatar_url,
+          sustainability_goals,
+          preferences,
+          created_at,
+          updated_at,
+          has_completed_onboarding,
+          email:auth.users(email)
+        `)
         .eq("id", session?.user?.id)
         .single();
 
       if (error) throw error;
 
-      // Extract email from the joined users table
-      const email = profileData.users?.email || '';
-      
       // Create a properly typed profile object
       const typedProfile: ProfileType = {
         id: profileData.id,
         name: profileData.name,
-        email: email,
+        email: profileData.email?.[0]?.email || '',
         avatar_url: profileData.avatar_url,
         sustainability_goals: profileData.sustainability_goals,
-        preferences: profileData.preferences as ProfilePreferences,
+        preferences: profileData.preferences as ProfilePreferences || {
+          notifications: true,
+          darkTheme: false
+        },
         created_at: profileData.created_at,
         updated_at: profileData.updated_at,
         has_completed_onboarding: profileData.has_completed_onboarding
@@ -90,15 +100,15 @@ export const ProfileContainer = () => {
 
     try {
       // Convert ProfilePreferences to a plain object that matches the Json type
-      const preferencesJson: { [key: string]: boolean } = {
+      const preferencesJson = {
         notifications: preferences.notifications,
         darkTheme: preferences.darkTheme
-      };
+      } as unknown as Json;
 
       const { error } = await supabase
         .from("profiles")
         .update({
-          preferences: preferencesJson as Json,
+          preferences: preferencesJson,
         })
         .eq("id", session.user.id);
 
