@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,10 +9,12 @@ import { ProfileForm } from "./ProfileForm";
 import { BusinessProfileManager } from "@/components/business/BusinessProfileManager";
 import { Profile as ProfileType, ProfileFormData, ProfilePreferences } from "@/types/profile";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
+import { Json } from "@/integrations/supabase/types";
 
 export const ProfileContainer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isEditing, setIsEditing] = useState(false);
 
   const { data: session } = useQuery({
     queryKey: ["session"],
@@ -27,12 +30,16 @@ export const ProfileContainer = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("*")
+        .select("*, users:auth.users(email)")
         .eq("id", session?.user?.id)
         .single();
 
       if (error) throw error;
-      return data as ProfileType;
+      
+      return {
+        ...data,
+        email: data.users.email,
+      } as ProfileType;
     },
   });
 
@@ -44,7 +51,7 @@ export const ProfileContainer = () => {
         .from("profiles")
         .update({
           name: formData.name,
-          sustainability_goals: formData.sustainability_goals,
+          sustainability_goals: formData.sustainabilityGoals,
         })
         .eq("id", session.user.id);
 
@@ -54,6 +61,7 @@ export const ProfileContainer = () => {
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       });
+      setIsEditing(false);
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
@@ -71,7 +79,7 @@ export const ProfileContainer = () => {
       const { error } = await supabase
         .from("profiles")
         .update({
-          preferences,
+          preferences: preferences as Json,
         })
         .eq("id", session.user.id);
 
@@ -106,23 +114,27 @@ export const ProfileContainer = () => {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <ProfileHeader profile={profile} session={session} />
+      <ProfileHeader 
+        avatarUrl={profile?.avatar_url}
+        name={profile?.name}
+        email={profile?.email}
+      />
       
       <Card className="p-6">
         <ProfileForm
-          profile={profile}
+          profile={profile!}
+          isEditing={isEditing}
           onSubmit={handleUpdateProfile}
+          onEdit={() => setIsEditing(true)}
+          onCancel={() => setIsEditing(false)}
         />
       </Card>
 
       <Card className="p-6">
-        <NotificationPreferences
-          preferences={profile?.preferences as ProfilePreferences}
-          onUpdate={handleUpdatePreferences}
-        />
+        <NotificationPreferences />
       </Card>
 
-      <BusinessProfileManager userId={session.user.id} />
+      <BusinessProfileManager />
     </div>
   );
 };
