@@ -9,9 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileForm } from "@/components/profile/ProfileForm";
 import { BusinessProfileManager } from "@/components/business/BusinessProfileManager";
-import { Profile as ProfileType, ProfileFormData } from "@/types/profile";
-
-// ... keep existing code (imports and component setup)
+import { Profile as ProfileType, ProfileFormData, ProfilePreferences } from "@/types/profile";
 
 export default function Profile() {
   const navigate = useNavigate();
