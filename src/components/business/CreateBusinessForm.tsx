@@ -10,9 +10,11 @@ interface CreateBusinessFormProps {
   onSuccess: () => void;
 }
 
+type BusinessType = 'manufacturer' | 'retailer' | 'distributor' | 'supplier';
+
 export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
   const [name, setName] = useState("");
-  const [businessType, setBusinessType] = useState<string>("");
+  const [businessType, setBusinessType] = useState<BusinessType | "">("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -26,19 +28,25 @@ export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!businessType) {
+      toast({
+        title: "Error",
+        description: "Please select a business type",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsLoading(true);
 
     try {
       // First create the business
       const { data: business, error: businessError } = await supabase
         .from("businesses")
-        .insert([
-          {
-            name,
-            business_type: businessType,
-            created_by: session?.user?.id,
-          },
-        ])
+        .insert({
+          name,
+          business_type: businessType,
+          created_by: session?.user?.id,
+        })
         .select()
         .single();
 
@@ -47,13 +55,11 @@ export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
       // Then create the business profile
       const { error: profileError } = await supabase
         .from("business_profiles")
-        .insert([
-          {
-            business_id: business.id,
-            user_id: session?.user?.id,
-            role: "owner",
-          },
-        ]);
+        .insert({
+          business_id: business.id,
+          user_id: session?.user?.id,
+          role: "owner",
+        });
 
       if (profileError) throw profileError;
 
@@ -92,7 +98,7 @@ export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
         <label htmlFor="type" className="text-sm font-medium">
           Business Type
         </label>
-        <Select value={businessType} onValueChange={setBusinessType} required>
+        <Select value={businessType} onValueChange={(value) => setBusinessType(value as BusinessType)} required>
           <SelectTrigger>
             <SelectValue placeholder="Select business type" />
           </SelectTrigger>

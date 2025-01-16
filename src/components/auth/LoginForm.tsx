@@ -30,9 +30,6 @@ export const LoginForm = () => {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          persistSession: true // Ensure session persistence
-        }
       });
 
       if (error) {
@@ -52,9 +49,6 @@ export const LoginForm = () => {
       }
 
       if (data?.user) {
-        // Set session in localStorage
-        localStorage.setItem('supabase.auth.token', JSON.stringify(data.session));
-        
         toast({
           title: "Success!",
           description: "You have been signed in.",
