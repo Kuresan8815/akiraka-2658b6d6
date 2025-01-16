@@ -7,9 +7,9 @@ import { Card } from "@/components/ui/card";
 import { ProfileHeader } from "./ProfileHeader";
 import { ProfileForm } from "./ProfileForm";
 import { BusinessProfileManager } from "@/components/business/BusinessProfileManager";
-import { Profile as ProfileType, ProfileFormData, ProfilePreferences } from "@/types/profile";
+import { ProfileFormData, ProfilePreferences } from "@/types/profile";
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
-import { Json } from "@/integrations/supabase/types";
+import { fetchUserProfile, updateUserProfile, updateUserPreferences } from "@/utils/profile";
 
 export const ProfileContainer = () => {
   const navigate = useNavigate();
@@ -28,41 +28,8 @@ export const ProfileContainer = () => {
     queryKey: ["profile", session?.user?.id],
     enabled: !!session?.user?.id,
     queryFn: async () => {
-      const { data: profileData, error } = await supabase
-        .from("profiles")
-        .select(`
-          id,
-          name,
-          avatar_url,
-          sustainability_goals,
-          preferences,
-          created_at,
-          updated_at,
-          has_completed_onboarding,
-          email:auth.users(email)
-        `)
-        .eq("id", session?.user?.id)
-        .single();
-
-      if (error) throw error;
-
-      // Create a properly typed profile object
-      const typedProfile: ProfileType = {
-        id: profileData.id,
-        name: profileData.name,
-        email: profileData.email?.[0]?.email || '',
-        avatar_url: profileData.avatar_url,
-        sustainability_goals: profileData.sustainability_goals,
-        preferences: profileData.preferences as ProfilePreferences || {
-          notifications: true,
-          darkTheme: false
-        },
-        created_at: profileData.created_at,
-        updated_at: profileData.updated_at,
-        has_completed_onboarding: profileData.has_completed_onboarding
-      };
-      
-      return typedProfile;
+      if (!session?.user?.id) throw new Error("No user ID");
+      return fetchUserProfile(session.user.id);
     },
   });
 
@@ -70,16 +37,8 @@ export const ProfileContainer = () => {
     if (!session?.user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          name: formData.name,
-          sustainability_goals: formData.sustainabilityGoals,
-        })
-        .eq("id", session.user.id);
-
-      if (error) throw error;
-
+      await updateUserProfile(session.user.id, formData.name, formData.sustainabilityGoals);
+      
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
@@ -99,20 +58,7 @@ export const ProfileContainer = () => {
     if (!session?.user?.id) return;
 
     try {
-      // Convert ProfilePreferences to a plain object that matches the Json type
-      const preferencesJson = {
-        notifications: preferences.notifications,
-        darkTheme: preferences.darkTheme
-      } as unknown as Json;
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          preferences: preferencesJson,
-        })
-        .eq("id", session.user.id);
-
-      if (error) throw error;
+      await updateUserPreferences(session.user.id, preferences);
 
       toast({
         title: "Preferences updated",
@@ -141,17 +87,19 @@ export const ProfileContainer = () => {
     );
   }
 
+  if (!profile) return null;
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <ProfileHeader 
-        avatarUrl={profile?.avatar_url}
-        name={profile?.name}
-        email={profile?.email}
+        avatarUrl={profile.avatar_url}
+        name={profile.name}
+        email={profile.email}
       />
       
       <Card className="p-6">
         <ProfileForm
-          profile={profile!}
+          profile={profile}
           isEditing={isEditing}
           onSubmit={handleUpdateProfile}
           onEdit={() => setIsEditing(true)}
@@ -160,7 +108,10 @@ export const ProfileContainer = () => {
       </Card>
 
       <Card className="p-6">
-        <NotificationPreferences />
+        <NotificationPreferences 
+          preferences={profile.preferences}
+          onUpdate={handleUpdatePreferences}
+        />
       </Card>
 
       <BusinessProfileManager />
