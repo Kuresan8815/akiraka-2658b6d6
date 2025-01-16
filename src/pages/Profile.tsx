@@ -8,7 +8,10 @@ import { ArrowLeft, ArrowRight, LogOut } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
 import { ProfileForm } from "@/components/profile/ProfileForm";
-import { Profile as ProfileType, ProfileFormData, ProfilePreferences } from "@/types/profile";
+import { BusinessProfileManager } from "@/components/business/BusinessProfileManager";
+import { Profile as ProfileType, ProfileFormData } from "@/types/profile";
+
+// ... keep existing code (imports and component setup)
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -146,6 +149,10 @@ export default function Profile() {
           onEdit={() => setIsEditing(true)}
           onCancel={() => setIsEditing(false)}
         />
+      </Card>
+
+      <Card className="p-6">
+        <BusinessProfileManager />
       </Card>
 
       <Card className="p-6 space-y-4">
