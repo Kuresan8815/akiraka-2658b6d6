@@ -24,7 +24,11 @@ export const BusinessSelector = () => {
         businesses (
           id,
           name,
-          business_type
+          business_type,
+          created_at,
+          updated_at,
+          created_by,
+          is_active
         )
       `)
       .eq("user_id", user.id);
@@ -39,7 +43,7 @@ export const BusinessSelector = () => {
     }
 
     const businessList = data?.map(item => item.businesses) || [];
-    setBusinesses(businessList);
+    setBusinesses(businessList as Business[]);
   };
 
   const getCurrentBusiness = async () => {

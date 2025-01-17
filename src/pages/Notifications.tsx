@@ -4,6 +4,7 @@ import { NotificationsList } from "@/components/notifications/NotificationsList"
 import { NotificationPreferences } from "@/components/notifications/NotificationPreferences";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { ProfilePreferences } from "@/types/profile";
 
 const Notifications = () => {
   const { toast } = useToast();
@@ -19,6 +20,51 @@ const Notifications = () => {
 
       if (error) throw error;
       return data;
+    },
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const updatePreferencesMutation = useMutation({
+    mutationFn: async (preferences: ProfilePreferences) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ preferences })
+        .eq("id", user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      toast({
+        title: "Success",
+        description: "Preferences updated successfully",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: "Failed to update preferences",
+        variant: "destructive",
+      });
     },
   });
 
@@ -67,7 +113,10 @@ const Notifications = () => {
         </TabsContent>
         
         <TabsContent value="preferences">
-          <NotificationPreferences />
+          <NotificationPreferences 
+            preferences={profile?.preferences || {}}
+            onUpdate={(prefs) => updatePreferencesMutation.mutate(prefs)}
+          />
         </TabsContent>
       </Tabs>
     </div>
