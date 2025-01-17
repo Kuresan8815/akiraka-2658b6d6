@@ -5,6 +5,7 @@ import { NotificationPreferences } from "@/components/notifications/Notification
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ProfilePreferences } from "@/types/profile";
+import { Json } from "@/integrations/supabase/types";
 
 const Notifications = () => {
   const { toast } = useToast();
@@ -41,13 +42,13 @@ const Notifications = () => {
   });
 
   const updatePreferencesMutation = useMutation({
-    mutationFn: async (preferences: ProfilePreferences) => {
+    mutationFn: async (preferences: ProfilePreferences): Promise<void> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
       const { error } = await supabase
         .from("profiles")
-        .update({ preferences })
+        .update({ preferences: preferences as Json })
         .eq("id", user.id);
 
       if (error) throw error;
@@ -114,8 +115,10 @@ const Notifications = () => {
         
         <TabsContent value="preferences">
           <NotificationPreferences 
-            preferences={profile?.preferences || {}}
-            onUpdate={(prefs) => updatePreferencesMutation.mutate(prefs)}
+            preferences={(profile?.preferences || {}) as ProfilePreferences}
+            onUpdate={async (prefs) => {
+              await updatePreferencesMutation.mutateAsync(prefs);
+            }}
           />
         </TabsContent>
       </Tabs>
