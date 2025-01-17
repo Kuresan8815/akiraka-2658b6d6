@@ -15,11 +15,17 @@ export const BusinessSelect = ({ businesses, selectedBusiness, onSelect }: Busin
           <SelectValue placeholder="Select a business" />
         </SelectTrigger>
         <SelectContent>
-          {businesses.map((business) => (
-            <SelectItem key={business.id} value={business.id}>
-              {business.name} ({business.business_type})
+          {businesses && businesses.length > 0 ? (
+            businesses.map((business) => (
+              <SelectItem key={business.id} value={business.id}>
+                {business.name} ({business.business_type})
+              </SelectItem>
+            ))
+          ) : (
+            <SelectItem value="no-businesses" disabled>
+              No businesses available
             </SelectItem>
-          ))}
+          )}
         </SelectContent>
       </Select>
     </div>

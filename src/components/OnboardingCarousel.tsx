@@ -8,15 +8,7 @@ import { BusinessSelect } from "./onboarding/BusinessSelect";
 import { IndustrySelect } from "./onboarding/IndustrySelect";
 import { ActivitiesSelect } from "./onboarding/ActivitiesSelect";
 import { GoalsSelect } from "./onboarding/GoalsSelect";
-
-interface Business {
-  id: string;
-  name: string;
-  business_type: string;
-  industry_type?: string;
-  activities?: string[];
-  sustainability_goals?: string[];
-}
+import type { Business } from "@/types/business";
 
 const slides = [
   {
@@ -72,7 +64,7 @@ export const OnboardingCarousel = () => {
   const fetchBusinesses = async () => {
     const { data, error } = await supabase
       .from("businesses")
-      .select("id, name, business_type, industry_type, activities, sustainability_goals")
+      .select("id, name, business_type, industry_type, activities, sustainability_goals, created_at, updated_at, created_by, is_active")
       .eq("is_active", true);
 
     if (error) {
