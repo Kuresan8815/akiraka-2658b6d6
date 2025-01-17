@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Business } from "@/types/business";
+import { useNavigate } from "react-router-dom";
 
 export const BusinessSelector = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [selectedBusiness, setSelectedBusiness] = useState<string>("");
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBusinesses();
@@ -42,8 +46,8 @@ export const BusinessSelector = () => {
       return;
     }
 
-    const businessList = data?.map(item => item.businesses) || [];
-    setBusinesses(businessList as Business[]);
+    const businessList = data?.map(item => item.businesses).filter(Boolean) as Business[];
+    setBusinesses(businessList);
   };
 
   const getCurrentBusiness = async () => {
@@ -54,6 +58,11 @@ export const BusinessSelector = () => {
   };
 
   const handleBusinessChange = async (businessId: string) => {
+    if (businessId === "new") {
+      navigate("/onboarding");
+      return;
+    }
+
     const { error } = await supabase.auth.updateUser({
       data: { current_business_id: businessId }
     });
@@ -75,9 +84,9 @@ export const BusinessSelector = () => {
   };
 
   return (
-    <div className="w-full max-w-xs">
+    <div className="space-y-4">
       <Select value={selectedBusiness} onValueChange={handleBusinessChange}>
-        <SelectTrigger>
+        <SelectTrigger className="w-full">
           <SelectValue placeholder="Select a business" />
         </SelectTrigger>
         <SelectContent>
@@ -86,6 +95,12 @@ export const BusinessSelector = () => {
               {business.name} ({business.business_type})
             </SelectItem>
           ))}
+          <SelectItem value="new" className="text-eco-primary">
+            <div className="flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Create New Business
+            </div>
+          </SelectItem>
         </SelectContent>
       </Select>
     </div>

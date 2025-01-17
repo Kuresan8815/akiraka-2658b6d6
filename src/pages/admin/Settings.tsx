@@ -8,7 +8,7 @@ export const AdminSettings = () => {
       <div className="space-y-6">
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-4">Business Selection</h2>
-          <p className="text-gray-600 mb-4">Switch between your onboarded businesses</p>
+          <p className="text-gray-600 mb-4">Switch between your businesses or create a new one</p>
           <BusinessSelector />
         </div>
       </div>
