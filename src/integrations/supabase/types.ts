@@ -67,38 +67,47 @@ export type Database = {
       }
       businesses: {
         Row: {
+          activities: string[] | null
           business_type: Database["public"]["Enums"]["business_type"]
           created_at: string
           created_by: string
           description: string | null
           id: string
+          industry_type: string
           is_active: boolean | null
           logo_url: string | null
           name: string
+          sustainability_goals: string[] | null
           updated_at: string
           website: string | null
         }
         Insert: {
+          activities?: string[] | null
           business_type: Database["public"]["Enums"]["business_type"]
           created_at?: string
           created_by: string
           description?: string | null
           id?: string
+          industry_type: string
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          sustainability_goals?: string[] | null
           updated_at?: string
           website?: string | null
         }
         Update: {
+          activities?: string[] | null
           business_type?: Database["public"]["Enums"]["business_type"]
           created_at?: string
           created_by?: string
           description?: string | null
           id?: string
+          industry_type?: string
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          sustainability_goals?: string[] | null
           updated_at?: string
           website?: string | null
         }
