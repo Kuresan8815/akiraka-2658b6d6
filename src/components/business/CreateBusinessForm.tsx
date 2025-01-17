@@ -46,6 +46,7 @@ export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
           name,
           business_type: businessType,
           created_by: session?.user?.id,
+          industry_type: "Other", // Default value to satisfy the NOT NULL constraint
         })
         .select()
         .single();

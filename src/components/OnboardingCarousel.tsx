@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, QrCode, Award, ChartBar, Building2, Factory, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
+import { BusinessSelect } from "./onboarding/BusinessSelect";
+import { IndustrySelect } from "./onboarding/IndustrySelect";
+import { ActivitiesSelect } from "./onboarding/ActivitiesSelect";
+import { GoalsSelect } from "./onboarding/GoalsSelect";
 
 interface Business {
   id: string;
@@ -15,39 +17,6 @@ interface Business {
   activities?: string[];
   sustainability_goals?: string[];
 }
-
-const industryTypes = [
-  "Manufacturing",
-  "Retail",
-  "Energy",
-  "Agriculture",
-  "Transportation",
-  "Construction",
-  "Technology",
-  "Other"
-];
-
-const activities = [
-  "Product Manufacturing",
-  "Renewable Energy",
-  "Waste Management",
-  "Supply Chain Optimization",
-  "Sustainable Packaging",
-  "Carbon Offsetting",
-  "Green Transportation",
-  "Recycling Programs"
-];
-
-const sustainabilityGoals = [
-  "Reduce Carbon Emissions",
-  "Improve Energy Efficiency",
-  "Increase Recyclability",
-  "Reduce Water Usage",
-  "Sustainable Sourcing",
-  "Zero Waste",
-  "Renewable Energy Adoption",
-  "Biodiversity Protection"
-];
 
 const slides = [
   {
@@ -258,96 +227,37 @@ export const OnboardingCarousel = () => {
     navigate("/dashboard");
   };
 
-  const renderBusinessSelect = () => (
-    <div className="w-full max-w-xs mx-auto">
-      <Select value={selectedBusiness} onValueChange={setSelectedBusiness}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select a business" />
-        </SelectTrigger>
-        <SelectContent>
-          {businesses.map((business) => (
-            <SelectItem key={business.id} value={business.id}>
-              {business.name} ({business.business_type})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
-  const renderIndustrySelect = () => (
-    <div className="w-full max-w-xs mx-auto">
-      <Select value={selectedIndustry} onValueChange={setSelectedIndustry}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select your industry" />
-        </SelectTrigger>
-        <SelectContent>
-          {industryTypes.map((industry) => (
-            <SelectItem key={industry} value={industry}>
-              {industry}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-
-  const renderActivitiesSelect = () => (
-    <div className="w-full max-w-xs mx-auto space-y-4">
-      {activities.map((activity) => (
-        <div key={activity} className="flex items-center space-x-2">
-          <Checkbox
-            id={activity}
-            checked={selectedActivities.includes(activity)}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                setSelectedActivities([...selectedActivities, activity]);
-              } else {
-                setSelectedActivities(selectedActivities.filter(a => a !== activity));
-              }
-            }}
-          />
-          <label htmlFor={activity} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            {activity}
-          </label>
-        </div>
-      ))}
-    </div>
-  );
-
-  const renderGoalsSelect = () => (
-    <div className="w-full max-w-xs mx-auto space-y-4">
-      {sustainabilityGoals.map((goal) => (
-        <div key={goal} className="flex items-center space-x-2">
-          <Checkbox
-            id={goal}
-            checked={selectedGoals.includes(goal)}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                setSelectedGoals([...selectedGoals, goal]);
-              } else {
-                setSelectedGoals(selectedGoals.filter(g => g !== goal));
-              }
-            }}
-          />
-          <label htmlFor={goal} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            {goal}
-          </label>
-        </div>
-      ))}
-    </div>
-  );
-
   const renderComponent = (componentName: string) => {
     switch (componentName) {
       case "BusinessSelect":
-        return renderBusinessSelect();
+        return (
+          <BusinessSelect
+            businesses={businesses}
+            selectedBusiness={selectedBusiness}
+            onSelect={setSelectedBusiness}
+          />
+        );
       case "IndustrySelect":
-        return renderIndustrySelect();
+        return (
+          <IndustrySelect
+            selectedIndustry={selectedIndustry}
+            onSelect={setSelectedIndustry}
+          />
+        );
       case "ActivitiesSelect":
-        return renderActivitiesSelect();
+        return (
+          <ActivitiesSelect
+            selectedActivities={selectedActivities}
+            onSelect={setSelectedActivities}
+          />
+        );
       case "GoalsSelect":
-        return renderGoalsSelect();
+        return (
+          <GoalsSelect
+            selectedGoals={selectedGoals}
+            onSelect={setSelectedGoals}
+          />
+        );
       default:
         return null;
     }
