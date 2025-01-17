@@ -46,9 +46,15 @@ const Notifications = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No user found");
 
+      // Convert ProfilePreferences to a plain object that matches Json type
+      const preferencesJson: { [key: string]: boolean } = {
+        notifications: preferences.notifications,
+        darkTheme: preferences.darkTheme
+      };
+
       const { error } = await supabase
         .from("profiles")
-        .update({ preferences: preferences as Json })
+        .update({ preferences: preferencesJson as Json })
         .eq("id", user.id);
 
       if (error) throw error;
@@ -95,6 +101,21 @@ const Notifications = () => {
     },
   });
 
+  // Default preferences if none exist
+  const defaultPreferences: ProfilePreferences = {
+    notifications: true,
+    darkTheme: false
+  };
+
+  // Safely convert the stored Json preferences to ProfilePreferences type
+  const storedPreferences = profile?.preferences as { [key: string]: boolean } | null;
+  const currentPreferences: ProfilePreferences = storedPreferences
+    ? {
+        notifications: Boolean(storedPreferences.notifications),
+        darkTheme: Boolean(storedPreferences.darkTheme)
+      }
+    : defaultPreferences;
+
   return (
     <div className="container mx-auto p-4 space-y-6">
       <h1 className="text-2xl font-bold">Notifications</h1>
@@ -115,7 +136,7 @@ const Notifications = () => {
         
         <TabsContent value="preferences">
           <NotificationPreferences 
-            preferences={(profile?.preferences || {}) as ProfilePreferences}
+            preferences={currentPreferences}
             onUpdate={async (prefs) => {
               await updatePreferencesMutation.mutateAsync(prefs);
             }}
