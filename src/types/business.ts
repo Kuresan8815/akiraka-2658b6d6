@@ -9,6 +9,9 @@ export interface Business {
   website?: string;
   description?: string;
   is_active: boolean;
+  industry_type: string;
+  activities?: string[];
+  sustainability_goals?: string[];
 }
 
 export interface BusinessProfile {
