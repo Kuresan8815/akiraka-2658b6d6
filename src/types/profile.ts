@@ -22,4 +22,5 @@ export interface ProfileFormData {
   sustainabilityGoals: string[];
   notifications: boolean;
   darkTheme: boolean;
+  has_completed_onboarding: boolean;
 }
