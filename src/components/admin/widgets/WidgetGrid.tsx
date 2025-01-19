@@ -14,7 +14,7 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
   if (error) {
     return (
       <Card className="p-4 text-center text-red-500">
-        <p>Error loading widgets. Please try again later.</p>
+        <p>Error loading widgets: {error.message}</p>
       </Card>
     );
   }

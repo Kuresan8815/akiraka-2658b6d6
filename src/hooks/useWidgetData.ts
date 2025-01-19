@@ -5,7 +5,7 @@ import { Widget } from "@/types/widgets";
 type WidgetCategory = "environmental" | "social" | "governance";
 
 export const useWidgetData = (businessId: string, category?: WidgetCategory) => {
-  const { data: widgets, isLoading: widgetsLoading } = useQuery({
+  const { data: widgets, isLoading: widgetsLoading, error: widgetsError } = useQuery({
     queryKey: ["widgets", category],
     queryFn: async () => {
       let query = supabase
@@ -25,7 +25,7 @@ export const useWidgetData = (businessId: string, category?: WidgetCategory) => 
     retry: 2,
   });
 
-  const { data: businessWidgets, isLoading: businessWidgetsLoading } = useQuery({
+  const { data: businessWidgets, isLoading: businessWidgetsLoading, error: businessWidgetsError } = useQuery({
     queryKey: ["business-widgets", businessId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -41,7 +41,7 @@ export const useWidgetData = (businessId: string, category?: WidgetCategory) => 
     retry: 2,
   });
 
-  const { data: metrics, isLoading: metricsLoading } = useQuery({
+  const { data: metrics, isLoading: metricsLoading, error: metricsError } = useQuery({
     queryKey: ["widget-metrics", businessId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -67,11 +67,13 @@ export const useWidgetData = (businessId: string, category?: WidgetCategory) => 
   });
 
   const isLoading = widgetsLoading || businessWidgetsLoading || metricsLoading;
+  const error = widgetsError || businessWidgetsError || metricsError;
 
   return {
     widgets,
     businessWidgets,
     metrics,
     isLoading,
+    error
   };
 };
