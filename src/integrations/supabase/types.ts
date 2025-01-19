@@ -11,18 +11,21 @@ export type Database = {
     Tables: {
       admin_users: {
         Row: {
+          account_level: Database["public"]["Enums"]["account_level"] | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
+          account_level?: Database["public"]["Enums"]["account_level"] | null
           created_at?: string
           id: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
+          account_level?: Database["public"]["Enums"]["account_level"] | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -77,6 +80,7 @@ export type Database = {
           is_active: boolean | null
           logo_url: string | null
           name: string
+          region_id: string | null
           sustainability_goals: string[] | null
           updated_at: string
           website: string | null
@@ -92,6 +96,7 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name: string
+          region_id?: string | null
           sustainability_goals?: string[] | null
           updated_at?: string
           website?: string | null
@@ -107,11 +112,20 @@ export type Database = {
           is_active?: boolean | null
           logo_url?: string | null
           name?: string
+          region_id?: string | null
           sustainability_goals?: string[] | null
           updated_at?: string
           website?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "businesses_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -261,6 +275,65 @@ export type Database = {
           name?: string | null
           preferences?: Json | null
           sustainability_goals?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      regional_admins: {
+        Row: {
+          created_at: string
+          id: string
+          region_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          region_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          region_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regional_admins_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      regions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
           updated_at?: string
         }
         Relationships: []
@@ -520,6 +593,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_regional_admin: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       mark_notifications_as_read: {
         Args: {
           notification_ids: string[]
@@ -528,6 +613,7 @@ export type Database = {
       }
     }
     Enums: {
+      account_level: "super_admin" | "regional_admin" | "business"
       business_type: "manufacturer" | "retailer" | "distributor" | "supplier"
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
       reward_type: "discount" | "voucher" | "product" | "service"

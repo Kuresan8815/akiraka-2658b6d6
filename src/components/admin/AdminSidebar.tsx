@@ -7,15 +7,34 @@ import {
   BarChart, 
   Settings,
   LogOut,
-  Gift 
+  Gift,
+  Globe,
+  Building2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 export const AdminSidebar = ({ role }: { role: string }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const { data: adminLevel } = useQuery({
+    queryKey: ["admin-level"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data } = await supabase
+        .from("admin_users")
+        .select("account_level")
+        .eq("id", user.id)
+        .single();
+
+      return data?.account_level;
+    },
+  });
 
   const handleLogout = async () => {
     try {
@@ -34,7 +53,13 @@ export const AdminSidebar = ({ role }: { role: string }) => {
     <div className="w-64 bg-white border-r border-gray-200 p-4">
       <div className="mb-8">
         <h1 className="text-xl font-bold text-eco-primary">Admin Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Role: {role}</p>
+        <p className="text-sm text-gray-500 mt-1">
+          {adminLevel === "super_admin" 
+            ? "Super Admin" 
+            : adminLevel === "regional_admin" 
+              ? "Regional Admin" 
+              : role}
+        </p>
       </div>
 
       <nav className="space-y-2">
@@ -45,11 +70,28 @@ export const AdminSidebar = ({ role }: { role: string }) => {
           </Button>
         </Link>
 
-        {role === "admin" && (
-          <Link to="/admin/users">
+        {adminLevel === "super_admin" && (
+          <>
+            <Link to="/admin/regions">
+              <Button variant="ghost" className="w-full justify-start">
+                <Globe className="mr-2 h-4 w-4" />
+                Regions
+              </Button>
+            </Link>
+            <Link to="/admin/users">
+              <Button variant="ghost" className="w-full justify-start">
+                <Users className="mr-2 h-4 w-4" />
+                Users
+              </Button>
+            </Link>
+          </>
+        )}
+
+        {adminLevel === "regional_admin" && (
+          <Link to="/admin/businesses">
             <Button variant="ghost" className="w-full justify-start">
-              <Users className="mr-2 h-4 w-4" />
-              Users
+              <Building2 className="mr-2 h-4 w-4" />
+              Businesses
             </Button>
           </Link>
         )}
@@ -61,12 +103,14 @@ export const AdminSidebar = ({ role }: { role: string }) => {
           </Button>
         </Link>
 
-        <Link to="/admin/analytics">
-          <Button variant="ghost" className="w-full justify-start">
-            <BarChart className="mr-2 h-4 w-4" />
-            Analytics
-          </Button>
-        </Link>
+        {adminLevel === "super_admin" && (
+          <Link to="/admin/analytics">
+            <Button variant="ghost" className="w-full justify-start">
+              <BarChart className="mr-2 h-4 w-4" />
+              Analytics
+            </Button>
+          </Link>
+        )}
 
         <Link to="/admin/rewards">
           <Button variant="ghost" className="w-full justify-start">
