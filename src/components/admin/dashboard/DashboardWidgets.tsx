@@ -2,13 +2,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WidgetGrid } from "../widgets/WidgetGrid";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardWidgetsProps {
   businessId: string;
 }
 
 export const DashboardWidgets = ({ businessId }: DashboardWidgetsProps) => {
-  const { data: activeCategories } = useQuery({
+  const { data: activeCategories, isLoading } = useQuery({
     queryKey: ["widget-categories", businessId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -24,7 +25,18 @@ export const DashboardWidgets = ({ businessId }: DashboardWidgetsProps) => {
       const categories = [...new Set(data.map(item => item.widget.category))];
       return categories;
     },
+    staleTime: 30000, // Cache data for 30 seconds
+    retry: 2,
   });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-full max-w-[300px]" />
+        <Skeleton className="h-[200px] w-full" />
+      </div>
+    );
+  }
 
   if (!activeCategories?.length) {
     return null;

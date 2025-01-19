@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { WidgetDisplay } from "./WidgetDisplay";
 import { Widget } from "@/types/widgets";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface WidgetGridProps {
   businessId: string;
@@ -25,7 +26,7 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
       if (error) throw error;
       return data as Widget[];
     },
-    staleTime: 1000,
+    staleTime: 30000, // Cache data for 30 seconds
     retry: 2,
   });
 
@@ -41,7 +42,7 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
       if (error) throw error;
       return data.map(bw => bw.widget_id);
     },
-    staleTime: 1000,
+    staleTime: 30000, // Cache data for 30 seconds
     retry: 2,
   });
 
@@ -56,7 +57,6 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
       
       if (error) throw error;
       
-      // Create a map of latest values for each widget
       const latestMetrics = new Map();
       data?.forEach(metric => {
         if (!latestMetrics.has(metric.widget_id)) {
@@ -67,7 +67,7 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
       return latestMetrics;
     },
     enabled: !!businessId,
-    staleTime: 1000,
+    staleTime: 30000, // Cache data for 30 seconds
     retry: 2,
   });
 
@@ -86,13 +86,14 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+          <div key={i} className="h-32">
+            <Skeleton className="h-full w-full" />
+          </div>
         ))}
       </div>
     );
   }
 
-  // Filter widgets to only show active ones that are associated with the business
   const activeWidgets = widgets?.filter(widget => 
     businessWidgets?.includes(widget.id)
   );
