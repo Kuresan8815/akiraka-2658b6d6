@@ -22,7 +22,7 @@ interface Widget {
 }
 
 export const WidgetSelector = ({ businessId }: { businessId: string }) => {
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<'environmental' | 'social' | 'governance' | null>(null);
   const { toast } = useToast();
 
   const { data: widgets, isLoading } = useQuery({
