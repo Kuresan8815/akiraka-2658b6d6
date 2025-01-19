@@ -64,6 +64,7 @@ export const useOnboarding = () => {
       return;
     }
 
+    // Update business with selected options
     const { error: businessError } = await supabase
       .from("businesses")
       .update({
@@ -82,6 +83,7 @@ export const useOnboarding = () => {
       return;
     }
 
+    // Update user profile onboarding status
     const { error: updateError } = await supabase
       .from("profiles")
       .update({ has_completed_onboarding: true })
@@ -96,6 +98,7 @@ export const useOnboarding = () => {
       return;
     }
 
+    // Update user's current business ID in auth metadata
     const { error: authError } = await supabase.auth.updateUser({
       data: { current_business_id: createdBusinessId }
     });
@@ -109,12 +112,31 @@ export const useOnboarding = () => {
       return;
     }
 
+    // Create admin user role for the business creator
+    const { error: adminError } = await supabase
+      .from("admin_users")
+      .insert({
+        id: user.id,
+        role: 'business_user',
+        account_level: 'business'
+      });
+
+    if (adminError) {
+      toast({
+        title: "Error",
+        description: "Failed to set admin role",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Welcome!",
       description: "Onboarding completed successfully",
     });
 
-    navigate("/dashboard");
+    // Redirect to admin dashboard instead of user dashboard
+    navigate("/admin");
   };
 
   const nextSlide = async () => {
