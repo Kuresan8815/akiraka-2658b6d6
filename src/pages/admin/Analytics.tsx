@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnalyticsDashboard } from '@/components/admin/analytics/AnalyticsDashboard';
-import { DashboardWidgets } from '@/components/admin/dashboard/DashboardWidgets';
+import { ESGMetricsSection } from '@/components/admin/analytics/ESGMetricsSection';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -37,10 +37,7 @@ export const AdminAnalytics = () => {
       <AnalyticsDashboard />
       
       {currentBusiness?.id && (
-        <div className="mt-8">
-          <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
-          <DashboardWidgets businessId={currentBusiness.id} />
-        </div>
+        <ESGMetricsSection businessId={currentBusiness.id} />
       )}
     </div>
   );

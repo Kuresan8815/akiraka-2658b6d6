@@ -1,21 +1,10 @@
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { 
-  LayoutDashboard, 
-  Users, 
-  Package, 
-  BarChart, 
-  Settings,
-  LogOut,
-  Gift,
-  Globe,
-  Building2,
-  LayoutGrid
-} from "lucide-react";
+import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { SidebarNavItems } from "./sidebar/SidebarNavItems";
 
 export const AdminSidebar = ({ role }: { role: string }) => {
   const navigate = useNavigate();
@@ -63,78 +52,12 @@ export const AdminSidebar = ({ role }: { role: string }) => {
         </p>
       </div>
 
-      <nav className="space-y-2">
-        <Link to="/admin">
-          <Button variant="ghost" className="w-full justify-start">
-            <LayoutDashboard className="mr-2 h-4 w-4" />
-            Dashboard
-          </Button>
-        </Link>
-
-        {adminLevel === "super_admin" && (
-          <>
-            <Link to="/admin/regions">
-              <Button variant="ghost" className="w-full justify-start">
-                <Globe className="mr-2 h-4 w-4" />
-                Regions
-              </Button>
-            </Link>
-            <Link to="/admin/users">
-              <Button variant="ghost" className="w-full justify-start">
-                <Users className="mr-2 h-4 w-4" />
-                Users
-              </Button>
-            </Link>
-          </>
-        )}
-
-        {adminLevel === "regional_admin" && (
-          <Link to="/admin/businesses">
-            <Button variant="ghost" className="w-full justify-start">
-              <Building2 className="mr-2 h-4 w-4" />
-              Businesses
-            </Button>
-          </Link>
-        )}
-
-        <Link to="/admin/products">
-          <Button variant="ghost" className="w-full justify-start">
-            <Package className="mr-2 h-4 w-4" />
-            Products
-          </Button>
-        </Link>
-
-        <Link to="/admin/widgets">
-          <Button variant="ghost" className="w-full justify-start">
-            <LayoutGrid className="mr-2 h-4 w-4" />
-            Widgets
-          </Button>
-        </Link>
-
-        <Link to="/admin/analytics">
-          <Button variant="ghost" className="w-full justify-start">
-            <BarChart className="mr-2 h-4 w-4" />
-            Analytics
-          </Button>
-        </Link>
-
-        <Link to="/admin/rewards">
-          <Button variant="ghost" className="w-full justify-start">
-            <Gift className="mr-2 h-4 w-4" />
-            Rewards & Loyalty
-          </Button>
-        </Link>
-
-        <Link to="/admin/settings">
-          <Button variant="ghost" className="w-full justify-start">
-            <Settings className="mr-2 h-4 w-4" />
-            Settings
-          </Button>
-        </Link>
-
+      <nav>
+        <SidebarNavItems adminLevel={adminLevel} />
+        
         <Button
           variant="ghost"
-          className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+          className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 mt-2"
           onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
