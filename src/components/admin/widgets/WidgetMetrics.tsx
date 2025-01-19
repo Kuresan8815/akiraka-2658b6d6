@@ -4,15 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BusinessWidget } from "@/types/widgets";
 import { MetricCard } from "./components/MetricCard";
+import { CategoryFilter } from "./components/CategoryFilter";
 
 export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
   const [metrics, setMetrics] = useState<Record<string, string>>({});
+  const [selectedCategory, setSelectedCategory] = useState<'environmental' | 'social' | 'governance' | null>(null);
   const { toast } = useToast();
 
   const { data: businessWidgets, refetch } = useQuery({
-    queryKey: ["business-widgets", businessId],
+    queryKey: ["business-widgets", businessId, selectedCategory],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("business_widgets")
         .select(`
           id,
@@ -21,8 +23,13 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
           widget:widgets(*)
         `)
         .eq("business_id", businessId)
-        .eq("is_active", true)
-        .order("position");
+        .eq("is_active", true);
+
+      if (selectedCategory) {
+        query = query.eq("widget.category", selectedCategory);
+      }
+
+      const { data, error } = await query.order("position");
 
       if (error) throw error;
       return data as BusinessWidget[];
@@ -89,7 +96,13 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Active Widgets</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Active Widgets</h2>
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
+      </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {businessWidgets?.map((bw) => (
