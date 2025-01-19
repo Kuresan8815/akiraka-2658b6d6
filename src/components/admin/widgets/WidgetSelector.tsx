@@ -1,25 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Plus, Filter } from "lucide-react";
-
-interface Widget {
-  id: string;
-  name: string;
-  description: string;
-  category: 'environmental' | 'social' | 'governance';
-  metric_type: string;
-  unit: string;
-}
+import { Widget } from "@/types/widgets";
+import { CategoryFilter } from "./components/CategoryFilter";
+import { WidgetCard } from "./components/WidgetCard";
 
 export const WidgetSelector = ({ businessId }: { businessId: string }) => {
   const [selectedCategory, setSelectedCategory] = useState<'environmental' | 'social' | 'governance' | null>(null);
@@ -81,59 +66,28 @@ export const WidgetSelector = ({ businessId }: { businessId: string }) => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Available Widgets</h2>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              {selectedCategory ? selectedCategory : "All Categories"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setSelectedCategory(null)}>
-              All Categories
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedCategory("environmental")}>
-              Environmental
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedCategory("social")}>
-              Social
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSelectedCategory("governance")}>
-              Governance
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <CategoryFilter
+          selectedCategory={selectedCategory}
+          onCategoryChange={setSelectedCategory}
+        />
       </div>
 
       {isLoading ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="p-4 animate-pulse">
+            <div key={i} className="p-4 animate-pulse">
               <div className="h-24 bg-gray-200 rounded" />
-            </Card>
+            </div>
           ))}
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {widgets?.map((widget) => (
-            <Card key={widget.id} className="p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-semibold">{widget.name}</h3>
-                  <p className="text-sm text-gray-500">{widget.description}</p>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Metric: {widget.metric_type} ({widget.unit})
-                  </p>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => addWidget(widget.id)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            </Card>
+            <WidgetCard
+              key={widget.id}
+              widget={widget}
+              onAdd={addWidget}
+            />
           ))}
         </div>
       )}

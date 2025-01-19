@@ -1,27 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Trash2, GripVertical } from "lucide-react";
-
-interface Widget {
-  id: string;
-  name: string;
-  description: string;
-  metric_type: string;
-  unit: string;
-}
-
-interface BusinessWidget {
-  id: string;
-  widget_id: string;
-  position: number;
-  widget: Widget;
-  latest_value?: number;
-}
+import { BusinessWidget } from "@/types/widgets";
+import { MetricCard } from "./components/MetricCard";
 
 export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
   const [metrics, setMetrics] = useState<Record<string, string>>({});
@@ -111,41 +93,19 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {businessWidgets?.map((bw) => (
-          <Card key={bw.id} className="p-4">
-            <div className="flex items-center mb-2">
-              <GripVertical className="h-4 w-4 text-gray-400 mr-2" />
-              <h3 className="font-semibold">{bw.widget.name}</h3>
-            </div>
-            <p className="text-sm text-gray-500 mb-4">{bw.widget.description}</p>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder={`Enter value (${bw.widget.unit})`}
-                value={metrics[bw.widget.id] || ""}
-                onChange={(e) =>
-                  setMetrics((prev) => ({
-                    ...prev,
-                    [bw.widget.id]: e.target.value,
-                  }))
-                }
-              />
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => updateMetric(bw.widget.id)}
-              >
-                <Save className="h-4 w-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="outline"
-                className="text-red-500 hover:text-red-600"
-                onClick={() => removeWidget(bw.widget.id)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </Card>
+          <MetricCard
+            key={bw.id}
+            businessWidget={bw}
+            metricValue={metrics[bw.widget.id] || ""}
+            onMetricChange={(value) =>
+              setMetrics((prev) => ({
+                ...prev,
+                [bw.widget.id]: value,
+              }))
+            }
+            onUpdate={() => updateMetric(bw.widget.id)}
+            onRemove={() => removeWidget(bw.widget.id)}
+          />
         ))}
       </div>
     </div>
