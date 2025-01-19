@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Widget } from "@/types/widgets";
 
-export const useWidgetData = (businessId: string, category?: string) => {
+type WidgetCategory = "environmental" | "social" | "governance";
+
+export const useWidgetData = (businessId: string, category?: WidgetCategory) => {
   const { data: widgets, isLoading: widgetsLoading } = useQuery({
     queryKey: ["widgets", category],
     queryFn: async () => {
