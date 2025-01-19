@@ -8,6 +8,7 @@ import { BusinessSelect } from "./onboarding/BusinessSelect";
 import { IndustrySelect } from "./onboarding/IndustrySelect";
 import { ActivitiesSelect } from "./onboarding/ActivitiesSelect";
 import { GoalsSelect } from "./onboarding/GoalsSelect";
+import { CreateBusinessForm } from "./business/CreateBusinessForm";
 import type { Business } from "@/types/business";
 
 const slides = [
@@ -18,10 +19,10 @@ const slides = [
     component: "IndustrySelect",
   },
   {
-    title: "Select Your Business",
-    description: "Choose the business you're associated with",
+    title: "Create Your Business",
+    description: "Set up your business profile",
     icon: Building2,
-    component: "BusinessSelect",
+    component: "CreateBusinessForm",
   },
   {
     title: "Business Activities",
@@ -49,35 +50,12 @@ const slides = [
 
 export const OnboardingCarousel = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [selectedBusiness, setSelectedBusiness] = useState<string>("");
   const [selectedIndustry, setSelectedIndustry] = useState<string>("");
   const [selectedActivities, setSelectedActivities] = useState<string[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [createdBusinessId, setCreatedBusinessId] = useState<string>("");
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchBusinesses();
-  }, []);
-
-  const fetchBusinesses = async () => {
-    const { data, error } = await supabase
-      .from("businesses")
-      .select("id, name, business_type, industry_type, activities, sustainability_goals, created_at, updated_at, created_by, is_active")
-      .eq("is_active", true);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to load businesses. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setBusinesses(data || []);
-  };
 
   const nextSlide = async () => {
     // Validation for each step
@@ -90,10 +68,10 @@ export const OnboardingCarousel = () => {
       return;
     }
 
-    if (currentSlide === 1 && !selectedBusiness) {
+    if (currentSlide === 1 && !createdBusinessId) {
       toast({
         title: "Required",
-        description: "Please select a business to continue",
+        description: "Please create your business profile to continue",
         variant: "destructive",
       });
       return;
@@ -145,7 +123,7 @@ export const OnboardingCarousel = () => {
         activities: selectedActivities,
         sustainability_goals: selectedGoals
       })
-      .eq("id", selectedBusiness);
+      .eq("id", createdBusinessId);
 
     if (businessError) {
       toast({
@@ -160,9 +138,9 @@ export const OnboardingCarousel = () => {
     const { error: profileError } = await supabase
       .from("business_profiles")
       .insert({
-        business_id: selectedBusiness,
+        business_id: createdBusinessId,
         user_id: user.id,
-        role: "member",
+        role: "owner",
       });
 
     if (profileError) {
@@ -219,6 +197,11 @@ export const OnboardingCarousel = () => {
     navigate("/dashboard");
   };
 
+  const handleBusinessCreated = (businessId: string) => {
+    setCreatedBusinessId(businessId);
+    nextSlide();
+  };
+
   const renderComponent = (componentName: string) => {
     switch (componentName) {
       case "IndustrySelect":
@@ -228,12 +211,11 @@ export const OnboardingCarousel = () => {
             onSelect={setSelectedIndustry}
           />
         );
-      case "BusinessSelect":
+      case "CreateBusinessForm":
         return (
-          <BusinessSelect
-            businesses={businesses}
-            selectedBusiness={selectedBusiness}
-            onSelect={setSelectedBusiness}
+          <CreateBusinessForm
+            onSuccess={handleBusinessCreated}
+            selectedIndustry={selectedIndustry}
           />
         );
       case "ActivitiesSelect":

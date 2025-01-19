@@ -7,12 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/components/ui/use-toast";
 
 interface CreateBusinessFormProps {
-  onSuccess: () => void;
+  onSuccess: (businessId: string) => void;
+  selectedIndustry: string;
 }
 
 type BusinessType = 'manufacturer' | 'retailer' | 'distributor' | 'supplier';
 
-export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
+export const CreateBusinessForm = ({ onSuccess, selectedIndustry }: CreateBusinessFormProps) => {
   const [name, setName] = useState("");
   const [businessType, setBusinessType] = useState<BusinessType | "">("");
   const [isLoading, setIsLoading] = useState(false);
@@ -39,21 +40,21 @@ export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
     setIsLoading(true);
 
     try {
-      // First create the business
+      // Create the business
       const { data: business, error: businessError } = await supabase
         .from("businesses")
         .insert({
           name,
           business_type: businessType,
           created_by: session?.user?.id,
-          industry_type: "Other", // Default value to satisfy the NOT NULL constraint
+          industry_type: selectedIndustry,
         })
         .select()
         .single();
 
       if (businessError) throw businessError;
 
-      // Then create the business profile
+      // Create the business profile
       const { error: profileError } = await supabase
         .from("business_profiles")
         .insert({
@@ -69,7 +70,7 @@ export const CreateBusinessForm = ({ onSuccess }: CreateBusinessFormProps) => {
         description: "Business profile created successfully",
       });
 
-      onSuccess();
+      onSuccess(business.id);
     } catch (error: any) {
       toast({
         title: "Error",
