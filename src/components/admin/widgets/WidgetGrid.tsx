@@ -9,7 +9,7 @@ interface WidgetGridProps {
 }
 
 export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
-  const { data: widgets, isLoading } = useQuery({
+  const { data: widgets, isLoading: widgetsLoading, error: widgetsError } = useQuery({
     queryKey: ["widgets", category],
     queryFn: async () => {
       let query = supabase
@@ -25,9 +25,11 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
       if (error) throw error;
       return data as Widget[];
     },
+    staleTime: 1000,
+    retry: 2,
   });
 
-  const { data: businessWidgets } = useQuery({
+  const { data: businessWidgets, isLoading: businessWidgetsLoading, error: businessWidgetsError } = useQuery({
     queryKey: ["business-widgets", businessId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -39,9 +41,11 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
       if (error) throw error;
       return data.map(bw => bw.widget_id);
     },
+    staleTime: 1000,
+    retry: 2,
   });
 
-  const { data: metrics } = useQuery({
+  const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["widget-metrics", businessId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -63,7 +67,20 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
       return latestMetrics;
     },
     enabled: !!businessId,
+    staleTime: 1000,
+    retry: 2,
   });
+
+  const isLoading = widgetsLoading || businessWidgetsLoading || metricsLoading;
+  const error = widgetsError || businessWidgetsError;
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-red-500">
+        <p>Error loading widgets. Please try again later.</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -79,6 +96,14 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
   const activeWidgets = widgets?.filter(widget => 
     businessWidgets?.includes(widget.id)
   );
+
+  if (!activeWidgets?.length) {
+    return (
+      <div className="p-4 text-center text-gray-500">
+        <p>No widgets available for this category.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

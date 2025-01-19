@@ -8,7 +8,7 @@ interface ESGMetricsSectionProps {
 }
 
 export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
-  const { data: activeWidgets, isLoading } = useQuery({
+  const { data: activeWidgets, isLoading, error } = useQuery({
     queryKey: ["business-widgets", businessId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -28,7 +28,20 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
       // Filter out any null widgets or inactive widgets
       return data?.filter(bw => bw.widget && bw.widget.is_active) || [];
     },
+    staleTime: 1000, // Add stale time to prevent unnecessary refetches
+    retry: 2, // Retry failed requests twice
   });
+
+  if (error) {
+    return (
+      <div className="mt-8">
+        <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
+        <Card className="p-6 text-center text-red-500">
+          <p>Error loading ESG metrics. Please try again later.</p>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
