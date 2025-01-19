@@ -33,7 +33,7 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
           .eq("category", selectedCategory)
           .eq("is_active", true);
 
-        if (categoryWidgets) {
+        if (categoryWidgets && categoryWidgets.length > 0) {
           // Then filter business_widgets by these widget IDs
           query.in("widget_id", categoryWidgets.map(w => w.id));
         }

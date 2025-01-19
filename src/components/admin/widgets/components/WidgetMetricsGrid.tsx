@@ -16,9 +16,18 @@ export const WidgetMetricsGrid = ({
   onUpdate,
   onRemove,
 }: WidgetMetricsGridProps) => {
+  if (!businessWidgets) {
+    return <div>No widgets found</div>;
+  }
+
+  // Filter out any null widgets and ensure widget property exists
+  const validBusinessWidgets = businessWidgets.filter(
+    (bw): bw is BusinessWidget => bw !== null && bw.widget !== null
+  );
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {businessWidgets?.map((bw) => (
+      {validBusinessWidgets.map((bw) => (
         <MetricCard
           key={bw.id}
           businessWidget={bw}
