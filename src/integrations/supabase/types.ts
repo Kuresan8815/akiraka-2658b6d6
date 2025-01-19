@@ -773,12 +773,7 @@ export type Database = {
     }
     Enums: {
       account_level: "super_admin" | "regional_admin" | "business"
-      business_type:
-        | "manufacturer"
-        | "retailer"
-        | "distributor"
-        | "supplier"
-        | "public_institution"
+      business_type: "manufacturer" | "retailer" | "distributor" | "supplier"
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
       reward_type: "discount" | "voucher" | "product" | "service"
       user_role: "admin" | "business_user"
