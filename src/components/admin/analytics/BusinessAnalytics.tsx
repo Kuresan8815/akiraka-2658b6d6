@@ -29,7 +29,7 @@ export const BusinessAnalytics = ({ dateRange }: BusinessAnalyticsProps) => {
         .from("businesses")
         .select("*")
         .eq("id", currentBusinessId)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       return data;
