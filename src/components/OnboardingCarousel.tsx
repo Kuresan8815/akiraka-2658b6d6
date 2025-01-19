@@ -188,7 +188,7 @@ export const OnboardingCarousel = () => {
         );
       case "ActivitiesStep":
         return (
-          <ActivitiesSelect
+          <ActivitiesStep
             selectedActivities={selectedActivities}
             onSelect={setSelectedActivities}
           />
@@ -234,7 +234,7 @@ export const OnboardingCarousel = () => {
             Back
           </Button>
         ) : (
-          <div /> {/* Empty div to maintain layout */}
+          <div></div>
         )}
         <div className="flex gap-2">
           {slides.map((_, index) => (
