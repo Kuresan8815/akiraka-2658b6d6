@@ -22,6 +22,7 @@ export const BusinessSelector = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Updated query to handle multiple business profiles
     const { data, error } = await supabase
       .from("business_profiles")
       .select(`
@@ -38,6 +39,7 @@ export const BusinessSelector = () => {
       .eq("user_id", user.id);
 
     if (error) {
+      console.error("Error fetching businesses:", error);
       toast({
         title: "Error",
         description: "Failed to load businesses",
@@ -46,8 +48,12 @@ export const BusinessSelector = () => {
       return;
     }
 
-    const businessList = data?.map(item => item.businesses).filter(Boolean) as Business[];
-    setBusinesses(businessList);
+    // Filter out null businesses and transform the data
+    const businessList = data
+      ?.map(item => item.businesses)
+      .filter((business): business is Business => business !== null);
+
+    setBusinesses(businessList || []);
   };
 
   const getCurrentBusiness = async () => {
