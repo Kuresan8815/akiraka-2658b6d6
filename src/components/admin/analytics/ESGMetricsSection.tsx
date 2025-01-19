@@ -24,7 +24,9 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
         .order("position");
 
       if (error) throw error;
-      return data;
+      
+      // Filter out any null widgets or inactive widgets
+      return data?.filter(bw => bw.widget && bw.widget.is_active) || [];
     },
   });
 

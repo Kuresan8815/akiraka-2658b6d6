@@ -27,6 +27,20 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
     },
   });
 
+  const { data: businessWidgets } = useQuery({
+    queryKey: ["business-widgets", businessId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("business_widgets")
+        .select("widget_id")
+        .eq("business_id", businessId)
+        .eq("is_active", true);
+      
+      if (error) throw error;
+      return data.map(bw => bw.widget_id);
+    },
+  });
+
   const { data: metrics } = useQuery({
     queryKey: ["widget-metrics", businessId],
     queryFn: async () => {
@@ -61,9 +75,14 @@ export const WidgetGrid = ({ businessId, category }: WidgetGridProps) => {
     );
   }
 
+  // Filter widgets to only show active ones that are associated with the business
+  const activeWidgets = widgets?.filter(widget => 
+    businessWidgets?.includes(widget.id)
+  );
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {widgets?.map((widget) => (
+      {activeWidgets?.map((widget) => (
         <WidgetDisplay
           key={widget.id}
           widget={widget}
