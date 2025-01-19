@@ -112,7 +112,7 @@ export const useOnboarding = () => {
       return;
     }
 
-    // Create admin user role for the business creator
+    // Create admin user role for the business creator with business_user role
     const { error: adminError } = await supabase
       .from("admin_users")
       .insert({
@@ -122,6 +122,7 @@ export const useOnboarding = () => {
       });
 
     if (adminError) {
+      console.error("Admin role error:", adminError);
       toast({
         title: "Error",
         description: "Failed to set admin role",
@@ -135,7 +136,6 @@ export const useOnboarding = () => {
       description: "Onboarding completed successfully",
     });
 
-    // Redirect to admin dashboard instead of user dashboard
     navigate("/admin");
   };
 
