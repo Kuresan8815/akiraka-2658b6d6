@@ -5,8 +5,11 @@ import { Card } from "@/components/ui/card";
 import { WidgetSelector } from "@/components/admin/widgets/WidgetSelector";
 import { TemplateSelector } from "@/components/admin/widgets/TemplateSelector";
 import { WidgetMetrics } from "@/components/admin/widgets/WidgetMetrics";
+import { useToast } from "@/hooks/use-toast";
 
 export const AdminWidgets = () => {
+  const { toast } = useToast();
+  
   const { data: session } = useQuery({
     queryKey: ["session"],
     queryFn: async () => {
@@ -22,11 +25,24 @@ export const AdminWidgets = () => {
       const { data, error } = await supabase
         .from("business_profiles")
         .select("business_id")
-        .eq("user_id", session?.user?.id)
-        .single();
+        .eq("user_id", session?.user?.id);
 
-      if (error) throw error;
-      return data;
+      if (error) {
+        console.error("Error fetching business profiles:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load business profile",
+          variant: "destructive",
+        });
+        throw error;
+      }
+
+      if (!data || data.length === 0) {
+        return null;
+      }
+
+      // Return the first business profile
+      return data[0];
     },
   });
 
