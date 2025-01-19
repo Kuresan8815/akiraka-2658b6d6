@@ -5,8 +5,33 @@ import { RecentScansWidget } from "./RecentScansWidget";
 import { TopProductsWidget } from "./TopProductsWidget";
 import { MonthlyUsersChart } from "./MonthlyUsersChart";
 import { Users, PackageSearch, Award, Activity } from "lucide-react";
+import { WidgetGrid } from "./widgets/WidgetGrid";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const AdminDashboard = () => {
+  const { data: session } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    },
+  });
+
+  const { data: businessProfile } = useQuery({
+    queryKey: ["business-profile", session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("business_profiles")
+        .select("business_id")
+        .eq("user_id", session?.user?.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: dashboardStats, isLoading } = useQuery({
     queryKey: ["admin-dashboard-stats"],
     queryFn: async () => {
@@ -53,6 +78,36 @@ export const AdminDashboard = () => {
           onClick={() => {/* TODO: Implement navigation to detailed view */}}
         />
       </div>
+
+      {businessProfile?.business_id && (
+        <div className="mt-8">
+          <Tabs defaultValue="environmental" className="w-full">
+            <TabsList>
+              <TabsTrigger value="environmental">Environmental</TabsTrigger>
+              <TabsTrigger value="social">Social</TabsTrigger>
+              <TabsTrigger value="governance">Governance</TabsTrigger>
+            </TabsList>
+            <TabsContent value="environmental">
+              <WidgetGrid 
+                businessId={businessProfile.business_id} 
+                category="environmental" 
+              />
+            </TabsContent>
+            <TabsContent value="social">
+              <WidgetGrid 
+                businessId={businessProfile.business_id} 
+                category="social" 
+              />
+            </TabsContent>
+            <TabsContent value="governance">
+              <WidgetGrid 
+                businessId={businessProfile.business_id} 
+                category="governance" 
+              />
+            </TabsContent>
+          </Tabs>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MonthlyUsersChart />

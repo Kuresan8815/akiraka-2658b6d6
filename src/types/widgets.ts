@@ -1,10 +1,13 @@
 export interface Widget {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   category: 'environmental' | 'social' | 'governance';
   metric_type: string;
-  unit: string;
+  unit: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BusinessWidget {
