@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BusinessWidget } from "@/types/widgets";
-import { MetricCard } from "./components/MetricCard";
-import { CategoryFilter } from "./components/CategoryFilter";
+import { WidgetMetricsHeader } from "./components/WidgetMetricsHeader";
+import { WidgetMetricsGrid } from "./components/WidgetMetricsGrid";
 
 export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
   const [metrics, setMetrics] = useState<Record<string, string>>({});
@@ -94,33 +94,26 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
     }
   };
 
+  const handleMetricChange = (widgetId: string, value: string) => {
+    setMetrics((prev) => ({
+      ...prev,
+      [widgetId]: value,
+    }));
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Active Widgets</h2>
-        <CategoryFilter
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-        />
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {businessWidgets?.map((bw) => (
-          <MetricCard
-            key={bw.id}
-            businessWidget={bw}
-            metricValue={metrics[bw.widget.id] || ""}
-            onMetricChange={(value) =>
-              setMetrics((prev) => ({
-                ...prev,
-                [bw.widget.id]: value,
-              }))
-            }
-            onUpdate={() => updateMetric(bw.widget.id)}
-            onRemove={() => removeWidget(bw.widget.id)}
-          />
-        ))}
-      </div>
+      <WidgetMetricsHeader
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+      />
+      <WidgetMetricsGrid
+        businessWidgets={businessWidgets}
+        metrics={metrics}
+        onMetricChange={handleMetricChange}
+        onUpdate={updateMetric}
+        onRemove={removeWidget}
+      />
     </div>
   );
 };
