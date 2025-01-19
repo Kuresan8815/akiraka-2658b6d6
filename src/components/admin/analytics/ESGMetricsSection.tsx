@@ -25,7 +25,9 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
             category,
             metric_type,
             unit,
-            is_active
+            is_active,
+            created_at,
+            updated_at
           )
         `)
         .eq("business_id", businessId)

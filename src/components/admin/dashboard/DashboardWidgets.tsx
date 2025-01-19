@@ -1,6 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WidgetGrid } from "../widgets/WidgetGrid";
-import { Skeleton } from "@/components/ui/skeleton";
 import { BusinessWidget } from "@/types/widgets";
 
 interface DashboardWidgetsProps {
@@ -9,8 +8,11 @@ interface DashboardWidgetsProps {
 }
 
 export const DashboardWidgets = ({ businessId, activeWidgets }: DashboardWidgetsProps) => {
-  // Get unique categories from active widgets
-  const categories = [...new Set(activeWidgets.map(bw => bw.widget.category))];
+  // Get unique categories from active widgets, filtering out any undefined widgets
+  const categories = [...new Set(activeWidgets
+    .filter(bw => bw?.widget)
+    .map(bw => bw.widget.category)
+  )];
 
   if (!categories.length) {
     return null;
@@ -30,7 +32,7 @@ export const DashboardWidgets = ({ businessId, activeWidgets }: DashboardWidgets
           <WidgetGrid 
             businessId={businessId} 
             category={category}
-            activeWidgets={activeWidgets.filter(bw => bw.widget.category === category)}
+            activeWidgets={activeWidgets.filter(bw => bw.widget?.category === category)}
           />
         </TabsContent>
       ))}
