@@ -111,14 +111,12 @@ export const AdminSidebar = ({ role }: { role: string }) => {
           </Button>
         </Link>
 
-        {adminLevel === "super_admin" && (
-          <Link to="/admin/analytics">
-            <Button variant="ghost" className="w-full justify-start">
-              <BarChart className="mr-2 h-4 w-4" />
-              Analytics
-            </Button>
-          </Link>
-        )}
+        <Link to="/admin/analytics">
+          <Button variant="ghost" className="w-full justify-start">
+            <BarChart className="mr-2 h-4 w-4" />
+            Analytics
+          </Button>
+        </Link>
 
         <Link to="/admin/rewards">
           <Button variant="ghost" className="w-full justify-start">

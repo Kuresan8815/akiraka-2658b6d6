@@ -49,11 +49,6 @@ export const AdminRoutes = () => {
               <AdminUsers />
             </AdminLayout>
           } />
-          <Route path="analytics" element={
-            <AdminLayout role="admin">
-              <AdminAnalytics />
-            </AdminLayout>
-          } />
         </>
       )}
       <Route path="products" element={
@@ -64,6 +59,11 @@ export const AdminRoutes = () => {
       <Route path="widgets" element={
         <AdminLayout role="admin">
           <AdminWidgets />
+        </AdminLayout>
+      } />
+      <Route path="analytics" element={
+        <AdminLayout role="admin">
+          <AdminAnalytics />
         </AdminLayout>
       } />
       <Route path="rewards" element={
