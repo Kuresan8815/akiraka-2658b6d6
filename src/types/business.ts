@@ -1,7 +1,7 @@
 export interface Business {
   id: string;
   name: string;
-  business_type: 'manufacturer' | 'retailer' | 'distributor' | 'supplier';
+  business_type: 'manufacturer' | 'retailer' | 'distributor' | 'supplier' | 'public_institution';
   created_at: string;
   updated_at: string;
   created_by: string;
