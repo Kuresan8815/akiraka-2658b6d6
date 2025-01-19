@@ -36,11 +36,11 @@ export const BusinessAnalytics = ({ dateRange }: BusinessAnalyticsProps) => {
     },
   });
 
+  if (!currentBusiness) return null;
+
   return (
     <div className="space-y-8">
-      {currentBusiness?.id && (
-        <ESGMetricsSection businessId={currentBusiness.id} />
-      )}
+      <ESGMetricsSection businessId={currentBusiness.id} />
       <SustainabilityImpactChart dateRange={dateRange} />
     </div>
   );

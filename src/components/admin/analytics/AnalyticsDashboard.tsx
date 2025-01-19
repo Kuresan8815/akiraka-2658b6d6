@@ -51,13 +51,16 @@ export const AnalyticsDashboard = () => {
     
     const csvContent = [
       ["Metric", "Value"],
-      ["Total Scans", analyticsData.total_scans],
-      ["Unique Users", analyticsData.unique_users],
-      ["Average Scans per User", analyticsData.avg_scans_per_user],
-      ["Total Carbon Saved (kg)", analyticsData.total_carbon_saved],
-      ["Total Water Saved (L)", analyticsData.total_water_saved],
-      ["Average Sustainability Score", analyticsData.avg_sustainability_score],
-      ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user],
+      ...(analyticsType === "business" ? [
+        ["Total Carbon Saved (kg)", analyticsData.total_carbon_saved],
+        ["Total Water Saved (L)", analyticsData.total_water_saved],
+        ["Average Sustainability Score", analyticsData.avg_sustainability_score],
+      ] : [
+        ["Total Scans", analyticsData.total_scans],
+        ["Unique Users", analyticsData.unique_users],
+        ["Average Scans per User", analyticsData.avg_scans_per_user],
+        ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user],
+      ])
     ]
       .map((row) => row.join(","))
       .join("\n");
@@ -105,13 +108,11 @@ export const AnalyticsDashboard = () => {
       {isLoading ? (
         <div>Loading analytics data...</div>
       ) : (
-        <>
-          {analyticsType === "business" ? (
-            <BusinessAnalytics dateRange={dateRange} />
-          ) : (
-            <CustomerAnalytics analyticsData={analyticsData} dateRange={dateRange} />
-          )}
-        </>
+        analyticsType === "business" ? (
+          <BusinessAnalytics dateRange={dateRange} />
+        ) : (
+          <CustomerAnalytics analyticsData={analyticsData} dateRange={dateRange} />
+        )
       )}
     </div>
   );

@@ -13,6 +13,8 @@ interface CustomerAnalyticsProps {
 }
 
 export const CustomerAnalytics = ({ analyticsData, dateRange }: CustomerAnalyticsProps) => {
+  if (!analyticsData) return null;
+  
   return (
     <div className="space-y-8">
       <AnalyticsMetricsGrid analyticsData={analyticsData} />
