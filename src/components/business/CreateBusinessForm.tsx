@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 
 interface CreateBusinessFormProps {
@@ -11,11 +10,8 @@ interface CreateBusinessFormProps {
   selectedIndustry: string;
 }
 
-type BusinessType = 'manufacturer' | 'retailer' | 'distributor' | 'supplier';
-
 export const CreateBusinessForm = ({ onSuccess, selectedIndustry }: CreateBusinessFormProps) => {
   const [name, setName] = useState("");
-  const [businessType, setBusinessType] = useState<BusinessType | "">("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -29,23 +25,15 @@ export const CreateBusinessForm = ({ onSuccess, selectedIndustry }: CreateBusine
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!businessType) {
-      toast({
-        title: "Error",
-        description: "Please select a business type",
-        variant: "destructive",
-      });
-      return;
-    }
     setIsLoading(true);
 
     try {
-      // Create the business
+      // Create the business with a default business type
       const { data: business, error: businessError } = await supabase
         .from("businesses")
         .insert({
           name,
-          business_type: businessType,
+          business_type: 'manufacturer', // Default type
           created_by: session?.user?.id,
           industry_type: selectedIndustry,
         })
@@ -93,24 +81,8 @@ export const CreateBusinessForm = ({ onSuccess, selectedIndustry }: CreateBusine
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
+          placeholder="Enter your business name"
         />
-      </div>
-
-      <div className="space-y-2">
-        <label htmlFor="type" className="text-sm font-medium">
-          Business Type
-        </label>
-        <Select value={businessType} onValueChange={(value) => setBusinessType(value as BusinessType)} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Select business type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="manufacturer">Manufacturer</SelectItem>
-            <SelectItem value="retailer">Retailer</SelectItem>
-            <SelectItem value="distributor">Distributor</SelectItem>
-            <SelectItem value="supplier">Supplier</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>

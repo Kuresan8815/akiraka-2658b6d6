@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, QrCode, Award, ChartBar, Building2, Factory, Target } from "lucide-react";
+import { ChevronRight, ArrowLeft, QrCode, Award, ChartBar, Building2, Factory, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -33,16 +33,6 @@ const slides = [
     description: "Set your environmental targets",
     icon: Target,
     component: "GoalsStep",
-  },
-  {
-    title: "Scan and Verify Products",
-    description: "Scan QR codes for real-time sustainability data",
-    icon: QrCode,
-  },
-  {
-    title: "Earn Rewards",
-    description: "Get points for sustainable purchases",
-    icon: Award,
   },
 ];
 
@@ -101,6 +91,12 @@ export const OnboardingCarousel = () => {
     setCurrentSlide((prev) => prev + 1);
   };
 
+  const previousSlide = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide((prev) => prev - 1);
+    }
+  };
+
   const completeOnboarding = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -147,32 +143,24 @@ export const OnboardingCarousel = () => {
       return;
     }
 
+    // Update user's current business ID in auth metadata
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { current_business_id: createdBusinessId }
+    });
+
+    if (authError) {
+      toast({
+        title: "Error",
+        description: "Failed to set current business",
+        variant: "destructive",
+      });
+      return;
+    }
+
     toast({
       title: "Welcome!",
       description: "Onboarding completed successfully",
     });
-
-    navigate("/dashboard");
-  };
-
-  const skipOnboarding = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (user) {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ has_completed_onboarding: true })
-        .eq("id", user.id);
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to update profile",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
 
     navigate("/dashboard");
   };
@@ -200,7 +188,7 @@ export const OnboardingCarousel = () => {
         );
       case "ActivitiesStep":
         return (
-          <ActivitiesStep
+          <ActivitiesSelect
             selectedActivities={selectedActivities}
             onSelect={setSelectedActivities}
           />
@@ -240,9 +228,14 @@ export const OnboardingCarousel = () => {
       </div>
 
       <div className="flex justify-between items-center mt-8">
-        <Button variant="ghost" onClick={skipOnboarding}>
-          Skip
-        </Button>
+        {currentSlide > 0 ? (
+          <Button variant="outline" onClick={previousSlide}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+        ) : (
+          <div /> {/* Empty div to maintain layout */}
+        )}
         <div className="flex gap-2">
           {slides.map((_, index) => (
             <div
