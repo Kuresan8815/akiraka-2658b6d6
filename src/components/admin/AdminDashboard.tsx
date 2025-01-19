@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { RecentScansWidget } from "./RecentScansWidget";
 import { DashboardMetrics } from "./dashboard/DashboardMetrics";
-import { DashboardWidgets } from "./dashboard/DashboardWidgets";
 import { DashboardCharts } from "./dashboard/DashboardCharts";
 
 export const AdminDashboard = () => {
@@ -57,16 +56,6 @@ export const AdminDashboard = () => {
         totalPoints={dashboardStats?.totalPoints || 0}
         activeUsers={dashboardStats?.activeUsers || 0}
       />
-
-      {currentBusiness?.id ? (
-        <div className="mt-8">
-          <DashboardWidgets businessId={currentBusiness.id} />
-        </div>
-      ) : (
-        <div className="mt-8 p-6 bg-gray-50 rounded-lg text-center">
-          <p className="text-gray-600">Please select a business to view widgets</p>
-        </div>
-      )}
 
       <DashboardCharts />
       <RecentScansWidget />
