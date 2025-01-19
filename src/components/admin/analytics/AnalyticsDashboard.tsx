@@ -4,8 +4,15 @@ import { DateRange } from "react-day-picker";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { AnalyticsMetricsGrid } from "./AnalyticsMetricsGrid";
-import { AnalyticsChartsGrid } from "./AnalyticsChartsGrid";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { BusinessAnalytics } from "./BusinessAnalytics";
+import { CustomerAnalytics } from "./CustomerAnalytics";
 
 interface AnalyticsData {
   total_scans: number;
@@ -22,6 +29,7 @@ export const AnalyticsDashboard = () => {
     from: new Date(new Date().setMonth(new Date().getMonth() - 1)),
     to: new Date(),
   });
+  const [analyticsType, setAnalyticsType] = useState<"business" | "customer">("business");
 
   const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["analytics", dateRange],
@@ -33,7 +41,7 @@ export const AnalyticsDashboard = () => {
         total_carbon_saved: 25890,
         total_water_saved: 158900,
         avg_sustainability_score: 85.4,
-        avg_purchase_per_user: 3000 // Updated to 3000 yen
+        avg_purchase_per_user: 3000
       };
     },
   });
@@ -58,7 +66,7 @@ export const AnalyticsDashboard = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `analytics-${dateRange?.from?.toISOString().split("T")[0]}-to-${
+    a.download = `${analyticsType}-analytics-${dateRange?.from?.toISOString().split("T")[0]}-to-${
       dateRange?.to?.toISOString().split("T")[0]
     }.csv`;
     a.click();
@@ -70,6 +78,18 @@ export const AnalyticsDashboard = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-eco-primary">Analytics Dashboard</h1>
         <div className="flex items-center gap-4">
+          <Select
+            value={analyticsType}
+            onValueChange={(value: "business" | "customer") => setAnalyticsType(value)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select analytics type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="business">Business Analytics</SelectItem>
+              <SelectItem value="customer">Customer Analytics</SelectItem>
+            </SelectContent>
+          </Select>
           <DateRangePicker date={dateRange} onDateChange={setDateRange} />
           <Button
             onClick={handleDownloadCSV}
@@ -86,8 +106,11 @@ export const AnalyticsDashboard = () => {
         <div>Loading analytics data...</div>
       ) : (
         <>
-          <AnalyticsMetricsGrid analyticsData={analyticsData} />
-          <AnalyticsChartsGrid dateRange={dateRange} />
+          {analyticsType === "business" ? (
+            <BusinessAnalytics dateRange={dateRange} />
+          ) : (
+            <CustomerAnalytics analyticsData={analyticsData} dateRange={dateRange} />
+          )}
         </>
       )}
     </div>
