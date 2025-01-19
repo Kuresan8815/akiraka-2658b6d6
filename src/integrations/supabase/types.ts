@@ -68,6 +68,51 @@ export type Database = {
           },
         ]
       }
+      business_widgets: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          position: number
+          updated_at: string
+          widget_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          position: number
+          updated_at?: string
+          widget_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          position?: number
+          updated_at?: string
+          widget_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_widgets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_widgets_widget_id_fkey"
+            columns: ["widget_id"]
+            isOneToOne: false
+            referencedRelation: "widgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       businesses: {
         Row: {
           activities: string[] | null
@@ -126,6 +171,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      industry_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          industry_type: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+          widget_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry_type: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+          widget_ids: string[]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          industry_type?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+          widget_ids?: string[]
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -516,6 +594,87 @@ export type Database = {
         }
         Relationships: []
       }
+      widget_metrics: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          recorded_at: string
+          updated_at: string
+          value: number
+          widget_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          recorded_at?: string
+          updated_at?: string
+          value: number
+          widget_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          recorded_at?: string
+          updated_at?: string
+          value?: number
+          widget_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "widget_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "widget_metrics_widget_id_fkey"
+            columns: ["widget_id"]
+            isOneToOne: false
+            referencedRelation: "widgets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      widgets: {
+        Row: {
+          category: Database["public"]["Enums"]["widget_category"]
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          metric_type: string
+          name: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["widget_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          metric_type: string
+          name: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["widget_category"]
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          metric_type?: string
+          name?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       monthly_scanning_activity: {
@@ -618,6 +777,7 @@ export type Database = {
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
       reward_type: "discount" | "voucher" | "product" | "service"
       user_role: "admin" | "business_user"
+      widget_category: "environmental" | "social" | "governance"
     }
     CompositeTypes: {
       [_ in never]: never

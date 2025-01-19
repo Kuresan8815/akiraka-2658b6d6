@@ -5,6 +5,7 @@ import { AdminProducts } from "@/pages/admin/Products";
 import { AdminAnalytics } from "@/pages/admin/Analytics";
 import { AdminSettings } from "@/pages/admin/Settings";
 import { AdminRewards } from "@/pages/admin/Rewards";
+import { AdminWidgets } from "@/pages/admin/Widgets";
 import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
 import { RegionalAdminDashboard } from "@/components/admin/RegionalAdminDashboard";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -58,6 +59,11 @@ export const AdminRoutes = () => {
       <Route path="products" element={
         <AdminLayout role="admin">
           <AdminProducts />
+        </AdminLayout>
+      } />
+      <Route path="widgets" element={
+        <AdminLayout role="admin">
+          <AdminWidgets />
         </AdminLayout>
       } />
       <Route path="rewards" element={
