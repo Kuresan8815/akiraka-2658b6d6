@@ -13,6 +13,7 @@ const industryTypes = [
   "Transportation",
   "Construction",
   "Technology",
+  "Public Institutions/Organizations",
   "Other"
 ];
 
