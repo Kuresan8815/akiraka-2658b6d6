@@ -2,6 +2,7 @@ import { DashboardWidgets } from "@/components/admin/dashboard/DashboardWidgets"
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ESGMetricsSectionProps {
   businessId: string;
@@ -28,8 +29,8 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
       // Filter out any null widgets or inactive widgets
       return data?.filter(bw => bw.widget && bw.widget.is_active) || [];
     },
-    staleTime: 1000, // Add stale time to prevent unnecessary refetches
-    retry: 2, // Retry failed requests twice
+    staleTime: 1000,
+    retry: 2,
   });
 
   if (error) {
@@ -48,9 +49,13 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
       <div className="mt-8">
         <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
         <Card className="p-6">
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-            <div className="h-24 bg-gray-200 rounded"></div>
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-[200px]" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-[200px]" />
+              ))}
+            </div>
           </div>
         </Card>
       </div>
