@@ -17,15 +17,19 @@ export const AdminDashboard = () => {
     },
   });
 
-  const { data: businessProfile } = useQuery({
-    queryKey: ["business-profile", session?.user?.id],
+  const { data: currentBusiness } = useQuery({
+    queryKey: ["current-business", session?.user?.id],
     enabled: !!session?.user?.id,
     queryFn: async () => {
+      const currentBusinessId = session?.user?.user_metadata?.current_business_id;
+      
+      if (!currentBusinessId) return null;
+
       const { data, error } = await supabase
-        .from("business_profiles")
-        .select("business_id")
-        .eq("user_id", session?.user?.id)
-        .maybeSingle();
+        .from("businesses")
+        .select("*")
+        .eq("id", currentBusinessId)
+        .single();
 
       if (error) throw error;
       return data;
@@ -79,7 +83,7 @@ export const AdminDashboard = () => {
         />
       </div>
 
-      {businessProfile?.business_id && (
+      {currentBusiness?.id ? (
         <div className="mt-8">
           <Tabs defaultValue="environmental" className="w-full">
             <TabsList>
@@ -89,23 +93,27 @@ export const AdminDashboard = () => {
             </TabsList>
             <TabsContent value="environmental">
               <WidgetGrid 
-                businessId={businessProfile.business_id} 
+                businessId={currentBusiness.id} 
                 category="environmental" 
               />
             </TabsContent>
             <TabsContent value="social">
               <WidgetGrid 
-                businessId={businessProfile.business_id} 
+                businessId={currentBusiness.id} 
                 category="social" 
               />
             </TabsContent>
             <TabsContent value="governance">
               <WidgetGrid 
-                businessId={businessProfile.business_id} 
+                businessId={currentBusiness.id} 
                 category="governance" 
               />
             </TabsContent>
           </Tabs>
+        </div>
+      ) : (
+        <div className="mt-8 p-6 bg-gray-50 rounded-lg text-center">
+          <p className="text-gray-600">Please select a business to view widgets</p>
         </div>
       )}
 
