@@ -12,16 +12,16 @@ import type { Business } from "@/types/business";
 
 const slides = [
   {
+    title: "Select Industry",
+    description: "Choose your primary industry sector",
+    icon: Factory,
+    component: "IndustrySelect",
+  },
+  {
     title: "Select Your Business",
     description: "Choose the business you're associated with",
     icon: Building2,
     component: "BusinessSelect",
-  },
-  {
-    title: "Select Industry",
-    description: "Choose your primary industry",
-    icon: Factory,
-    component: "IndustrySelect",
   },
   {
     title: "Business Activities",
@@ -81,19 +81,19 @@ export const OnboardingCarousel = () => {
 
   const nextSlide = async () => {
     // Validation for each step
-    if (currentSlide === 0 && !selectedBusiness) {
+    if (currentSlide === 0 && !selectedIndustry) {
       toast({
         title: "Required",
-        description: "Please select a business to continue",
+        description: "Please select an industry to continue",
         variant: "destructive",
       });
       return;
     }
 
-    if (currentSlide === 1 && !selectedIndustry) {
+    if (currentSlide === 1 && !selectedBusiness) {
       toast({
         title: "Required",
-        description: "Please select an industry to continue",
+        description: "Please select a business to continue",
         variant: "destructive",
       });
       return;
@@ -221,19 +221,19 @@ export const OnboardingCarousel = () => {
 
   const renderComponent = (componentName: string) => {
     switch (componentName) {
+      case "IndustrySelect":
+        return (
+          <IndustrySelect
+            selectedIndustry={selectedIndustry}
+            onSelect={setSelectedIndustry}
+          />
+        );
       case "BusinessSelect":
         return (
           <BusinessSelect
             businesses={businesses}
             selectedBusiness={selectedBusiness}
             onSelect={setSelectedBusiness}
-          />
-        );
-      case "IndustrySelect":
-        return (
-          <IndustrySelect
-            selectedIndustry={selectedIndustry}
-            onSelect={setSelectedIndustry}
           />
         );
       case "ActivitiesSelect":
