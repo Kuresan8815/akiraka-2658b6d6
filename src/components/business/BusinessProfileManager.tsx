@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
-import { Business, BusinessProfile } from "@/types/business";
 import { CreateBusinessForm } from "./CreateBusinessForm";
 import { BusinessList } from "./BusinessList";
 
@@ -39,7 +38,6 @@ export const BusinessProfileManager = () => {
 
   const handleProfileSwitch = async (businessId: string) => {
     try {
-      // Update user metadata with selected business
       const { error } = await supabase.auth.updateUser({
         data: { current_business_id: businessId }
       });
@@ -51,7 +49,6 @@ export const BusinessProfileManager = () => {
         description: "Business profile switched successfully",
       });
 
-      // Refresh profiles to update UI
       refetchProfiles();
     } catch (error: any) {
       toast({
@@ -74,6 +71,7 @@ export const BusinessProfileManager = () => {
       {showCreateForm && (
         <Card className="p-6">
           <CreateBusinessForm
+            selectedIndustry=""
             onSuccess={() => {
               setShowCreateForm(false);
               refetchProfiles();

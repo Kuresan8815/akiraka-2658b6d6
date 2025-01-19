@@ -1,40 +1,38 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, QrCode, Award, ChartBar, Building2, Factory, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { BusinessSelect } from "./onboarding/BusinessSelect";
-import { IndustrySelect } from "./onboarding/IndustrySelect";
-import { ActivitiesSelect } from "./onboarding/ActivitiesSelect";
-import { GoalsSelect } from "./onboarding/GoalsSelect";
-import { CreateBusinessForm } from "./business/CreateBusinessForm";
-import type { Business } from "@/types/business";
+import { IndustryStep } from "./onboarding/steps/IndustryStep";
+import { BusinessStep } from "./onboarding/steps/BusinessStep";
+import { ActivitiesStep } from "./onboarding/steps/ActivitiesStep";
+import { GoalsStep } from "./onboarding/steps/GoalsStep";
 
 const slides = [
   {
     title: "Select Industry",
     description: "Choose your primary industry sector",
     icon: Factory,
-    component: "IndustrySelect",
+    component: "IndustryStep",
   },
   {
     title: "Create Your Business",
     description: "Set up your business profile",
     icon: Building2,
-    component: "CreateBusinessForm",
+    component: "BusinessStep",
   },
   {
     title: "Business Activities",
     description: "Select your sustainability activities",
     icon: ChartBar,
-    component: "ActivitiesSelect",
+    component: "ActivitiesStep",
   },
   {
     title: "Sustainability Goals",
     description: "Set your environmental targets",
     icon: Target,
-    component: "GoalsSelect",
+    component: "GoalsStep",
   },
   {
     title: "Scan and Verify Products",
@@ -134,24 +132,6 @@ export const OnboardingCarousel = () => {
       return;
     }
 
-    // Create business profile
-    const { error: profileError } = await supabase
-      .from("business_profiles")
-      .insert({
-        business_id: createdBusinessId,
-        user_id: user.id,
-        role: "owner",
-      });
-
-    if (profileError) {
-      toast({
-        title: "Error",
-        description: "Failed to create business profile",
-        variant: "destructive",
-      });
-      return;
-    }
-
     // Update user profile onboarding status
     const { error: updateError } = await supabase
       .from("profiles")
@@ -204,30 +184,30 @@ export const OnboardingCarousel = () => {
 
   const renderComponent = (componentName: string) => {
     switch (componentName) {
-      case "IndustrySelect":
+      case "IndustryStep":
         return (
-          <IndustrySelect
+          <IndustryStep
             selectedIndustry={selectedIndustry}
             onSelect={setSelectedIndustry}
           />
         );
-      case "CreateBusinessForm":
+      case "BusinessStep":
         return (
-          <CreateBusinessForm
-            onSuccess={handleBusinessCreated}
+          <BusinessStep
             selectedIndustry={selectedIndustry}
+            onBusinessCreated={handleBusinessCreated}
           />
         );
-      case "ActivitiesSelect":
+      case "ActivitiesStep":
         return (
-          <ActivitiesSelect
+          <ActivitiesStep
             selectedActivities={selectedActivities}
             onSelect={setSelectedActivities}
           />
         );
-      case "GoalsSelect":
+      case "GoalsStep":
         return (
-          <GoalsSelect
+          <GoalsStep
             selectedGoals={selectedGoals}
             onSelect={setSelectedGoals}
           />
