@@ -116,7 +116,31 @@ export const useOnboarding = () => {
         return;
       }
 
-      // Create business_user role in admin_users table
+      // Create business profile association with proper error handling
+      const { error: profileError } = await supabase
+        .from("business_profiles")
+        .insert({
+          business_id: createdBusinessId,
+          user_id: user.id,
+          role: 'owner'
+        });
+
+      if (profileError) {
+        // Check if error is due to duplicate entry
+        if (profileError.code === '23505') { // Unique violation code
+          console.log("Business profile association already exists");
+        } else {
+          console.error("Business profile error:", profileError);
+          toast({
+            title: "Error",
+            description: "Failed to create business profile association",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      // Create admin user role if it doesn't exist
       const { error: adminError } = await supabase
         .from("admin_users")
         .insert({
@@ -138,25 +162,6 @@ export const useOnboarding = () => {
           });
           return;
         }
-      }
-
-      // Create business profile association
-      const { error: profileError } = await supabase
-        .from("business_profiles")
-        .insert({
-          business_id: createdBusinessId,
-          user_id: user.id,
-          role: 'owner'
-        });
-
-      if (profileError) {
-        console.error("Business profile error:", profileError);
-        toast({
-          title: "Error",
-          description: "Failed to create business profile association",
-          variant: "destructive",
-        });
-        return;
       }
 
       toast({
