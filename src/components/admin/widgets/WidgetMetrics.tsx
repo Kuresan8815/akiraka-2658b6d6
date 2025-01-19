@@ -14,7 +14,7 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
   const { data: businessWidgets, refetch } = useQuery({
     queryKey: ["business-widgets", businessId, selectedCategory],
     queryFn: async () => {
-      let query = supabase
+      const query = supabase
         .from("business_widgets")
         .select(`
           id,
@@ -26,7 +26,17 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
         .eq("is_active", true);
 
       if (selectedCategory) {
-        query = query.eq("widget.category", selectedCategory);
+        // First get the widgets of the selected category
+        const { data: categoryWidgets } = await supabase
+          .from("widgets")
+          .select("id")
+          .eq("category", selectedCategory)
+          .eq("is_active", true);
+
+        if (categoryWidgets) {
+          // Then filter business_widgets by these widget IDs
+          query.in("widget_id", categoryWidgets.map(w => w.id));
+        }
       }
 
       const { data, error } = await query.order("position");
