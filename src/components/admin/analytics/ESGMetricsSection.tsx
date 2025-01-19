@@ -18,7 +18,15 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
           id,
           widget_id,
           position,
-          widget:widgets(*)
+          widget:widgets(
+            id,
+            name,
+            description,
+            category,
+            metric_type,
+            unit,
+            is_active
+          )
         `)
         .eq("business_id", businessId)
         .eq("is_active", true)
@@ -34,11 +42,12 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
   });
 
   if (error) {
+    console.error("Error loading ESG metrics:", error);
     return (
       <div className="mt-8">
         <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
         <Card className="p-6 text-center text-red-500">
-          <p>Error loading ESG metrics. Please try again later.</p>
+          <p>Error loading ESG metrics: {error.message}</p>
         </Card>
       </div>
     );
@@ -76,7 +85,10 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
   return (
     <div className="mt-8">
       <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
-      <DashboardWidgets businessId={businessId} />
+      <DashboardWidgets 
+        businessId={businessId} 
+        activeWidgets={activeWidgets}
+      />
     </div>
   );
 };

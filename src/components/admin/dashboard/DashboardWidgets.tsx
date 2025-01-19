@@ -1,42 +1,36 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { WidgetGrid } from "../widgets/WidgetGrid";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useWidgetCategories } from "@/hooks/useWidgetCategories";
+import { BusinessWidget } from "@/types/widgets";
 
 interface DashboardWidgetsProps {
   businessId: string;
+  activeWidgets: BusinessWidget[];
 }
 
-export const DashboardWidgets = ({ businessId }: DashboardWidgetsProps) => {
-  const { data: activeCategories, isLoading } = useWidgetCategories(businessId);
+export const DashboardWidgets = ({ businessId, activeWidgets }: DashboardWidgetsProps) => {
+  // Get unique categories from active widgets
+  const categories = [...new Set(activeWidgets.map(bw => bw.widget.category))];
 
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full max-w-[300px]" />
-        <Skeleton className="h-[200px] w-full" />
-      </div>
-    );
-  }
-
-  if (!activeCategories?.length) {
+  if (!categories.length) {
     return null;
   }
 
   return (
-    <Tabs defaultValue={activeCategories[0]} className="w-full">
+    <Tabs defaultValue={categories[0]} className="w-full">
       <TabsList>
-        {activeCategories.map((category) => (
+        {categories.map((category) => (
           <TabsTrigger key={category} value={category}>
             {category.charAt(0).toUpperCase() + category.slice(1)}
           </TabsTrigger>
         ))}
       </TabsList>
-      {activeCategories.map((category) => (
+      {categories.map((category) => (
         <TabsContent key={category} value={category}>
           <WidgetGrid 
             businessId={businessId} 
-            category={category} 
+            category={category}
+            activeWidgets={activeWidgets.filter(bw => bw.widget.category === category)}
           />
         </TabsContent>
       ))}
