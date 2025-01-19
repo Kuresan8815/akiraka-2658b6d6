@@ -5,6 +5,7 @@ import { Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { AuthError, AuthApiError } from "@supabase/supabase-js";
 
 export const AuthSection = () => {
   const [email, setEmail] = useState("");
@@ -22,6 +23,20 @@ export const AuthSection = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  const getErrorMessage = (error: AuthError) => {
+    if (error instanceof AuthApiError) {
+      switch (error.message) {
+        case "Invalid login credentials":
+          return "Invalid email or password. Please check your credentials and try again.";
+        case "Email not confirmed":
+          return "Please verify your email address before signing in.";
+        default:
+          return error.message;
+      }
+    }
+    return "An unexpected error occurred. Please try again.";
+  };
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,11 +59,18 @@ export const AuthSection = () => {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error",
+          description: getErrorMessage(error),
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success!",
-        description: "Account created successfully. You can now sign in.",
+        description: "Account created successfully. Please check your email to verify your account.",
       });
       setEmail("");
       setPassword("");
@@ -81,7 +103,14 @@ export const AuthSection = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error",
+          description: getErrorMessage(error),
+          variant: "destructive",
+        });
+        return;
+      }
 
       toast({
         title: "Success!",
