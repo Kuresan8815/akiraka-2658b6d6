@@ -8,3 +8,9 @@ export interface MetricRow {
   lastUpdated: string;
   isEditing?: boolean;
 }
+
+export interface MetricHistoryRecord {
+  id: string;
+  value: number;
+  recorded_at: string;
+}

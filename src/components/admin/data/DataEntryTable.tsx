@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/components/ui/use-toast";
 import { MetricRowComponent } from "./MetricRow";
 import { MetricCategory, MetricRow } from "@/types/metrics";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
+import { useState } from "react";
+import { MetricSelector } from "./MetricSelector";
+import { MetricHistory } from "./MetricHistory";
 
 interface MetricHistoryRecord {
   id: string;
@@ -17,7 +17,6 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
   const [selectedMetricId, setSelectedMetricId] = useState<string>("");
   const { toast } = useToast();
 
-  // Fetch available metrics for the selected category
   const { data: availableMetrics } = useQuery({
     queryKey: ["available-metrics", category],
     queryFn: async () => {
@@ -32,7 +31,6 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
     },
   });
 
-  // Fetch metric values and history when a metric is selected
   const { data: metricData } = useQuery({
     queryKey: ["metric-values", selectedMetricId],
     queryFn: async () => {
@@ -128,18 +126,11 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
 
   return (
     <div className="space-y-6">
-      <Select value={selectedMetricId} onValueChange={setSelectedMetricId}>
-        <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select a metric" />
-        </SelectTrigger>
-        <SelectContent>
-          {availableMetrics?.map((metric) => (
-            <SelectItem key={metric.id} value={metric.id}>
-              {metric.name} ({metric.unit || 'units'})
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <MetricSelector
+        availableMetrics={availableMetrics}
+        selectedMetricId={selectedMetricId}
+        onMetricSelect={setSelectedMetricId}
+      />
 
       {metricData?.current && (
         <>
@@ -167,21 +158,10 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
             </table>
           </div>
 
-          {metricData.history.length > 0 && (
-            <Card className="p-4 mt-4">
-              <h3 className="text-lg font-semibold mb-2">Update History</h3>
-              <div className="space-y-2">
-                {metricData.history.map((record) => (
-                  <div key={record.id} className="flex justify-between items-center text-sm">
-                    <span>Value: {record.value} {metricData.current.unit}</span>
-                    <span className="text-gray-500">
-                      {new Date(record.recorded_at).toLocaleString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          )}
+          <MetricHistory 
+            history={metricData.history} 
+            unit={metricData.current.unit} 
+          />
         </>
       )}
     </div>
