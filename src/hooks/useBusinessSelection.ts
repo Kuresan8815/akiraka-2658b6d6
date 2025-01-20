@@ -17,27 +17,26 @@ export const useBusinessSelection = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data: businessProfiles, error } = await supabase
-      .from("business_profiles")
+    // Query only businesses created by the current user
+    const { data, error } = await supabase
+      .from("businesses")
       .select(`
-        business_id,
-        businesses (
-          id,
-          name,
-          business_type,
-          created_at,
-          updated_at,
-          created_by,
-          is_active,
-          industry_type,
-          logo_url,
-          website,
-          description,
-          activities,
-          sustainability_goals
-        )
+        id,
+        name,
+        business_type,
+        created_at,
+        updated_at,
+        created_by,
+        is_active,
+        industry_type,
+        logo_url,
+        website,
+        description,
+        activities,
+        sustainability_goals
       `)
-      .eq("user_id", user.id);
+      .eq('created_by', user.id)
+      .eq('is_active', true);
 
     if (error) {
       console.error("Error fetching businesses:", error);
@@ -49,15 +48,8 @@ export const useBusinessSelection = () => {
       return;
     }
 
-    const uniqueBusinesses = new Map<string, Business>();
-    
-    businessProfiles?.forEach(profile => {
-      if (profile.businesses && !uniqueBusinesses.has(profile.businesses.id)) {
-        uniqueBusinesses.set(profile.businesses.id, profile.businesses);
-      }
-    });
-
-    setBusinesses(Array.from(uniqueBusinesses.values()));
+    // Set the businesses directly since we're already filtering by created_by
+    setBusinesses(data || []);
   };
 
   const getCurrentBusiness = async () => {
