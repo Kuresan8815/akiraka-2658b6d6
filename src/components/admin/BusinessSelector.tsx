@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,10 +21,11 @@ export const BusinessSelector = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Updated query to handle multiple business profiles
-    const { data, error } = await supabase
+    // Fetch business profiles for the current user
+    const { data: businessProfiles, error } = await supabase
       .from("business_profiles")
       .select(`
+        business_id,
         businesses (
           id,
           name,
@@ -48,12 +48,18 @@ export const BusinessSelector = () => {
       return;
     }
 
-    // Filter out null businesses and transform the data
-    const businessList = data
-      ?.map(item => item.businesses)
-      .filter((business): business is Business => business !== null);
+    // Create a Map to store unique businesses
+    const uniqueBusinesses = new Map<string, Business>();
+    
+    // Filter out null businesses and add to Map
+    businessProfiles?.forEach(profile => {
+      if (profile.businesses && !uniqueBusinesses.has(profile.businesses.id)) {
+        uniqueBusinesses.set(profile.businesses.id, profile.businesses);
+      }
+    });
 
-    setBusinesses(businessList || []);
+    // Convert Map values to array
+    setBusinesses(Array.from(uniqueBusinesses.values()));
   };
 
   const getCurrentBusiness = async () => {
