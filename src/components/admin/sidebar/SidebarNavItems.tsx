@@ -9,7 +9,8 @@ import {
   Gift,
   Globe,
   Building2,
-  LayoutGrid
+  LayoutGrid,
+  Leaf
 } from "lucide-react";
 
 interface SidebarNavItemsProps {
@@ -70,6 +71,13 @@ export const SidebarNavItems = ({ adminLevel }: SidebarNavItemsProps) => {
         <Button variant="ghost" className="w-full justify-start">
           <BarChart className="mr-2 h-4 w-4" />
           Analytics
+        </Button>
+      </Link>
+
+      <Link to="/admin/carbon">
+        <Button variant="ghost" className="w-full justify-start">
+          <Leaf className="mr-2 h-4 w-4" />
+          Carbon Footprint
         </Button>
       </Link>
 
