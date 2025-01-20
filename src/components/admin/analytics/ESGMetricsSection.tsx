@@ -23,7 +23,7 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
     queryFn: async () => {
       console.log("Fetching widgets for business:", businessId);
       
-      // First, fetch the business widgets
+      // First, fetch the business widgets that are active
       const { data: businessWidgets, error: businessWidgetsError } = await supabase
         .from("business_widgets")
         .select(`
@@ -37,9 +37,7 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
             category,
             metric_type,
             unit,
-            is_active,
-            created_at,
-            updated_at
+            is_active
           )
         `)
         .eq("business_id", businessId)
@@ -63,7 +61,10 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
         .from("widget_metrics")
         .select("*")
         .eq("business_id", businessId)
-        .in("widget_id", businessWidgets.map(bw => bw.widget.id))
+        .in(
+          "widget_id",
+          businessWidgets.map((bw) => bw.widget.id)
+        )
         .order("recorded_at", { ascending: false });
 
       if (metricsError) {
@@ -75,29 +76,22 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
 
       // Create a map of latest values for each widget
       const latestMetrics = new Map();
-      metrics?.forEach(metric => {
+      metrics?.forEach((metric) => {
         if (!latestMetrics.has(metric.widget_id)) {
           latestMetrics.set(metric.widget_id, metric.value);
         }
       });
 
       // Transform and validate the data
-      const transformedWidgets = businessWidgets.map(bw => ({
-        ...bw,
-        latest_value: latestMetrics.get(bw.widget.id)
-      }));
+      const transformedWidgets = businessWidgets
+        .filter((bw) => bw.widget && bw.widget.is_active)
+        .map((bw) => ({
+          ...bw,
+          latest_value: latestMetrics.get(bw.widget.id) || 0
+        }));
 
-      // Filter out any null widgets or inactive widgets
-      const filteredWidgets = transformedWidgets.filter(bw => {
-        const isValid = bw.widget && bw.widget.is_active;
-        if (!isValid) {
-          console.log("Filtered out widget:", bw);
-        }
-        return isValid;
-      });
-
-      console.log("Final filtered and transformed widgets:", filteredWidgets);
-      return filteredWidgets as BusinessWidget[];
+      console.log("Final transformed widgets:", transformedWidgets);
+      return transformedWidgets as BusinessWidget[];
     },
     enabled: !!businessId,
     staleTime: 1000 * 60, // Cache for 1 minute
