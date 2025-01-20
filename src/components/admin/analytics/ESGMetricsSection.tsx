@@ -39,8 +39,8 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
       // Filter out any null widgets or inactive widgets
       return data?.filter(bw => bw.widget && bw.widget.is_active) || [];
     },
-    staleTime: 1000,
-    retry: 2,
+    enabled: !!businessId,
+    staleTime: 1000 * 60, // Cache for 1 minute
   });
 
   if (error) {
