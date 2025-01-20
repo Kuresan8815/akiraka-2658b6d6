@@ -12,6 +12,8 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
   const { data: activeWidgets, isLoading, error } = useQuery({
     queryKey: ["business-widgets", businessId],
     queryFn: async () => {
+      console.log("Fetching widgets for business:", businessId);
+      
       const { data, error } = await supabase
         .from("business_widgets")
         .select(`
@@ -25,19 +27,31 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
             category,
             metric_type,
             unit,
-            is_active,
-            created_at,
-            updated_at
+            is_active
           )
         `)
         .eq("business_id", businessId)
         .eq("is_active", true)
         .order("position");
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase query error:", error);
+        throw error;
+      }
+
+      console.log("Raw widget data:", data);
       
       // Filter out any null widgets or inactive widgets
-      return data?.filter(bw => bw.widget && bw.widget.is_active) || [];
+      const filteredWidgets = data?.filter(bw => {
+        const isValid = bw.widget && bw.widget.is_active;
+        if (!isValid) {
+          console.log("Filtered out widget:", bw);
+        }
+        return isValid;
+      }) || [];
+
+      console.log("Filtered widgets:", filteredWidgets);
+      return filteredWidgets;
     },
     enabled: !!businessId,
     staleTime: 1000 * 60, // Cache for 1 minute
