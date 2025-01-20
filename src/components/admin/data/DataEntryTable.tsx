@@ -2,88 +2,182 @@ import React, { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { MetricRowComponent } from "./MetricRow";
 import { MetricCategory, MetricRow } from "@/types/metrics";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
 
 export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
-  const [metrics, setMetrics] = useState<MetricRow[]>([]);
+  const [selectedMetricId, setSelectedMetricId] = useState<string>("");
   const { toast } = useToast();
 
+  // Fetch available metrics for the selected category
+  const { data: availableMetrics } = useQuery({
+    queryKey: ["available-metrics", category],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("widgets")
+        .select("id, name")
+        .eq("category", category)
+        .eq("is_active", true);
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Fetch metric values and history when a metric is selected
+  const { data: metricData } = useQuery({
+    queryKey: ["metric-values", selectedMetricId],
+    queryFn: async () => {
+      if (!selectedMetricId) return null;
+      
+      const { data, error } = await supabase
+        .from("widget_metrics")
+        .select("*")
+        .eq("widget_id", selectedMetricId)
+        .order("recorded_at", { ascending: false });
+      
+      if (error) throw error;
+      
+      // Transform the latest value into our MetricRow format
+      const latestValue = data[0];
+      if (!latestValue) return null;
+
+      const metric = availableMetrics?.find(m => m.id === selectedMetricId);
+      return {
+        current: {
+          id: latestValue.id,
+          name: metric?.name || "",
+          unit: "units", // You might want to fetch this from the widgets table
+          value: latestValue.value,
+          lastUpdated: latestValue.recorded_at,
+          isEditing: false
+        },
+        history: data.slice(1) // All values except the latest
+      };
+    },
+    enabled: !!selectedMetricId,
+  });
+
   const handleEdit = (id: string) => {
-    setMetrics(
-      metrics.map((metric) =>
-        metric.id === id ? { ...metric, isEditing: true } : metric
-      )
-    );
+    if (metricData?.current) {
+      const updatedMetric = { ...metricData.current, isEditing: true };
+      // Update local state
+    }
   };
 
-  const handleSave = (id: string, value: string) => {
-    setMetrics(
-      metrics.map((metric) =>
-        metric.id === id
-          ? {
-              ...metric,
-              value,
-              isEditing: false,
-              lastUpdated: new Date().toISOString(),
-            }
-          : metric
-      )
-    );
-    toast({
-      title: "Success",
-      description: "Metric value updated successfully",
-    });
+  const handleSave = async (id: string, value: string) => {
+    const confirmed = window.confirm("Are you sure you want to save these changes? This action cannot be undone.");
+    if (!confirmed) return;
+
+    try {
+      const { error } = await supabase
+        .from("widget_metrics")
+        .update({ value })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Metric value updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update metric value",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleCancel = (id: string) => {
-    setMetrics(
-      metrics.map((metric) =>
-        metric.id === id ? { ...metric, isEditing: false } : metric
-      )
-    );
-  };
+  const handleDelete = async (id: string) => {
+    const initialConfirm = window.confirm("Are you sure you want to delete this metric value?");
+    if (!initialConfirm) return;
 
-  const handleDelete = (id: string) => {
-    setMetrics(metrics.filter((metric) => metric.id !== id));
-    toast({
-      title: "Success",
-      description: "Metric deleted successfully",
-    });
-  };
+    const finalConfirm = window.confirm("This action cannot be undone. Please confirm deletion.");
+    if (!finalConfirm) return;
 
-  const handleValueChange = (id: string, value: string) => {
-    setMetrics(
-      metrics.map((metric) =>
-        metric.id === id ? { ...metric, value } : metric
-      )
-    );
+    try {
+      const { error } = await supabase
+        .from("widget_metrics")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Metric value deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete metric value",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-white">
-        <thead>
-          <tr>
-            <th className="px-4 py-2 text-left">Metric Name</th>
-            <th className="px-4 py-2 text-left">Unit of Measure</th>
-            <th className="px-4 py-2 text-left">Value</th>
-            <th className="px-4 py-2 text-left">Last Updated</th>
-            <th className="px-4 py-2 text-left">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {metrics.map((metric) => (
-            <MetricRowComponent
-              key={metric.id}
-              metric={metric}
-              onEdit={handleEdit}
-              onSave={handleSave}
-              onCancel={handleCancel}
-              onDelete={handleDelete}
-              onValueChange={handleValueChange}
-            />
+    <div className="space-y-6">
+      <Select value={selectedMetricId} onValueChange={setSelectedMetricId}>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select a metric" />
+        </SelectTrigger>
+        <SelectContent>
+          {availableMetrics?.map((metric) => (
+            <SelectItem key={metric.id} value={metric.id}>
+              {metric.name}
+            </SelectItem>
           ))}
-        </tbody>
-      </table>
+        </SelectContent>
+      </Select>
+
+      {metricData?.current && (
+        <>
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2 text-left">Metric Name</th>
+                  <th className="px-4 py-2 text-left">Unit of Measure</th>
+                  <th className="px-4 py-2 text-left">Value</th>
+                  <th className="px-4 py-2 text-left">Last Updated</th>
+                  <th className="px-4 py-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <MetricRowComponent
+                  metric={metricData.current}
+                  onEdit={handleEdit}
+                  onSave={handleSave}
+                  onCancel={() => {}}
+                  onDelete={handleDelete}
+                  onValueChange={() => {}}
+                />
+              </tbody>
+            </table>
+          </div>
+
+          {metricData.history.length > 0 && (
+            <Card className="p-4 mt-4">
+              <h3 className="text-lg font-semibold mb-2">Update History</h3>
+              <div className="space-y-2">
+                {metricData.history.map((record: any) => (
+                  <div key={record.id} className="flex justify-between items-center text-sm">
+                    <span>Value: {record.value}</span>
+                    <span className="text-gray-500">
+                      {new Date(record.recorded_at).toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
+      )}
     </div>
   );
 };
