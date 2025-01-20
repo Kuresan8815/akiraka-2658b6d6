@@ -1,12 +1,20 @@
 import { DashboardWidgets } from "@/components/admin/dashboard/DashboardWidgets";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { BusinessWidget } from "@/types/widgets";
+import { BusinessWidget, Widget } from "@/types/widgets";
+import { ESGMetricsLoading } from "./ESGMetricsLoading";
+import { ESGMetricsEmpty } from "./ESGMetricsEmpty";
+import { ESGMetricsError } from "./ESGMetricsError";
 
 interface ESGMetricsSectionProps {
   businessId: string;
+}
+
+interface RawBusinessWidget {
+  id: string;
+  widget_id: string;
+  position: number;
+  widget: Widget;
 }
 
 export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
@@ -44,23 +52,20 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
 
       console.log("Raw widget data:", data);
       
-      // Transform the data to match BusinessWidget type
-      const transformedWidgets = data?.map(bw => ({
-        id: bw.id,
-        widget_id: bw.widget_id,
-        position: bw.position,
-        widget: bw.widget,
-        latest_value: undefined // Add this to match BusinessWidget type
-      })) || [];
+      // Transform and validate the data
+      const transformedWidgets = (data as RawBusinessWidget[])?.map(bw => ({
+        ...bw,
+        latest_value: undefined
+      }));
 
       // Filter out any null widgets or inactive widgets
-      const filteredWidgets = transformedWidgets.filter(bw => {
+      const filteredWidgets = transformedWidgets?.filter(bw => {
         const isValid = bw.widget && bw.widget.is_active;
         if (!isValid) {
           console.log("Filtered out widget:", bw);
         }
         return isValid;
-      });
+      }) || [];
 
       console.log("Filtered widgets:", filteredWidgets);
       return filteredWidgets as BusinessWidget[];
@@ -70,44 +75,15 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
   });
 
   if (error) {
-    console.error("Error loading ESG metrics:", error);
-    return (
-      <div className="mt-8">
-        <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
-        <Card className="p-6 text-center text-red-500">
-          <p>Error loading ESG metrics: {error.message}</p>
-        </Card>
-      </div>
-    );
+    return <ESGMetricsError error={error as Error} />;
   }
 
   if (isLoading) {
-    return (
-      <div className="mt-8">
-        <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
-        <Card className="p-6">
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-[200px]" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-[200px]" />
-              ))}
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
+    return <ESGMetricsLoading />;
   }
 
   if (!activeWidgets?.length) {
-    return (
-      <div className="mt-8">
-        <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
-        <Card className="p-6 text-center">
-          <p className="text-gray-500">No ESG metrics selected. Please add widgets from the Widgets page.</p>
-        </Card>
-      </div>
-    );
+    return <ESGMetricsEmpty />;
   }
 
   return (
