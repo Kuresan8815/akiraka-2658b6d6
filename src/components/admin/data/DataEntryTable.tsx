@@ -44,10 +44,12 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
       
       if (error) throw error;
       
-      const latestValue = data[0];
-      if (!latestValue) return null;
-
       const metric = availableMetrics?.find(m => m.id === selectedMetricId);
+      const latestValue = data[0] || { 
+        id: crypto.randomUUID(),
+        value: 0,
+        recorded_at: new Date().toISOString()
+      };
       
       return {
         current: {
