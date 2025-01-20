@@ -17,29 +17,31 @@ export const useBusinessSelection = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Query only businesses created by the current user
-    const { data, error } = await supabase
-      .from("businesses")
+    // First get the business profiles for this user
+    const { data: businessProfiles, error: profilesError } = await supabase
+      .from("business_profiles")
       .select(`
-        id,
-        name,
-        business_type,
-        created_at,
-        updated_at,
-        created_by,
-        is_active,
-        industry_type,
-        logo_url,
-        website,
-        description,
-        activities,
-        sustainability_goals
+        business_id,
+        businesses (
+          id,
+          name,
+          business_type,
+          created_at,
+          updated_at,
+          created_by,
+          is_active,
+          industry_type,
+          logo_url,
+          website,
+          description,
+          activities,
+          sustainability_goals
+        )
       `)
-      .eq('created_by', user.id)
-      .eq('is_active', true);
+      .eq("user_id", user.id);
 
-    if (error) {
-      console.error("Error fetching businesses:", error);
+    if (profilesError) {
+      console.error("Error fetching business profiles:", profilesError);
       toast({
         title: "Error",
         description: "Failed to load businesses",
@@ -48,8 +50,17 @@ export const useBusinessSelection = () => {
       return;
     }
 
-    // Set the businesses directly since we're already filtering by created_by
-    setBusinesses(data || []);
+    // Filter out any null businesses and create a unique set based on business ID
+    const uniqueBusinesses = businessProfiles
+      ?.filter(profile => profile.businesses && profile.businesses.is_active)
+      .reduce((acc, profile) => {
+        if (profile.businesses && !acc.some(b => b.id === profile.businesses.id)) {
+          acc.push(profile.businesses);
+        }
+        return acc;
+      }, [] as Business[]);
+
+    setBusinesses(uniqueBusinesses || []);
   };
 
   const getCurrentBusiness = async () => {
