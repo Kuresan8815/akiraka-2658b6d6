@@ -7,6 +7,12 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 
+interface MetricHistoryRecord {
+  id: string;
+  value: number;
+  recorded_at: string;
+}
+
 export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
   const [selectedMetricId, setSelectedMetricId] = useState<string>("");
   const { toast } = useToast();
@@ -40,24 +46,25 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
       
       if (error) throw error;
       
-      // Transform the latest value into our MetricRow format
       const latestValue = data[0];
       if (!latestValue) return null;
 
       const metric = availableMetrics?.find(m => m.id === selectedMetricId);
+      
       return {
         current: {
           id: latestValue.id,
           name: metric?.name || "",
-          unit: "units", // You might want to fetch this from the widgets table
-          value: Number(latestValue.value), // Convert to number here
+          unit: "units",
+          value: Number(latestValue.value),
           lastUpdated: latestValue.recorded_at,
           isEditing: false
-        },
+        } as MetricRow,
         history: data.slice(1).map(record => ({
-          ...record,
-          value: Number(record.value) // Convert historical values to numbers
-        }))
+          id: record.id,
+          value: Number(record.value),
+          recorded_at: record.recorded_at
+        })) as MetricHistoryRecord[]
       };
     },
     enabled: !!selectedMetricId,
@@ -164,7 +171,7 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
             <Card className="p-4 mt-4">
               <h3 className="text-lg font-semibold mb-2">Update History</h3>
               <div className="space-y-2">
-                {metricData.history.map((record: any) => (
+                {metricData.history.map((record) => (
                   <div key={record.id} className="flex justify-between items-center text-sm">
                     <span>Value: {record.value}</span>
                     <span className="text-gray-500">
