@@ -50,11 +50,14 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
           id: latestValue.id,
           name: metric?.name || "",
           unit: "units", // You might want to fetch this from the widgets table
-          value: latestValue.value,
+          value: Number(latestValue.value), // Convert to number here
           lastUpdated: latestValue.recorded_at,
           isEditing: false
         },
-        history: data.slice(1) // All values except the latest
+        history: data.slice(1).map(record => ({
+          ...record,
+          value: Number(record.value) // Convert historical values to numbers
+        }))
       };
     },
     enabled: !!selectedMetricId,
@@ -68,13 +71,15 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
   };
 
   const handleSave = async (id: string, value: string) => {
-    const confirmed = window.confirm("Are you sure you want to save these changes? This action cannot be undone.");
-    if (!confirmed) return;
-
     try {
+      const numericValue = Number(value);
+      if (isNaN(numericValue)) {
+        throw new Error("Invalid numeric value");
+      }
+
       const { error } = await supabase
         .from("widget_metrics")
-        .update({ value })
+        .update({ value: numericValue })
         .eq("id", id);
 
       if (error) throw error;
@@ -93,12 +98,6 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
   };
 
   const handleDelete = async (id: string) => {
-    const initialConfirm = window.confirm("Are you sure you want to delete this metric value?");
-    if (!initialConfirm) return;
-
-    const finalConfirm = window.confirm("This action cannot be undone. Please confirm deletion.");
-    if (!finalConfirm) return;
-
     try {
       const { error } = await supabase
         .from("widget_metrics")
