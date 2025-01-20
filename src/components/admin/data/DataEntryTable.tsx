@@ -23,7 +23,7 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("widgets")
-        .select("id, name")
+        .select("id, name, unit")
         .eq("category", category)
         .eq("is_active", true);
       
@@ -55,7 +55,7 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
         current: {
           id: latestValue.id,
           name: metric?.name || "",
-          unit: "units",
+          unit: metric?.unit || "units",
           value: Number(latestValue.value),
           lastUpdated: latestValue.recorded_at,
           isEditing: false
@@ -135,7 +135,7 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
         <SelectContent>
           {availableMetrics?.map((metric) => (
             <SelectItem key={metric.id} value={metric.id}>
-              {metric.name}
+              {metric.name} ({metric.unit || 'units'})
             </SelectItem>
           ))}
         </SelectContent>
@@ -173,7 +173,7 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
               <div className="space-y-2">
                 {metricData.history.map((record) => (
                   <div key={record.id} className="flex justify-between items-center text-sm">
-                    <span>Value: {record.value}</span>
+                    <span>Value: {record.value} {metricData.current.unit}</span>
                     <span className="text-gray-500">
                       {new Date(record.recorded_at).toLocaleString()}
                     </span>
