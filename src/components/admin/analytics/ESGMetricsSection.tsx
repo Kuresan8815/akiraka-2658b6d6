@@ -23,13 +23,14 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
     queryFn: async () => {
       console.log("Fetching widgets for business:", businessId);
       
-      // First, fetch the business widgets that are active
+      // First, fetch all business widgets
       const { data: businessWidgets, error: businessWidgetsError } = await supabase
         .from("business_widgets")
         .select(`
           id,
           widget_id,
           position,
+          is_active,
           widget:widgets(
             id,
             name,
@@ -41,7 +42,6 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
           )
         `)
         .eq("business_id", businessId)
-        .eq("is_active", true)
         .order("position");
 
       if (businessWidgetsError) {
@@ -52,18 +52,28 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
       console.log("Raw business widgets data:", businessWidgets);
 
       if (!businessWidgets?.length) {
-        console.log("No active widgets found for business");
+        console.log("No widgets found for business");
         return [];
       }
 
-      // Then fetch the latest metrics for these widgets
+      // Filter active widgets first
+      const activeBusinessWidgets = businessWidgets.filter(
+        (bw) => bw.is_active && bw.widget?.is_active
+      );
+
+      if (!activeBusinessWidgets.length) {
+        console.log("No active widgets found");
+        return [];
+      }
+
+      // Then fetch the latest metrics for active widgets
       const { data: metrics, error: metricsError } = await supabase
         .from("widget_metrics")
         .select("*")
         .eq("business_id", businessId)
         .in(
           "widget_id",
-          businessWidgets.map((bw) => bw.widget.id)
+          activeBusinessWidgets.map((bw) => bw.widget.id)
         )
         .order("recorded_at", { ascending: false });
 
@@ -82,13 +92,14 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
         }
       });
 
-      // Transform and validate the data
-      const transformedWidgets = businessWidgets
-        .filter((bw) => bw.widget && bw.widget.is_active)
-        .map((bw) => ({
-          ...bw,
-          latest_value: latestMetrics.get(bw.widget.id) || 0
-        }));
+      // Transform the active widgets with their latest values
+      const transformedWidgets = activeBusinessWidgets.map((bw) => ({
+        id: bw.id,
+        widget_id: bw.widget_id,
+        position: bw.position,
+        widget: bw.widget,
+        latest_value: latestMetrics.get(bw.widget.id) ?? 0
+      }));
 
       console.log("Final transformed widgets:", transformedWidgets);
       return transformedWidgets as BusinessWidget[];
