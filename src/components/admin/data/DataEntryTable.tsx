@@ -22,7 +22,7 @@ export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("widgets")
-        .select("id, name, unit")
+        .select("id, name, description, category, metric_type, unit, is_active, created_at, updated_at")
         .eq("category", category)
         .eq("is_active", true);
       
