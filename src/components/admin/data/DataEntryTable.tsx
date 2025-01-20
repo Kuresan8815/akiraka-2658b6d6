@@ -24,7 +24,9 @@ interface MetricRow {
   isEditing?: boolean;
 }
 
-export const DataEntryTable = ({ category }: { category: string }) => {
+type MetricCategory = "environmental" | "social" | "governance";
+
+export const DataEntryTable = ({ category }: { category: MetricCategory }) => {
   const [metrics, setMetrics] = useState<MetricRow[]>([]);
   const { toast } = useToast();
 
