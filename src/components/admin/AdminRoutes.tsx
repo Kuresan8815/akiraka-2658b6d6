@@ -6,7 +6,6 @@ import { AdminAnalytics } from "@/pages/admin/Analytics";
 import { AdminSettings } from "@/pages/admin/Settings";
 import { AdminRewards } from "@/pages/admin/Rewards";
 import { AdminWidgets } from "@/pages/admin/Widgets";
-import { CarbonFootprint } from "@/pages/admin/CarbonFootprint";
 import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
 import { RegionalAdminDashboard } from "@/components/admin/RegionalAdminDashboard";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -65,11 +64,6 @@ export const AdminRoutes = () => {
       <Route path="analytics" element={
         <AdminLayout role="admin">
           <AdminAnalytics />
-        </AdminLayout>
-      } />
-      <Route path="carbon" element={
-        <AdminLayout role="admin">
-          <CarbonFootprint />
         </AdminLayout>
       } />
       <Route path="rewards" element={

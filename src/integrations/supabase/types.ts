@@ -172,47 +172,6 @@ export type Database = {
           },
         ]
       }
-      carbon_emissions: {
-        Row: {
-          business_id: string
-          created_at: string
-          emission_source: string | null
-          emission_value: number
-          id: string
-          recorded_date: string
-          scope: Database["public"]["Enums"]["emission_scope"]
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          emission_source?: string | null
-          emission_value: number
-          id?: string
-          recorded_date?: string
-          scope: Database["public"]["Enums"]["emission_scope"]
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          emission_source?: string | null
-          emission_value?: number
-          id?: string
-          recorded_date?: string
-          scope?: Database["public"]["Enums"]["emission_scope"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "carbon_emissions_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       industry_templates: {
         Row: {
           created_at: string
@@ -718,23 +677,6 @@ export type Database = {
       }
     }
     Views: {
-      emissions_summary: {
-        Row: {
-          business_id: string | null
-          month: string | null
-          scope: Database["public"]["Enums"]["emission_scope"] | null
-          total_emissions: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "carbon_emissions_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       monthly_scanning_activity: {
         Row: {
           month: string | null
@@ -773,16 +715,6 @@ export type Database = {
           total_carbon_saved: number
           total_water_saved: number
           avg_sustainability_score: number
-        }[]
-      }
-      get_emissions_summary: {
-        Args: {
-          business_id_param: string
-        }
-        Returns: {
-          scope: Database["public"]["Enums"]["emission_scope"]
-          monthly_total: number
-          year_to_date: number
         }[]
       }
       get_top_products: {
@@ -847,7 +779,6 @@ export type Database = {
         | "distributor"
         | "supplier"
         | "public_institution"
-      emission_scope: "scope_1" | "scope_2" | "scope_3"
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
       reward_type: "discount" | "voucher" | "product" | "service"
       user_role: "admin" | "business_user"
