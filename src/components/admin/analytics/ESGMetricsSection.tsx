@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { BusinessWidget } from "@/types/widgets";
 
 interface ESGMetricsSectionProps {
   businessId: string;
@@ -43,17 +44,26 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
 
       console.log("Raw widget data:", data);
       
+      // Transform the data to match BusinessWidget type
+      const transformedWidgets = data?.map(bw => ({
+        id: bw.id,
+        widget_id: bw.widget_id,
+        position: bw.position,
+        widget: bw.widget,
+        latest_value: undefined // Add this to match BusinessWidget type
+      })) || [];
+
       // Filter out any null widgets or inactive widgets
-      const filteredWidgets = data?.filter(bw => {
+      const filteredWidgets = transformedWidgets.filter(bw => {
         const isValid = bw.widget && bw.widget.is_active;
         if (!isValid) {
           console.log("Filtered out widget:", bw);
         }
         return isValid;
-      }) || [];
+      });
 
       console.log("Filtered widgets:", filteredWidgets);
-      return filteredWidgets;
+      return filteredWidgets as BusinessWidget[];
     },
     enabled: !!businessId,
     staleTime: 1000 * 60, // Cache for 1 minute
