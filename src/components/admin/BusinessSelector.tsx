@@ -33,7 +33,13 @@ export const BusinessSelector = () => {
           created_at,
           updated_at,
           created_by,
-          is_active
+          is_active,
+          industry_type,
+          logo_url,
+          website,
+          description,
+          activities,
+          sustainability_goals
         )
       `)
       .eq("user_id", user.id);
