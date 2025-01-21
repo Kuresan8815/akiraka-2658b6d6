@@ -1,0 +1,23 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "scan": "Scan",
+    "profile": "Profile",
+    "rewards": "Rewards",
+    "history": "History",
+    "logout": "Logout"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "analytics": "Analytics",
+    "products": "Products",
+    "users": "Users",
+    "metrics": "Metrics",
+    "data": "Data",
+    "rewards": "Rewards",
+    "settings": "Settings",
+    "superAdmin": "Super Admin",
+    "regionalAdmin": "Regional Admin",
+    "businessUser": "Business User"
+  }
+}

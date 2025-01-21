@@ -19,6 +19,8 @@ import { PrivateRoute } from "@/components/auth/PrivateRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import Index from "@/pages/Index";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { LanguageSwitch } from "@/components/LanguageSwitch";
+import "@/i18n/config";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -71,6 +73,7 @@ function App() {
             {/* Catch all redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          <LanguageSwitch />
           <Toaster />
         </Router>
       </QueryClientProvider>

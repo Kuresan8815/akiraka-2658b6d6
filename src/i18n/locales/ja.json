@@ -1,0 +1,23 @@
+{
+  "common": {
+    "dashboard": "ダッシュボード",
+    "scan": "スキャン",
+    "profile": "プロフィール",
+    "rewards": "報酬",
+    "history": "履歴",
+    "logout": "ログアウト"
+  },
+  "admin": {
+    "dashboard": "管理ダッシュボード",
+    "analytics": "分析",
+    "products": "製品",
+    "users": "ユーザー",
+    "metrics": "メトリクス",
+    "data": "データ",
+    "rewards": "報酬",
+    "settings": "設定",
+    "superAdmin": "スーパー管理者",
+    "regionalAdmin": "地域管理者",
+    "businessUser": "ビジネスユーザー"
+  }
+}

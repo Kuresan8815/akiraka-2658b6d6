@@ -5,10 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarNavItems } from "./sidebar/SidebarNavItems";
+import { useTranslation } from "react-i18next";
 
 export const AdminSidebar = ({ role }: { role: string }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const { data: adminLevel } = useQuery({
     queryKey: ["admin-level"],
@@ -42,13 +44,13 @@ export const AdminSidebar = ({ role }: { role: string }) => {
   return (
     <div className="w-64 bg-white border-r border-gray-200 p-4">
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-eco-primary">Admin Dashboard</h1>
+        <h1 className="text-xl font-bold text-eco-primary">{t('admin.dashboard')}</h1>
         <p className="text-sm text-gray-500 mt-1">
           {adminLevel === "super_admin" 
-            ? "Super Admin" 
+            ? t('admin.superAdmin')
             : adminLevel === "regional_admin" 
-              ? "Regional Admin" 
-              : role}
+              ? t('admin.regionalAdmin')
+              : t('admin.businessUser')}
         </p>
       </div>
 
@@ -61,7 +63,7 @@ export const AdminSidebar = ({ role }: { role: string }) => {
           onClick={handleLogout}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Logout
+          {t('common.logout')}
         </Button>
       </nav>
     </div>
