@@ -15,13 +15,37 @@ export const AuthSection = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    // Initialize auth state and handle session recovery
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Session initialization error:", error);
+      }
+    };
+
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
+      
       if (event === 'SIGNED_IN' && session) {
         navigate("/");
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log("Token refreshed successfully");
+      } else if (event === 'SIGNED_OUT') {
+        // Clear any stored session data
+        await supabase.auth.signOut();
+        navigate("/login");
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const getErrorMessage = (error: AuthError) => {
@@ -31,6 +55,8 @@ export const AuthSection = () => {
           return "Invalid email or password. Please check your credentials and try again.";
         case "Email not confirmed":
           return "Please verify your email address before signing in.";
+        case "Invalid Refresh Token: Refresh Token Not Found":
+          return "Your session has expired. Please sign in again.";
         default:
           return error.message;
       }
@@ -55,7 +81,7 @@ export const AuthSection = () => {
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
 
@@ -104,6 +130,10 @@ export const AuthSection = () => {
       });
 
       if (error) {
+        if (error.message.includes("Invalid Refresh Token")) {
+          // Handle expired session
+          await supabase.auth.signOut();
+        }
         toast({
           title: "Error",
           description: getErrorMessage(error),
