@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/select";
 import { BusinessAnalytics } from "./BusinessAnalytics";
 import { CustomerAnalytics } from "./CustomerAnalytics";
+import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 interface AnalyticsData {
   total_scans: number;
@@ -25,25 +27,39 @@ interface AnalyticsData {
 }
 
 export const AnalyticsDashboard = () => {
+  const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(new Date().setMonth(new Date().getMonth() - 1)),
     to: new Date(),
   });
   const [analyticsType, setAnalyticsType] = useState<"business" | "customer">("business");
 
-  const { data: analyticsData, isLoading } = useQuery<AnalyticsData>({
+  const { data: analyticsData, isLoading, error } = useQuery({
     queryKey: ["analytics", dateRange],
     queryFn: async () => {
-      return {
-        total_scans: 15742,
-        unique_users: 3256,
-        avg_scans_per_user: 4.8,
-        total_carbon_saved: 25890,
-        total_water_saved: 158900,
-        avg_sustainability_score: 85.4,
-        avg_purchase_per_user: 3000
-      };
+      try {
+        // Simulated API call - replace with actual API endpoint
+        return {
+          total_scans: 15742,
+          unique_users: 3256,
+          avg_scans_per_user: 4.8,
+          total_carbon_saved: 25890,
+          total_water_saved: 158900,
+          avg_sustainability_score: 85.4,
+          avg_purchase_per_user: 3000
+        };
+      } catch (err) {
+        console.error("Error fetching analytics data:", err);
+        toast({
+          title: "Error",
+          description: "Failed to fetch analytics data. Please try again later.",
+          variant: "destructive",
+        });
+        throw err;
+      }
     },
+    retry: 2,
+    retryDelay: 1000,
   });
 
   const handleDownloadCSV = () => {
@@ -76,6 +92,22 @@ export const AnalyticsDashboard = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="text-center space-y-4">
+          <p className="text-red-500">Failed to load analytics data</p>
+          <Button 
+            onClick={() => window.location.reload()}
+            variant="outline"
+          >
+            Retry
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -106,7 +138,11 @@ export const AnalyticsDashboard = () => {
       </div>
 
       {isLoading ? (
-        <div>Loading analytics data...</div>
+        <Card className="p-6">
+          <div className="text-center">
+            <p className="text-gray-500">Loading analytics data...</p>
+          </div>
+        </Card>
       ) : (
         analyticsType === "business" ? (
           <BusinessAnalytics dateRange={dateRange} />
