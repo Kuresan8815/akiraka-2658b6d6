@@ -23,7 +23,7 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
     queryFn: async () => {
       console.log("Fetching widgets for business:", businessId);
       
-      // First, fetch all business widgets
+      // Fetch only active business widgets with their associated widget data
       const { data: businessWidgets, error: businessWidgetsError } = await supabase
         .from("business_widgets")
         .select(`
@@ -42,6 +42,7 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
           )
         `)
         .eq("business_id", businessId)
+        .eq("is_active", true) // Only get active business widgets
         .order("position");
 
       if (businessWidgetsError) {
@@ -56,9 +57,9 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
         return [];
       }
 
-      // Filter active widgets first
+      // Filter to ensure we only get widgets that are active themselves
       const activeBusinessWidgets = businessWidgets.filter(
-        (bw) => bw.is_active && bw.widget?.is_active
+        (bw) => bw.widget?.is_active
       );
 
       if (!activeBusinessWidgets.length) {
@@ -66,7 +67,7 @@ export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
         return [];
       }
 
-      // Then fetch the latest metrics for active widgets
+      // Fetch the latest metrics for active widgets
       const { data: metrics, error: metricsError } = await supabase
         .from("widget_metrics")
         .select("*")
