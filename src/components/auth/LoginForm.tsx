@@ -5,6 +5,7 @@ import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 export const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -12,14 +13,15 @@ export const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
       toast({
-        title: "Error",
-        description: "Please enter both email and password",
+        title: t("auth.error"),
+        description: t("auth.enterBothFields"),
         variant: "destructive",
       });
       return;
@@ -34,14 +36,14 @@ export const LoginForm = () => {
 
       if (error) {
         console.error("Login error:", error);
-        let errorMessage = "Invalid email or password";
+        let errorMessage = t("auth.invalidCredentials");
         
         if (error.message.includes("Email not confirmed")) {
-          errorMessage = "Please verify your email before logging in";
+          errorMessage = t("auth.verifyEmail");
         }
         
         toast({
-          title: "Login Failed",
+          title: t("auth.loginFailed"),
           description: errorMessage,
           variant: "destructive",
         });
@@ -50,16 +52,16 @@ export const LoginForm = () => {
 
       if (data?.user) {
         toast({
-          title: "Success!",
-          description: "You have been signed in.",
+          title: t("auth.success"),
+          description: t("auth.signedIn"),
         });
         navigate("/");
       }
     } catch (error: any) {
       console.error("Unexpected error:", error);
       toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: t("auth.error"),
+        description: t("auth.unexpectedError"),
         variant: "destructive",
       });
     } finally {
@@ -78,7 +80,7 @@ export const LoginForm = () => {
           <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
             type="email"
-            placeholder="Enter your email"
+            placeholder={t("auth.enterEmail")}
             className="pl-10"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -90,7 +92,7 @@ export const LoginForm = () => {
           <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
             type="password"
-            placeholder="Enter your password"
+            placeholder={t("auth.enterPassword")}
             className="pl-10"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -106,7 +108,7 @@ export const LoginForm = () => {
         className="w-full bg-eco-primary hover:bg-eco-secondary"
         disabled={isLoading}
       >
-        {isLoading ? "Signing in..." : "Sign In"}
+        {isLoading ? t("auth.signingIn") : t("auth.signIn")}
       </Button>
 
       <div className="flex justify-between items-center text-sm">
@@ -115,14 +117,14 @@ export const LoginForm = () => {
           className="p-0 text-eco-primary"
           onClick={handleBack}
         >
-          Back to Home
+          {t("common.backToHome")}
         </Button>
         <Button
           variant="link"
           className="p-0 text-eco-primary"
           onClick={() => navigate("/signup")}
         >
-          Sign Up
+          {t("auth.signUp")}
         </Button>
       </div>
     </form>

@@ -5,7 +5,8 @@
     "profile": "プロフィール",
     "rewards": "報酬",
     "history": "履歴",
-    "logout": "ログアウト"
+    "logout": "ログアウト",
+    "backToHome": "ホームに戻る"
   },
   "admin": {
     "dashboard": "管理ダッシュボード",
@@ -19,5 +20,20 @@
     "superAdmin": "スーパー管理者",
     "regionalAdmin": "地域管理者",
     "businessUser": "ビジネスユーザー"
+  },
+  "auth": {
+    "error": "エラー",
+    "enterBothFields": "メールアドレスとパスワードを入力してください",
+    "invalidCredentials": "メールアドレスまたはパスワードが無効です",
+    "verifyEmail": "ログインする前にメールアドレスを確認してください",
+    "loginFailed": "ログイン失敗",
+    "success": "成功！",
+    "signedIn": "サインインしました。",
+    "unexpectedError": "予期せぬエラーが発生しました。もう一度お試しください。",
+    "enterEmail": "メールアドレスを入力",
+    "enterPassword": "パスワードを入力",
+    "signingIn": "サインイン中...",
+    "signIn": "サインイン",
+    "signUp": "新規登録"
   }
 }
