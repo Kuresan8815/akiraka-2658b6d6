@@ -1,11 +1,10 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import { LoginFormFields } from "./form/LoginFormFields";
+import { LoginFormActions } from "./form/LoginFormActions";
 
 export const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -69,64 +68,16 @@ export const LoginForm = () => {
     }
   };
 
-  const handleBack = () => {
-    navigate("/");
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <div className="relative">
-          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            type="email"
-            placeholder={t("auth.enterEmail")}
-            className="pl-10"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={isLoading}
-            required
-          />
-        </div>
-        <div className="relative">
-          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          <Input
-            type="password"
-            placeholder={t("auth.enterPassword")}
-            className="pl-10"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={isLoading}
-            required
-            minLength={6}
-          />
-        </div>
-      </div>
-
-      <Button 
-        type="submit"
-        className="w-full bg-eco-primary hover:bg-eco-secondary"
-        disabled={isLoading}
-      >
-        {isLoading ? t("auth.signingIn") : t("auth.signIn")}
-      </Button>
-
-      <div className="flex justify-between items-center text-sm">
-        <Button
-          variant="link"
-          className="p-0 text-eco-primary"
-          onClick={handleBack}
-        >
-          {t("common.backToHome")}
-        </Button>
-        <Button
-          variant="link"
-          className="p-0 text-eco-primary"
-          onClick={() => navigate("/signup")}
-        >
-          {t("auth.signUp")}
-        </Button>
-      </div>
+      <LoginFormFields
+        email={email}
+        password={password}
+        isLoading={isLoading}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+      />
+      <LoginFormActions isLoading={isLoading} />
     </form>
   );
 };
