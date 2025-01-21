@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Mail, Lock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useTranslation } from "react-i18next";
-import { LoginFormFields } from "./form/LoginFormFields";
-import { LoginFormActions } from "./form/LoginFormActions";
 
 export const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -12,15 +12,14 @@ export const LoginForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!email || !password) {
       toast({
-        title: t("auth.error"),
-        description: t("auth.enterBothFields"),
+        title: "Error",
+        description: "Please enter both email and password",
         variant: "destructive",
       });
       return;
@@ -35,14 +34,14 @@ export const LoginForm = () => {
 
       if (error) {
         console.error("Login error:", error);
-        let errorMessage = t("auth.invalidCredentials");
+        let errorMessage = "Invalid email or password";
         
         if (error.message.includes("Email not confirmed")) {
-          errorMessage = t("auth.verifyEmail");
+          errorMessage = "Please verify your email before logging in";
         }
         
         toast({
-          title: t("auth.loginFailed"),
+          title: "Login Failed",
           description: errorMessage,
           variant: "destructive",
         });
@@ -51,16 +50,16 @@ export const LoginForm = () => {
 
       if (data?.user) {
         toast({
-          title: t("auth.success"),
-          description: t("auth.signedIn"),
+          title: "Success!",
+          description: "You have been signed in.",
         });
         navigate("/");
       }
     } catch (error: any) {
       console.error("Unexpected error:", error);
       toast({
-        title: t("auth.error"),
-        description: t("auth.unexpectedError"),
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -68,16 +67,64 @@ export const LoginForm = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate("/");
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <LoginFormFields
-        email={email}
-        password={password}
-        isLoading={isLoading}
-        onEmailChange={setEmail}
-        onPasswordChange={setPassword}
-      />
-      <LoginFormActions isLoading={isLoading} />
+      <div className="space-y-2">
+        <div className="relative">
+          <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            type="email"
+            placeholder="Enter your email"
+            className="pl-10"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={isLoading}
+            required
+          />
+        </div>
+        <div className="relative">
+          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+          <Input
+            type="password"
+            placeholder="Enter your password"
+            className="pl-10"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={isLoading}
+            required
+            minLength={6}
+          />
+        </div>
+      </div>
+
+      <Button 
+        type="submit"
+        className="w-full bg-eco-primary hover:bg-eco-secondary"
+        disabled={isLoading}
+      >
+        {isLoading ? "Signing in..." : "Sign In"}
+      </Button>
+
+      <div className="flex justify-between items-center text-sm">
+        <Button
+          variant="link"
+          className="p-0 text-eco-primary"
+          onClick={handleBack}
+        >
+          Back to Home
+        </Button>
+        <Button
+          variant="link"
+          className="p-0 text-eco-primary"
+          onClick={() => navigate("/signup")}
+        >
+          Sign Up
+        </Button>
+      </div>
     </form>
   );
 };
