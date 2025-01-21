@@ -41,7 +41,6 @@ export const AdminWidgets = () => {
         return null;
       }
 
-      // Return the first business profile
       return data[0];
     },
   });
@@ -60,12 +59,12 @@ export const AdminWidgets = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Widget Dashboard</h1>
+      <h1 className="text-2xl font-bold mb-6">Metrics Dashboard</h1>
 
       <Tabs defaultValue="metrics" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="metrics">Active Widgets</TabsTrigger>
-          <TabsTrigger value="add">Add Widgets</TabsTrigger>
+          <TabsTrigger value="metrics">Active Metrics</TabsTrigger>
+          <TabsTrigger value="add">Add Metrics</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
         </TabsList>
 

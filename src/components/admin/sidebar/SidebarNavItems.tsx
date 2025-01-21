@@ -63,7 +63,7 @@ export const SidebarNavItems = ({ adminLevel }: SidebarNavItemsProps) => {
       <Link to="/admin/widgets">
         <Button variant="ghost" className="w-full justify-start">
           <LayoutGrid className="mr-2 h-4 w-4" />
-          Widgets
+          Metrics
         </Button>
       </Link>
 
