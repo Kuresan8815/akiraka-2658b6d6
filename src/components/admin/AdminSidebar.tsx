@@ -59,6 +59,17 @@ export const AdminSidebar = ({ role }: { role: string }) => {
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 p-4">
+      <div className="mb-8">
+        <h1 className="text-xl font-bold text-eco-primary">Admin Dashboard</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {adminLevel === "super_admin" 
+            ? "Super Admin" 
+            : adminLevel === "regional_admin" 
+              ? "Regional Admin" 
+              : role}
+        </p>
+      </div>
+
       {currentBusiness && (
         <div className="mb-6 p-3 bg-green-50 rounded-lg border border-green-100">
           <div className="flex items-center gap-2">
@@ -71,17 +82,6 @@ export const AdminSidebar = ({ role }: { role: string }) => {
           </div>
         </div>
       )}
-
-      <div className="mb-8">
-        <h1 className="text-xl font-bold text-eco-primary">Admin Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          {adminLevel === "super_admin" 
-            ? "Super Admin" 
-            : adminLevel === "regional_admin" 
-              ? "Regional Admin" 
-              : role}
-        </p>
-      </div>
 
       <nav>
         <SidebarNavItems adminLevel={adminLevel} />
@@ -98,3 +98,4 @@ export const AdminSidebar = ({ role }: { role: string }) => {
     </div>
   );
 };
+
