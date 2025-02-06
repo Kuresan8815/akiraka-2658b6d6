@@ -1,15 +1,19 @@
 
 import { Button } from "@/components/ui/button";
-import { LogOut, Building2 } from "lucide-react";
+import { LogOut, Building2, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarNavItems } from "./sidebar/SidebarNavItems";
+import { BusinessSelector } from "./BusinessSelector";
+import { useState } from "react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export const AdminSidebar = ({ role }: { role: string }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showBusinessSelector, setShowBusinessSelector] = useState(false);
 
   const { data: adminLevel } = useQuery({
     queryKey: ["admin-level"],
@@ -72,13 +76,16 @@ export const AdminSidebar = ({ role }: { role: string }) => {
 
       {currentBusiness && (
         <div className="mb-6 p-3 bg-green-50 rounded-lg border border-green-100">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-5 w-5 text-eco-primary" />
-            <div>
-              <h2 className="text-sm font-medium text-gray-500">Current Business</h2>
-              <p className="text-sm font-semibold text-eco-primary">{currentBusiness.name}</p>
-              <p className="text-xs text-gray-500">{currentBusiness.industry_type}</p>
+          <div className="flex items-center gap-2 justify-between cursor-pointer group" onClick={() => setShowBusinessSelector(true)}>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-eco-primary" />
+              <div>
+                <h2 className="text-sm font-medium text-gray-500">Current Business</h2>
+                <p className="text-sm font-semibold text-eco-primary">{currentBusiness.name}</p>
+                <p className="text-xs text-gray-500">{currentBusiness.industry_type}</p>
+              </div>
             </div>
+            <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-eco-primary transition-colors" />
           </div>
         </div>
       )}
@@ -95,7 +102,15 @@ export const AdminSidebar = ({ role }: { role: string }) => {
           Logout
         </Button>
       </nav>
+
+      <Dialog open={showBusinessSelector} onOpenChange={setShowBusinessSelector}>
+        <DialogContent className="sm:max-w-md">
+          <div className="py-6">
+            <h2 className="text-lg font-semibold mb-4">Switch Business</h2>
+            <BusinessSelector />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-
