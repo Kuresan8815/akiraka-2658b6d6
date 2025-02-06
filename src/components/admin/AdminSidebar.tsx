@@ -1,5 +1,6 @@
+
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,23 @@ export const AdminSidebar = ({ role }: { role: string }) => {
     },
   });
 
+  const { data: currentBusiness } = useQuery({
+    queryKey: ["current-business"],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.user_metadata?.current_business_id) return null;
+
+      const { data, error } = await supabase
+        .from("businesses")
+        .select("name, industry_type")
+        .eq("id", user.user_metadata.current_business_id)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -41,6 +59,19 @@ export const AdminSidebar = ({ role }: { role: string }) => {
 
   return (
     <div className="w-64 bg-white border-r border-gray-200 p-4">
+      {currentBusiness && (
+        <div className="mb-6 p-3 bg-green-50 rounded-lg border border-green-100">
+          <div className="flex items-center gap-2">
+            <Building2 className="h-5 w-5 text-eco-primary" />
+            <div>
+              <h2 className="text-sm font-medium text-gray-500">Current Business</h2>
+              <p className="text-sm font-semibold text-eco-primary">{currentBusiness.name}</p>
+              <p className="text-xs text-gray-500">{currentBusiness.industry_type}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-8">
         <h1 className="text-xl font-bold text-eco-primary">Admin Dashboard</h1>
         <p className="text-sm text-gray-500 mt-1">
