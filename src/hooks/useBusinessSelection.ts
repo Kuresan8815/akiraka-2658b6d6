@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +18,7 @@ export const useBusinessSelection = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // First get the business profiles for this user
+    // Get business profiles with their associated businesses
     const { data: businessProfiles, error: profilesError } = await supabase
       .from("business_profiles")
       .select(`
@@ -38,7 +39,8 @@ export const useBusinessSelection = () => {
           sustainability_goals
         )
       `)
-      .eq("user_id", user.id);
+      .eq("user_id", user.id)
+      .eq("businesses.name", "Beppu City"); // Filter specifically for Beppu City
 
     if (profilesError) {
       console.error("Error fetching business profiles:", profilesError);
@@ -50,15 +52,15 @@ export const useBusinessSelection = () => {
       return;
     }
 
-    // Filter out any null businesses and create a unique set based on business ID
+    // Create a unique set of businesses
     const uniqueBusinesses = businessProfiles
       ?.filter(profile => profile.businesses && profile.businesses.is_active)
-      .reduce((acc, profile) => {
+      .reduce((acc: Business[], profile) => {
         if (profile.businesses && !acc.some(b => b.id === profile.businesses.id)) {
           acc.push(profile.businesses);
         }
         return acc;
-      }, [] as Business[]);
+      }, []);
 
     setBusinesses(uniqueBusinesses || []);
   };
