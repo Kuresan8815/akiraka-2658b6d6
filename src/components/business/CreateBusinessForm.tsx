@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +10,25 @@ interface CreateBusinessFormProps {
   onSuccess: (businessId: string) => void;
   selectedIndustry: string;
 }
+
+const getBusinessTypeFromIndustry = (industry: string): 'manufacturer' | 'retailer' | 'distributor' | 'supplier' | 'public_institution' => {
+  switch (industry) {
+    case "Manufacturing":
+      return "manufacturer";
+    case "Retail":
+      return "retailer";
+    case "Transportation":
+    case "Energy":
+      return "distributor";
+    case "Agriculture":
+      return "supplier";
+    case "Public Institutions/Organizations":
+    case "Government":
+      return "public_institution";
+    default:
+      return "manufacturer"; // Default fallback
+  }
+};
 
 export const CreateBusinessForm = ({ onSuccess, selectedIndustry }: CreateBusinessFormProps) => {
   const [name, setName] = useState("");
@@ -28,12 +48,14 @@ export const CreateBusinessForm = ({ onSuccess, selectedIndustry }: CreateBusine
     setIsLoading(true);
 
     try {
-      // Create the business with a default business type
+      const businessType = getBusinessTypeFromIndustry(selectedIndustry);
+
+      // Create the business with the determined business type
       const { data: business, error: businessError } = await supabase
         .from("businesses")
         .insert({
           name,
-          business_type: 'manufacturer', // Default type
+          business_type: businessType,
           created_by: session?.user?.id,
           industry_type: selectedIndustry,
         })

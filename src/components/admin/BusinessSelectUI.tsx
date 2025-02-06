@@ -1,3 +1,4 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PlusCircle } from "lucide-react";
 import { Business } from "@/types/business";
@@ -22,7 +23,7 @@ export const BusinessSelectUI = ({
         <SelectContent>
           {businesses.map((business) => (
             <SelectItem key={business.id} value={business.id}>
-              {business.name} ({business.business_type})
+              {business.name} ({business.industry_type})
             </SelectItem>
           ))}
           <SelectItem value="new" className="text-eco-primary">
