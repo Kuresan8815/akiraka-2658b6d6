@@ -18,8 +18,8 @@ export const useBusinessSelection = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // First get the most recently created business profile for this user
-    const { data: businessProfile, error: profileError } = await supabase
+    // First get all business profiles for this user
+    const { data: businessProfiles, error: profileError } = await supabase
       .from("business_profiles")
       .select(`
         business_id,
@@ -40,11 +40,7 @@ export const useBusinessSelection = () => {
         )
       `)
       .eq("user_id", user.id)
-      .eq("businesses.name", "Beppu City")
-      .eq("businesses.is_active", true)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .eq("businesses.is_active", true);
 
     if (profileError) {
       console.error("Error fetching business profiles:", profileError);
@@ -56,12 +52,12 @@ export const useBusinessSelection = () => {
       return;
     }
 
-    // Set the business if it exists
-    if (businessProfile?.businesses) {
-      setBusinesses([businessProfile.businesses]);
-    } else {
-      setBusinesses([]);
-    }
+    // Filter and map the businesses
+    const validBusinesses = businessProfiles
+      ?.filter(profile => profile.businesses)
+      .map(profile => profile.businesses);
+
+    setBusinesses(validBusinesses || []);
   };
 
   const getCurrentBusiness = async () => {
