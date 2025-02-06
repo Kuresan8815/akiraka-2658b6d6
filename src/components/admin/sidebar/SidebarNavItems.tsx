@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { 
@@ -10,7 +11,8 @@ import {
   Globe,
   Building2,
   LayoutGrid,
-  Database
+  Database,
+  FileText
 } from "lucide-react";
 
 interface SidebarNavItemsProps {
@@ -64,6 +66,13 @@ export const SidebarNavItems = ({ adminLevel }: SidebarNavItemsProps) => {
         <Button variant="ghost" className="w-full justify-start">
           <LayoutGrid className="mr-2 h-4 w-4" />
           Metrics
+        </Button>
+      </Link>
+
+      <Link to="/admin/reports">
+        <Button variant="ghost" className="w-full justify-start">
+          <FileText className="mr-2 h-4 w-4" />
+          Reports
         </Button>
       </Link>
 

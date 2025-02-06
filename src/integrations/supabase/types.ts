@@ -213,6 +213,57 @@ export type Database = {
           },
         ]
       }
+      generated_reports: {
+        Row: {
+          business_id: string
+          date_range: Json | null
+          generated_at: string
+          generated_by: string
+          id: string
+          pdf_url: string | null
+          report_data: Json
+          status: string
+          template_id: string | null
+        }
+        Insert: {
+          business_id: string
+          date_range?: Json | null
+          generated_at?: string
+          generated_by: string
+          id?: string
+          pdf_url?: string | null
+          report_data?: Json
+          status?: string
+          template_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          date_range?: Json | null
+          generated_at?: string
+          generated_by?: string
+          id?: string
+          pdf_url?: string | null
+          report_data?: Json
+          status?: string
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_reports_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generated_reports_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       industry_templates: {
         Row: {
           created_at: string
@@ -456,6 +507,59 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      report_templates: {
+        Row: {
+          business_id: string
+          config: Json
+          created_at: string
+          description: string | null
+          id: string
+          included_metrics: string[] | null
+          is_active: boolean | null
+          last_generated: string | null
+          layout_type: string
+          name: string
+          theme_colors: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          included_metrics?: string[] | null
+          is_active?: boolean | null
+          last_generated?: string | null
+          layout_type?: string
+          name: string
+          theme_colors?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          included_metrics?: string[] | null
+          is_active?: boolean | null
+          last_generated?: string | null
+          layout_type?: string
+          name?: string
+          theme_colors?: string[] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reward_redemptions: {
         Row: {

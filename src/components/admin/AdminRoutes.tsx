@@ -1,3 +1,4 @@
+
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminDashboard } from "@/pages/admin/Dashboard";
 import { AdminUsers } from "@/pages/admin/Users";
@@ -7,6 +8,7 @@ import { AdminSettings } from "@/pages/admin/Settings";
 import { AdminRewards } from "@/pages/admin/Rewards";
 import { AdminWidgets } from "@/pages/admin/Widgets";
 import { AdminData } from "@/pages/admin/Data";
+import { Reports } from "@/pages/admin/Reports";
 import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
 import { RegionalAdminDashboard } from "@/components/admin/RegionalAdminDashboard";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -65,6 +67,11 @@ export const AdminRoutes = () => {
       <Route path="data" element={
         <AdminLayout role="admin">
           <AdminData />
+        </AdminLayout>
+      } />
+      <Route path="reports" element={
+        <AdminLayout role="admin">
+          <Reports />
         </AdminLayout>
       } />
       <Route path="analytics" element={
