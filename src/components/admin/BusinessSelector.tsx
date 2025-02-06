@@ -2,8 +2,8 @@
 import { useNavigate } from "react-router-dom";
 import { useBusinessSelection } from "@/hooks/useBusinessSelection";
 import { BusinessSelectUI } from "./BusinessSelectUI";
-import { Button } from "@/components/ui/button";
-import { Loader2, Plus } from "lucide-react";
+import { BusinessSelectorSkeleton } from "./business-selector/BusinessSelectorSkeleton";
+import { EmptyBusinessState } from "./business-selector/EmptyBusinessState";
 
 export const BusinessSelector = () => {
   const navigate = useNavigate();
@@ -18,23 +18,11 @@ export const BusinessSelector = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
+    return <BusinessSelectorSkeleton />;
   }
 
   if (!businesses.length) {
-    return (
-      <div className="text-center space-y-4">
-        <p className="text-gray-500">No businesses found.</p>
-        <Button onClick={() => navigate("/onboarding")}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create New Business
-        </Button>
-      </div>
-    );
+    return <EmptyBusinessState />;
   }
 
   return (

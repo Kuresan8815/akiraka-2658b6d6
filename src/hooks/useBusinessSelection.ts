@@ -21,7 +21,6 @@ export const useBusinessSelection = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get all business profiles for this user
       const { data: businessProfiles, error: profileError } = await supabase
         .from("business_profiles")
         .select(`
@@ -44,20 +43,10 @@ export const useBusinessSelection = () => {
           )
         `)
         .eq("user_id", user.id)
-        .eq("businesses.is_active", true)
-        .order('created_at', { ascending: false });
+        .eq("businesses.is_active", true);
 
-      if (profileError) {
-        console.error("Error fetching business profiles:", profileError);
-        toast({
-          title: "Error",
-          description: "Failed to load businesses",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (profileError) throw profileError;
 
-      // Filter and map the businesses
       const validBusinesses = businessProfiles
         ?.filter(profile => profile.businesses)
         .map(profile => ({
@@ -82,9 +71,6 @@ export const useBusinessSelection = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.user_metadata?.current_business_id) {
       setSelectedBusiness(user.user_metadata.current_business_id);
-    } else if (businesses.length > 0) {
-      // Default to the first business if none is selected
-      handleBusinessChange(businesses[0].id);
     }
   };
 
@@ -94,14 +80,7 @@ export const useBusinessSelection = () => {
         data: { current_business_id: businessId }
       });
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to switch business",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
       setSelectedBusiness(businessId);
       toast({
