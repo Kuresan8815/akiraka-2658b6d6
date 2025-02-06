@@ -40,7 +40,8 @@ export const useBusinessSelection = () => {
         )
       `)
       .eq("user_id", user.id)
-      .eq("businesses.name", "Beppu City"); // Filter specifically for Beppu City
+      .eq("businesses.name", "Beppu City") // Filter specifically for Beppu City
+      .single(); // Only get a single result
 
     if (profilesError) {
       console.error("Error fetching business profiles:", profilesError);
@@ -52,17 +53,12 @@ export const useBusinessSelection = () => {
       return;
     }
 
-    // Create a unique set of businesses
-    const uniqueBusinesses = businessProfiles
-      ?.filter(profile => profile.businesses && profile.businesses.is_active)
-      .reduce((acc: Business[], profile) => {
-        if (profile.businesses && !acc.some(b => b.id === profile.businesses.id)) {
-          acc.push(profile.businesses);
-        }
-        return acc;
-      }, []);
-
-    setBusinesses(uniqueBusinesses || []);
+    // Set the single business if it exists and is active
+    if (businessProfiles?.businesses && businessProfiles.businesses.is_active) {
+      setBusinesses([businessProfiles.businesses]);
+    } else {
+      setBusinesses([]);
+    }
   };
 
   const getCurrentBusiness = async () => {
