@@ -29,42 +29,65 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
   const [metricValue, setMetricValue] = useState<string>("");
   const { toast } = useToast();
 
-  const { data: widgets, isLoading } = useQuery({
-    queryKey: ["widgets", category],
+  // First, get the current user's business profile
+  const { data: businessProfile } = useQuery({
+    queryKey: ["business-profile"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       const { data, error } = await supabase
-        .from("widgets")
-        .select("*")
-        .eq("category", category)
-        .eq("is_active", true)
-        .order("name");
+        .from("business_profiles")
+        .select("business_id")
+        .eq("user_id", user.id)
+        .single();
 
       if (error) throw error;
       return data;
     },
   });
 
-  const { data: metrics, refetch: refetchMetrics } = useQuery({
-    queryKey: ["metrics", category],
+  // Then fetch only active widgets for this business
+  const { data: activeWidgets, isLoading } = useQuery({
+    queryKey: ["active-widgets", businessProfile?.business_id, category],
+    enabled: !!businessProfile?.business_id,
     queryFn: async () => {
-      if (!widgets?.length) return new Map<string, MetricData>();
+      const { data, error } = await supabase
+        .from("business_widgets")
+        .select(`
+          widget_id,
+          widget:widgets(
+            id,
+            name,
+            description,
+            category,
+            unit
+          )
+        `)
+        .eq("business_id", businessProfile.business_id)
+        .eq("is_active", true);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return new Map<string, MetricData>();
+      if (error) throw error;
 
-      const { data: businessData } = await supabase
-        .from("business_profiles")
-        .select("business_id")
-        .eq("user_id", user.id)
-        .single();
+      // Filter widgets by category and ensure they're active
+      return data
+        .filter(bw => bw.widget?.category === category)
+        .map(bw => bw.widget)
+        .filter(widget => widget !== null);
+    },
+  });
 
-      if (!businessData) return new Map<string, MetricData>();
+  const { data: metrics, refetch: refetchMetrics } = useQuery({
+    queryKey: ["metrics", businessProfile?.business_id, category],
+    enabled: !!businessProfile?.business_id && !!activeWidgets?.length,
+    queryFn: async () => {
+      if (!activeWidgets?.length) return new Map<string, MetricData>();
 
       const { data, error } = await supabase
         .from("widget_metrics")
         .select("*")
-        .eq("business_id", businessData.business_id)
-        .in("widget_id", widgets.map(w => w.id))
+        .eq("business_id", businessProfile.business_id)
+        .in("widget_id", activeWidgets.map(w => w.id))
         .order("recorded_at", { ascending: false });
 
       if (error) throw error;
@@ -85,7 +108,6 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
 
       return metricsMap;
     },
-    enabled: !!widgets?.length,
   });
 
   const handleSave = async (widgetId: string) => {
@@ -95,22 +117,11 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
         throw new Error("Please enter a valid number");
       }
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const { data: businessData } = await supabase
-        .from("business_profiles")
-        .select("business_id")
-        .eq("user_id", user.id)
-        .single();
-
-      if (!businessData) throw new Error("No business profile found");
-
       const { error } = await supabase
         .from("widget_metrics")
         .insert({
           widget_id: widgetId,
-          business_id: businessData.business_id,
+          business_id: businessProfile?.business_id,
           value: value,
         });
 
@@ -141,10 +152,10 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
     );
   }
 
-  if (!widgets?.length) {
+  if (!activeWidgets?.length) {
     return (
       <div className="text-center p-4 text-gray-500">
-        No metrics configured for this category
+        No active metrics configured for this category
       </div>
     );
   }
@@ -163,7 +174,7 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
           </TableRow>
         </TableHeader>
         <TableBody>
-          {widgets.map((widget) => {
+          {activeWidgets.map((widget) => {
             const currentMetric = metrics?.get(widget.id);
             const isEditing = editingMetric === widget.id;
 
