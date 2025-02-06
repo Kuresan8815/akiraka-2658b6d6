@@ -12,11 +12,17 @@ export type ReportTemplate = {
   included_metrics: string[];
   theme_colors: string[];
   last_generated: string | null;
+  header_image_url: string | null;
+  footer_text: string | null;
+  font_family: string | null;
+  custom_css: string | null;
+  page_orientation: 'portrait' | 'landscape' | null;
+  charts_config: Record<string, any>[] | null;
 };
 
 export type GeneratedReport = {
   id: string;
-  template_id: string;
+  template_id: string | null;
   business_id: string;
   generated_at: string;
   report_data: Record<string, any>;
@@ -27,4 +33,8 @@ export type GeneratedReport = {
     start: string;
     end: string;
   } | null;
+  metadata: Record<string, any> | null;
+  file_size: number | null;
+  page_count: number | null;
 };
+

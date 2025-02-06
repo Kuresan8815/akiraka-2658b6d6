@@ -23,7 +23,15 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
         .order("generated_at", { ascending: false });
 
       if (error) throw error;
-      return data as GeneratedReport[];
+      
+      // Transform the data to match our type
+      return (data as any[]).map(report => ({
+        ...report,
+        date_range: report.date_range ? {
+          start: report.date_range.start,
+          end: report.date_range.end
+        } : null
+      })) as GeneratedReport[];
     },
   });
 
@@ -60,23 +68,44 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                 </CardDescription>
               </div>
               {report.pdf_url && (
-                <Button variant="outline" size="sm">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
+                <Button variant="outline" size="sm" asChild>
+                  <a href={report.pdf_url} target="_blank" rel="noopener noreferrer">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                    {report.file_size && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({Math.round(report.file_size / 1024)}KB)
+                      </span>
+                    )}
+                  </a>
                 </Button>
               )}
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-sm text-gray-500">
-              Date Range: {report.date_range ? (
-                <span>
-                  {format(new Date(report.date_range.start), "PP")} -{" "}
-                  {format(new Date(report.date_range.end), "PP")}
-                </span>
-              ) : (
-                "All Time"
+            <div className="text-sm space-y-2">
+              <div className="text-gray-500">
+                Date Range: {report.date_range ? (
+                  <span>
+                    {format(new Date(report.date_range.start), "PP")} -{" "}
+                    {format(new Date(report.date_range.end), "PP")}
+                  </span>
+                ) : (
+                  "All Time"
+                )}
+              </div>
+              {report.page_count && (
+                <div className="text-gray-500">
+                  Pages: {report.page_count}
+                </div>
               )}
+              <div className={`text-sm ${
+                report.status === 'completed' ? 'text-green-600' :
+                report.status === 'failed' ? 'text-red-600' :
+                'text-yellow-600'
+              }`}>
+                Status: {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -84,3 +113,4 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
     </div>
   );
 };
+
