@@ -18,8 +18,8 @@ export const useBusinessSelection = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Get business profiles with their associated businesses
-    const { data: businessProfiles, error: profilesError } = await supabase
+    // First get the most recently created business profile for this user
+    const { data: businessProfile, error: profileError } = await supabase
       .from("business_profiles")
       .select(`
         business_id,
@@ -40,11 +40,14 @@ export const useBusinessSelection = () => {
         )
       `)
       .eq("user_id", user.id)
-      .eq("businesses.name", "Beppu City") // Filter specifically for Beppu City
-      .single(); // Only get a single result
+      .eq("businesses.name", "Beppu City")
+      .eq("businesses.is_active", true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (profilesError) {
-      console.error("Error fetching business profiles:", profilesError);
+    if (profileError) {
+      console.error("Error fetching business profiles:", profileError);
       toast({
         title: "Error",
         description: "Failed to load businesses",
@@ -53,9 +56,9 @@ export const useBusinessSelection = () => {
       return;
     }
 
-    // Set the single business if it exists and is active
-    if (businessProfiles?.businesses && businessProfiles.businesses.is_active) {
-      setBusinesses([businessProfiles.businesses]);
+    // Set the business if it exists
+    if (businessProfile?.businesses) {
+      setBusinesses([businessProfile.businesses]);
     } else {
       setBusinesses([]);
     }
