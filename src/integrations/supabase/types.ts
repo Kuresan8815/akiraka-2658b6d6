@@ -225,7 +225,7 @@ export type Database = {
           page_count: number | null
           pdf_url: string | null
           report_data: Json
-          status: string
+          status: Database["public"]["Enums"]["report_processing_status"]
           template_id: string | null
         }
         Insert: {
@@ -239,7 +239,7 @@ export type Database = {
           page_count?: number | null
           pdf_url?: string | null
           report_data?: Json
-          status?: string
+          status?: Database["public"]["Enums"]["report_processing_status"]
           template_id?: string | null
         }
         Update: {
@@ -253,7 +253,7 @@ export type Database = {
           page_count?: number | null
           pdf_url?: string | null
           report_data?: Json
-          status?: string
+          status?: Database["public"]["Enums"]["report_processing_status"]
           template_id?: string | null
         }
         Relationships: [
@@ -975,6 +975,10 @@ export type Database = {
         }
         Returns: string[]
       }
+      process_pending_reports: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       account_level: "super_admin" | "regional_admin" | "business"
@@ -986,6 +990,11 @@ export type Database = {
         | "public_institution"
       emission_scope: "scope_1" | "scope_2" | "scope_3"
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
+      report_processing_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
       reward_type: "discount" | "voucher" | "product" | "service"
       user_role: "admin" | "business_user"
       widget_category: "environmental" | "social" | "governance"

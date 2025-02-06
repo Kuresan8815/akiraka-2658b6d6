@@ -27,7 +27,7 @@ export type GeneratedReport = {
   generated_at: string;
   report_data: Record<string, any>;
   pdf_url: string | null;
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   generated_by: string;
   date_range: {
     start: string;

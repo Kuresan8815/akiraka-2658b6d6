@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GeneratedReport } from "@/types/reports";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
@@ -15,6 +15,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
   const { data: reports, isLoading } = useQuery({
     queryKey: ["generated-reports", businessId],
     enabled: !!businessId,
+    refetchInterval: 5000, // Poll every 5 seconds for updates
     queryFn: async () => {
       const { data, error } = await supabase
         .from("generated_reports")
@@ -24,7 +25,6 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
 
       if (error) throw error;
       
-      // Transform the data to match our type
       return (data as any[]).map(report => ({
         ...report,
         date_range: report.date_range ? {
@@ -67,7 +67,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                   Generated on {format(new Date(report.generated_at), "PPP")}
                 </CardDescription>
               </div>
-              {report.pdf_url && (
+              {report.pdf_url && report.status === 'completed' && (
                 <Button variant="outline" size="sm" asChild>
                   <a href={report.pdf_url} target="_blank" rel="noopener noreferrer">
                     <Download className="h-4 w-4 mr-2" />
@@ -99,12 +99,16 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                   Pages: {report.page_count}
                 </div>
               )}
-              <div className={`text-sm ${
+              <div className={`text-sm flex items-center gap-2 ${
                 report.status === 'completed' ? 'text-green-600' :
                 report.status === 'failed' ? 'text-red-600' :
+                report.status === 'processing' ? 'text-blue-600' :
                 'text-yellow-600'
               }`}>
                 Status: {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                {report.status === 'processing' && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
               </div>
             </div>
           </CardContent>
@@ -113,4 +117,3 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
     </div>
   );
 };
-

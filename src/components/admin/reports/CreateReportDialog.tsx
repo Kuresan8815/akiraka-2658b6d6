@@ -69,6 +69,13 @@ export const CreateReportDialog = ({
           .single();
 
         if (error) throw error;
+
+        // Trigger the report generation
+        const { error: fnError } = await supabase.functions.invoke('generate-report', {
+          body: { report_id: data.id }
+        });
+
+        if (fnError) throw fnError;
         return data;
       }
 
@@ -108,6 +115,13 @@ export const CreateReportDialog = ({
         .single();
 
       if (reportError) throw reportError;
+
+      // Trigger the report generation
+      const { error: fnError } = await supabase.functions.invoke('generate-report', {
+        body: { report_id: report.id }
+      });
+
+      if (fnError) throw fnError;
       return report;
     },
     onSuccess: () => {
@@ -115,7 +129,7 @@ export const CreateReportDialog = ({
       queryClient.invalidateQueries({ queryKey: ["generated-reports"] });
       toast({
         title: "Success",
-        description: "Report creation initiated successfully",
+        description: "Report generation started. You'll be notified when it's ready.",
       });
       onOpenChange(false);
       setName("");
@@ -187,7 +201,7 @@ export const CreateReportDialog = ({
             onClick={() => createReport()}
             disabled={(!selectedTemplate && !name) || isPending}
           >
-            Create Report
+            {isPending ? "Creating..." : "Create Report"}
           </Button>
         </div>
       </DialogContent>
