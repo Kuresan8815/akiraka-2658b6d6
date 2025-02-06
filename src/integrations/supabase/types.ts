@@ -637,6 +637,8 @@ export type Database = {
       }
       widget_metrics: {
         Row: {
+          blockchain_hash: string | null
+          blockchain_tx_id: string | null
           business_id: string
           created_at: string
           id: string
@@ -646,6 +648,8 @@ export type Database = {
           widget_id: string
         }
         Insert: {
+          blockchain_hash?: string | null
+          blockchain_tx_id?: string | null
           business_id: string
           created_at?: string
           id?: string
@@ -655,6 +659,8 @@ export type Database = {
           widget_id: string
         }
         Update: {
+          blockchain_hash?: string | null
+          blockchain_tx_id?: string | null
           business_id?: string
           created_at?: string
           id?: string

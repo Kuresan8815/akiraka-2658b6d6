@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataEntryTable } from "@/components/admin/data/DataEntryTable";
@@ -8,7 +9,12 @@ export const AdminData = () => {
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Data Management</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Data Management</h1>
+          <p className="text-gray-500 mt-2">
+            Enter and manage ESG metrics with blockchain verification
+          </p>
+        </div>
       </div>
 
       <Tabs defaultValue="environmental" className="w-full">
