@@ -19,7 +19,10 @@ export const useBusinessSelection = () => {
     try {
       setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        setBusinesses([]);
+        return;
+      }
 
       const { data: businessProfiles, error: profileError } = await supabase
         .from("business_profiles")
@@ -45,7 +48,10 @@ export const useBusinessSelection = () => {
         .eq("user_id", user.id)
         .eq("businesses.is_active", true);
 
-      if (profileError) throw profileError;
+      if (profileError) {
+        console.error("Error fetching business profiles:", profileError);
+        throw profileError;
+      }
 
       const validBusinesses = businessProfiles
         ?.filter(profile => profile.businesses)
@@ -59,7 +65,7 @@ export const useBusinessSelection = () => {
       console.error("Error in fetchBusinesses:", error);
       toast({
         title: "Error",
-        description: "Failed to load businesses",
+        description: "Failed to load businesses. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -68,9 +74,23 @@ export const useBusinessSelection = () => {
   };
 
   const getCurrentBusiness = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.user_metadata?.current_business_id) {
-      setSelectedBusiness(user.user_metadata.current_business_id);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.user_metadata?.current_business_id) {
+        // Verify the user still has access to this business
+        const { data: profile } = await supabase
+          .from("business_profiles")
+          .select("business_id")
+          .eq("user_id", user.id)
+          .eq("business_id", user.user_metadata.current_business_id)
+          .maybeSingle();
+
+        if (profile) {
+          setSelectedBusiness(user.user_metadata.current_business_id);
+        }
+      }
+    } catch (error) {
+      console.error("Error getting current business:", error);
     }
   };
 
@@ -94,7 +114,7 @@ export const useBusinessSelection = () => {
       console.error("Error in handleBusinessChange:", error);
       toast({
         title: "Error",
-        description: "Failed to switch business",
+        description: "Failed to switch business. Please try again.",
         variant: "destructive",
       });
     }
