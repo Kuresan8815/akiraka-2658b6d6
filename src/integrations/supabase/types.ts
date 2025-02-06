@@ -217,9 +217,12 @@ export type Database = {
         Row: {
           business_id: string
           date_range: Json | null
+          file_size: number | null
           generated_at: string
           generated_by: string
           id: string
+          metadata: Json | null
+          page_count: number | null
           pdf_url: string | null
           report_data: Json
           status: string
@@ -228,9 +231,12 @@ export type Database = {
         Insert: {
           business_id: string
           date_range?: Json | null
+          file_size?: number | null
           generated_at?: string
           generated_by: string
           id?: string
+          metadata?: Json | null
+          page_count?: number | null
           pdf_url?: string | null
           report_data?: Json
           status?: string
@@ -239,9 +245,12 @@ export type Database = {
         Update: {
           business_id?: string
           date_range?: Json | null
+          file_size?: number | null
           generated_at?: string
           generated_by?: string
           id?: string
+          metadata?: Json | null
+          page_count?: number | null
           pdf_url?: string | null
           report_data?: Json
           status?: string
@@ -511,43 +520,61 @@ export type Database = {
       report_templates: {
         Row: {
           business_id: string
+          charts_config: Json | null
           config: Json
           created_at: string
+          custom_css: string | null
           description: string | null
+          font_family: string | null
+          footer_text: string | null
+          header_image_url: string | null
           id: string
           included_metrics: string[] | null
           is_active: boolean | null
           last_generated: string | null
           layout_type: string
           name: string
+          page_orientation: string | null
           theme_colors: string[] | null
           updated_at: string
         }
         Insert: {
           business_id: string
+          charts_config?: Json | null
           config?: Json
           created_at?: string
+          custom_css?: string | null
           description?: string | null
+          font_family?: string | null
+          footer_text?: string | null
+          header_image_url?: string | null
           id?: string
           included_metrics?: string[] | null
           is_active?: boolean | null
           last_generated?: string | null
           layout_type?: string
           name: string
+          page_orientation?: string | null
           theme_colors?: string[] | null
           updated_at?: string
         }
         Update: {
           business_id?: string
+          charts_config?: Json | null
           config?: Json
           created_at?: string
+          custom_css?: string | null
           description?: string | null
+          font_family?: string | null
+          footer_text?: string | null
+          header_image_url?: string | null
           id?: string
           included_metrics?: string[] | null
           is_active?: boolean | null
           last_generated?: string | null
           layout_type?: string
           name?: string
+          page_orientation?: string | null
           theme_colors?: string[] | null
           updated_at?: string
         }
