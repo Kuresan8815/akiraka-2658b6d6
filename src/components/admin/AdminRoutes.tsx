@@ -11,6 +11,8 @@ import { AdminData } from "@/pages/admin/Data";
 import { Reports } from "@/pages/admin/Reports";
 import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
 import { RegionalAdminDashboard } from "@/components/admin/RegionalAdminDashboard";
+import { BusinessLogin } from "@/pages/admin/BusinessLogin";
+import { SuperAdminLogin } from "@/pages/admin/SuperAdminLogin";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,6 +36,8 @@ export const AdminRoutes = () => {
 
   return (
     <Routes>
+      <Route path="/login" element={<BusinessLogin />} />
+      <Route path="/super" element={<SuperAdminLogin />} />
       <Route path="/" element={
         <AdminLayout role="admin">
           {adminLevel === "super_admin" ? (

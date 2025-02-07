@@ -7,18 +7,10 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
-const AdminLogin = () => {
+const BusinessLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loginType, setLoginType] = useState<"super_admin" | "business">("business");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -30,7 +22,6 @@ const AdminLogin = () => {
     setIsLoading(true);
 
     try {
-      // First, attempt to sign in
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -42,9 +33,9 @@ const AdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check user type based on login selection
+      // Check if user is a business user
       const { data: checkResult, error: checkError } = await supabase
-        .rpc(loginType === "super_admin" ? 'is_super_admin' : 'is_business_user', {
+        .rpc('is_business_user', {
           user_id: authData.user.id
         });
 
@@ -53,21 +44,19 @@ const AdminLogin = () => {
       }
 
       if (!checkResult) {
-        // If not authorized, sign them out
         await supabase.auth.signOut();
-        throw new Error(`Unauthorized access. ${loginType === "super_admin" ? "Super admin" : "Business"} privileges required.`);
+        throw new Error("Unauthorized access. Business admin privileges required.");
       }
 
       toast({
         title: "Success",
-        description: "Welcome to the admin dashboard",
+        description: "Welcome to the business admin dashboard",
       });
       
-      // Navigate to the appropriate dashboard
       navigate("/admin", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
-      setError(error.message || "Failed to sign in. Please check your credentials.");
+      setError(error.message || "Failed to sign in");
       toast({
         title: "Error",
         description: error.message || "Failed to sign in",
@@ -82,7 +71,7 @@ const AdminLogin = () => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center text-eco-primary mb-6">
-          Admin Login
+          Business Admin Login
         </h1>
         {error && (
           <Alert variant="destructive" className="mb-4">
@@ -115,23 +104,6 @@ const AdminLogin = () => {
                 required
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Login Type
-              </label>
-              <Select
-                value={loginType}
-                onValueChange={(value: "super_admin" | "business") => setLoginType(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select login type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="business">Business Admin</SelectItem>
-                  <SelectItem value="super_admin">Super Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           <Button
             type="submit"
@@ -146,4 +118,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin;
+export default BusinessLogin;
