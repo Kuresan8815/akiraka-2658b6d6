@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -18,28 +19,37 @@ export const useAuthSession = () => {
     meta: {
       onError: (error: Error) => {
         console.error("Auth error:", error);
-        handleSignOut();
+        // Only handle signout if there's an actual error, not just no session
+        if (error.message !== "Session not found") {
+          handleSignOut();
+        }
       },
     },
   });
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-    toast({
-      title: "Session Expired",
-      description: "Please sign in again to continue.",
-      variant: "destructive",
-    });
+    try {
+      await supabase.auth.signOut();
+      navigate("/login");
+      toast({
+        title: "Session Expired",
+        description: "Please sign in again to continue.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error("Sign out error:", error);
+      // Even if sign out fails, redirect to login
+      navigate("/login");
+    }
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "SIGNED_OUT") {
-          navigate("/");
+          navigate("/login");
         } else if (!session && !isLoading) {
-          navigate("/");
+          navigate("/login");
         }
       }
     );

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -39,11 +40,26 @@ export const useAuthentication = () => {
       }
 
       if (data?.user) {
+        // Check user role and redirect accordingly
+        const { data: adminData } = await supabase
+          .from('admin_users')
+          .select('account_level')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        let redirectPath = "/";
+        if (adminData?.account_level === 'super_admin') {
+          redirectPath = "/admin/usermgt";
+        } else if (adminData?.account_level === 'business') {
+          redirectPath = "/admin/dashboard";
+        }
+
         toast({
           title: "Success!",
           description: "You have been signed in.",
         });
-        navigate("/");
+        
+        navigate(redirectPath);
       }
     } catch (error: any) {
       toast({
