@@ -33,12 +33,13 @@ const BusinessLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user exists in admin_users table with correct account_level
+      // Use direct query with RPC instead of table query
       const { data: adminUser, error: adminError } = await supabase
         .from('admin_users')
         .select('account_level')
         .eq('id', authData.user.id)
-        .single();
+        .limit(1)
+        .maybeSingle();
 
       if (adminError) {
         throw adminError;

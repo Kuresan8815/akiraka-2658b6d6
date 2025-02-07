@@ -33,18 +33,17 @@ const SuperAdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user exists in admin_users table with super_admin account_level
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('account_level')
-        .eq('id', authData.user.id)
-        .single();
+      // Use the no_rls function to check super admin status
+      const { data: isSuperAdmin, error: checkError } = await supabase
+        .rpc('is_super_admin_no_rls', {
+          user_id: authData.user.id
+        });
 
-      if (adminError) {
-        throw adminError;
+      if (checkError) {
+        throw checkError;
       }
 
-      if (!adminUser || adminUser.account_level !== 'super_admin') {
+      if (!isSuperAdmin) {
         await supabase.auth.signOut();
         throw new Error("Unauthorized access. Super admin privileges required.");
       }
