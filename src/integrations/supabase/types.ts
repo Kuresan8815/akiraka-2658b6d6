@@ -535,8 +535,10 @@ export type Database = {
           layout_type: string
           name: string
           page_orientation: string | null
+          report_type: Database["public"]["Enums"]["report_type"] | null
           theme_colors: string[] | null
           updated_at: string
+          visualization_config: Json | null
         }
         Insert: {
           business_id: string
@@ -555,8 +557,10 @@ export type Database = {
           layout_type?: string
           name: string
           page_orientation?: string | null
+          report_type?: Database["public"]["Enums"]["report_type"] | null
           theme_colors?: string[] | null
           updated_at?: string
+          visualization_config?: Json | null
         }
         Update: {
           business_id?: string
@@ -575,8 +579,10 @@ export type Database = {
           layout_type?: string
           name?: string
           page_orientation?: string | null
+          report_type?: Database["public"]["Enums"]["report_type"] | null
           theme_colors?: string[] | null
           updated_at?: string
+          visualization_config?: Json | null
         }
         Relationships: [
           {
@@ -995,6 +1001,7 @@ export type Database = {
         | "processing"
         | "completed"
         | "failed"
+      report_type: "metrics" | "sustainability" | "combined"
       reward_type: "discount" | "voucher" | "product" | "service"
       user_role: "admin" | "business_user"
       widget_category: "environmental" | "social" | "governance"
