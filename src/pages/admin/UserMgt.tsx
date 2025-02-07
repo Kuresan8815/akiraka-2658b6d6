@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -23,7 +22,7 @@ interface EditUserData {
   account_level: 'super_admin' | 'regional_admin' | 'business';
 }
 
-export const AdminUsers = () => {
+export const UserMgt = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editUserData, setEditUserData] = useState<EditUserData | null>(null);
 

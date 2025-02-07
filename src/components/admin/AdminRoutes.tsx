@@ -1,7 +1,6 @@
-
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminDashboard } from "@/pages/admin/Dashboard";
-import { AdminUsers } from "@/pages/admin/Users";
+import { UserMgt } from "@/pages/admin/UserMgt";
 import { AdminProducts } from "@/pages/admin/Products";
 import { AdminAnalytics } from "@/pages/admin/Analytics";
 import { AdminSettings } from "@/pages/admin/Settings";
@@ -34,7 +33,6 @@ export const AdminRoutes = () => {
     },
   });
 
-  // Show loading state while checking admin level
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -48,10 +46,10 @@ export const AdminRoutes = () => {
       {/* Super Admin Routes */}
       {adminLevel === "super_admin" ? (
         <>
-          <Route path="" element={<Navigate to="/admin/users" replace />} />
-          <Route path="users" element={
+          <Route path="" element={<Navigate to="/admin/usermgt" replace />} />
+          <Route path="usermgt" element={
             <AdminLayout role="admin">
-              <AdminUsers />
+              <UserMgt />
             </AdminLayout>
           } />
         </>
