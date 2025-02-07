@@ -47,7 +47,6 @@ export const AdminRoutes = () => {
       {/* Super Admin Routes */}
       {adminLevel === "super_admin" && (
         <>
-          <Route path="" element={<Navigate to="usermgt" replace />} />
           <Route path="usermgt" element={
             <AdminLayout role="admin">
               <UserMgt />
@@ -119,12 +118,18 @@ export const AdminRoutes = () => {
         </>
       )}
       
-      {/* Catch all redirect - Only redirect to root if not already on a valid route */}
+      {/* Handle root path for super admin */}
+      {adminLevel === "super_admin" && (
+        <Route path="" element={<Navigate to="usermgt" replace />} />
+      )}
+      
+      {/* Catch all redirect - Only redirect if not already on a valid route */}
       <Route path="*" element={
         adminLevel === "super_admin" ? 
-          <Navigate to="/admin/usermgt" replace /> : 
-          <Navigate to="/admin" replace />
+          <Navigate to="usermgt" replace /> : 
+          <Navigate to="" replace />
       } />
     </Routes>
   );
 };
+
