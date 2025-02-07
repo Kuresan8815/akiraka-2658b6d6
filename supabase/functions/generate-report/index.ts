@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
-import { renderPdf } from "https://deno.land/x/pdfme@0.1.9/mod.ts";
+import { PDFDocument, rgb, StandardFonts } from 'https://esm.sh/pdf-lib@1.17.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -134,55 +134,88 @@ serve(async (req) => {
       };
     }
 
-    // Generate PDF content
-    const pdfContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; }
-            .header { text-align: center; margin-bottom: 20px; }
-            .section { margin: 20px 0; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-            th { background-color: #f5f5f5; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>${template.name}</h1>
-            <p>Generated on ${new Date().toLocaleDateString()}</p>
-          </div>
-          ${Object.entries(reportData.metrics).map(([key, value]) => `
-            <div class="section">
-              <h3>${key.replace(/_/g, ' ').toUpperCase()}</h3>
-              <p>${value}</p>
-            </div>
-          `).join('')}
-          ${reportData.tables ? `
-            <div class="section">
-              <h3>Monthly Metrics</h3>
-              <table>
-                <tr>${reportData.tables.monthlyMetrics.headers.map((header: string) => `
-                  <th>${header}</th>
-                `).join('')}</tr>
-                ${reportData.tables.monthlyMetrics.rows.map((row: string[]) => `
-                  <tr>${row.map((cell: string) => `
-                    <td>${cell}</td>
-                  `).join('')}</tr>
-                `).join('')}
-              </table>
-            </div>
-          ` : ''}
-        </body>
-      </html>
-    `;
+    // Create PDF document
+    const pdfDoc = await PDFDocument.create();
+    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const page = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
+    const { width, height } = page.getSize();
+    
+    // Add title
+    page.drawText(template.name, {
+      x: 50,
+      y: height - 50,
+      size: 20,
+      font: timesRomanFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Add generation date
+    page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
+      x: 50,
+      y: height - 80,
+      size: 12,
+      font: timesRomanFont,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+
+    // Add metrics
+    let yPosition = height - 120;
+    Object.entries(reportData.metrics).forEach(([key, value]) => {
+      const label = key.replace(/_/g, ' ').toUpperCase();
+      page.drawText(`${label}: ${value}`, {
+        x: 50,
+        y: yPosition,
+        size: 12,
+        font: timesRomanFont,
+        color: rgb(0, 0, 0),
+      });
+      yPosition -= 25;
+    });
+
+    // Add table if available
+    if (reportData.tables) {
+      yPosition -= 40;
+      page.drawText('Monthly Metrics', {
+        x: 50,
+        y: yPosition,
+        size: 14,
+        font: timesRomanFont,
+        color: rgb(0, 0, 0),
+      });
+      
+      yPosition -= 25;
+      const tableHeaders = reportData.tables.monthlyMetrics.headers;
+      const columnWidth = (width - 100) / tableHeaders.length;
+      
+      // Draw headers
+      tableHeaders.forEach((header: string, index: number) => {
+        page.drawText(header, {
+          x: 50 + (columnWidth * index),
+          y: yPosition,
+          size: 10,
+          font: timesRomanFont,
+          color: rgb(0, 0, 0),
+        });
+      });
+
+      // Draw rows
+      reportData.tables.monthlyMetrics.rows.forEach((row: string[], rowIndex: number) => {
+        yPosition -= 20;
+        row.forEach((cell: string, cellIndex: number) => {
+          page.drawText(cell, {
+            x: 50 + (columnWidth * cellIndex),
+            y: yPosition,
+            size: 10,
+            font: timesRomanFont,
+            color: rgb(0, 0, 0),
+          });
+        });
+      });
+    }
 
     // Generate PDF buffer
-    const pdfBuffer = await renderPdf({
-      content: pdfContent,
-      format: template.page_orientation === 'landscape' ? 'A4L' : 'A4',
-    });
+    const pdfBytes = await pdfDoc.save();
+    const pdfBuffer = new Uint8Array(pdfBytes);
 
     // Generate PDF file name
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
