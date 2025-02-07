@@ -53,7 +53,8 @@ const SuperAdminLogin = () => {
         description: "Welcome to the super admin dashboard",
       });
       
-      navigate("/admin", { replace: true });
+      // Route to the users management page instead of the default dashboard
+      navigate("/admin/users", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in");

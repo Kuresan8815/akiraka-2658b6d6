@@ -18,21 +18,26 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const AdminRoutes = () => {
-  const { data: adminLevel } = useQuery({
+  const { data: adminLevel, isLoading } = useQuery({
     queryKey: ["admin-level"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data } = await supabase
+      const { data: adminUser } = await supabase
         .from("admin_users")
         .select("account_level")
         .eq("id", user.id)
         .single();
 
-      return data?.account_level;
+      return adminUser?.account_level;
     },
   });
+
+  // Show loading state while checking admin level
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <Routes>
@@ -44,7 +49,7 @@ export const AdminRoutes = () => {
       <Route path="" element={
         <AdminLayout role="admin">
           {adminLevel === "super_admin" ? (
-            <SuperAdminDashboard />
+            <Navigate to="/admin/users" replace />
           ) : adminLevel === "regional_admin" ? (
             <RegionalAdminDashboard />
           ) : (
@@ -53,6 +58,7 @@ export const AdminRoutes = () => {
         </AdminLayout>
       } />
       
+      {/* Super Admin Only Routes */}
       {adminLevel === "super_admin" && (
         <>
           <Route path="users" element={
@@ -62,6 +68,13 @@ export const AdminRoutes = () => {
           } />
         </>
       )}
+      
+      {/* Business Admin Routes */}
+      <Route path="dashboard" element={
+        <AdminLayout role="admin">
+          <AdminDashboard />
+        </AdminLayout>
+      } />
       
       <Route path="products" element={
         <AdminLayout role="admin">
