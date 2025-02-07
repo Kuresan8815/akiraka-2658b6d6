@@ -11,21 +11,21 @@ export type Database = {
     Tables: {
       admin_users: {
         Row: {
-          account_level: Database["public"]["Enums"]["account_level"] | null
+          account_level: Database["public"]["Enums"]["account_level"]
           created_at: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
-          account_level?: Database["public"]["Enums"]["account_level"] | null
+          account_level?: Database["public"]["Enums"]["account_level"]
           created_at?: string
           id: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
-          account_level?: Database["public"]["Enums"]["account_level"] | null
+          account_level?: Database["public"]["Enums"]["account_level"]
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
