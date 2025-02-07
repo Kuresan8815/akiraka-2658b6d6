@@ -18,6 +18,13 @@ export type ReportTemplate = {
   custom_css: string | null;
   page_orientation: 'portrait' | 'landscape' | null;
   charts_config: Record<string, any>[] | null;
+  report_type: 'metrics' | 'sustainability' | 'combined';
+  visualization_config: {
+    showBarCharts: boolean;
+    showPieCharts: boolean;
+    showTables: boolean;
+    showTimeline: boolean;
+  };
 };
 
 export type GeneratedReport = {

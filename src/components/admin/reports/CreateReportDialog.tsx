@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,10 +26,16 @@ export const CreateReportDialog = ({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  const [reportType, setReportType] = useState<'metrics' | 'sustainability' | 'combined'>('combined');
+  const [visualization, setVisualization] = useState({
+    showBarCharts: true,
+    showPieCharts: true,
+    showTables: true,
+    showTimeline: true,
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch available templates
   const { data: templates } = useQuery({
     queryKey: ["report-templates", businessId],
     enabled: !!businessId,
@@ -89,6 +96,8 @@ export const CreateReportDialog = ({
             description,
             layout_type: "standard",
             theme_colors: ["#9b87f5", "#7E69AB", "#6E59A5"],
+            report_type: reportType,
+            visualization_config: visualization,
           },
         ])
         .select()
@@ -135,6 +144,13 @@ export const CreateReportDialog = ({
       setName("");
       setDescription("");
       setSelectedTemplate("");
+      setReportType('combined');
+      setVisualization({
+        showBarCharts: true,
+        showPieCharts: true,
+        showTables: true,
+        showTimeline: true,
+      });
     },
     onError: (error) => {
       toast({
@@ -147,7 +163,7 @@ export const CreateReportDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New Report</DialogTitle>
         </DialogHeader>
@@ -190,6 +206,64 @@ export const CreateReportDialog = ({
                   placeholder="A comprehensive monthly report of our sustainability metrics..."
                 />
               </div>
+              <div className="space-y-2">
+                <Label>Report Type</Label>
+                <Select value={reportType} onValueChange={(value: 'metrics' | 'sustainability' | 'combined') => setReportType(value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="metrics">Metrics Only</SelectItem>
+                    <SelectItem value="sustainability">Sustainability Focus</SelectItem>
+                    <SelectItem value="combined">Combined Report</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Visualization Options</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showBarCharts"
+                      checked={visualization.showBarCharts}
+                      onCheckedChange={(checked) =>
+                        setVisualization((prev) => ({ ...prev, showBarCharts: checked as boolean }))
+                      }
+                    />
+                    <Label htmlFor="showBarCharts">Bar Charts</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showPieCharts"
+                      checked={visualization.showPieCharts}
+                      onCheckedChange={(checked) =>
+                        setVisualization((prev) => ({ ...prev, showPieCharts: checked as boolean }))
+                      }
+                    />
+                    <Label htmlFor="showPieCharts">Pie Charts</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showTables"
+                      checked={visualization.showTables}
+                      onCheckedChange={(checked) =>
+                        setVisualization((prev) => ({ ...prev, showTables: checked as boolean }))
+                      }
+                    />
+                    <Label htmlFor="showTables">Data Tables</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="showTimeline"
+                      checked={visualization.showTimeline}
+                      onCheckedChange={(checked) =>
+                        setVisualization((prev) => ({ ...prev, showTimeline: checked as boolean }))
+                      }
+                    />
+                    <Label htmlFor="showTimeline">Timeline View</Label>
+                  </div>
+                </div>
+              </div>
             </>
           )}
         </div>
@@ -208,3 +282,4 @@ export const CreateReportDialog = ({
     </Dialog>
   );
 };
+
