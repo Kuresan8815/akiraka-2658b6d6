@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card } from "@/components/ui/card";
 import { useQuery } from '@tanstack/react-query';
@@ -6,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { CreateUserForm } from '@/components/admin/users/CreateUserForm';
 import { UserTable } from '@/components/admin/users/UserTable';
 import { EditUserDialog } from '@/components/admin/users/EditUserDialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AdminUser {
   id: string;
@@ -27,9 +29,10 @@ export const UserMgt = () => {
   const [editUserData, setEditUserData] = useState<EditUserData | null>(null);
 
   // Fetch admin users
-  const { data: adminUsers, isLoading: isLoadingUsers, refetch: refetchUsers } = useQuery({
+  const { data: adminUsers, isLoading: isLoadingUsers, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
+      console.log('Fetching admin users...');
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
         .select(`
@@ -43,7 +46,12 @@ export const UserMgt = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (adminError) throw adminError;
+      if (adminError) {
+        console.error('Error fetching admin users:', adminError);
+        throw adminError;
+      }
+      
+      console.log('Admin users data:', adminData);
       
       // Transform the data to match our AdminUser interface
       return adminData.map((user: any) => ({
@@ -59,6 +67,14 @@ export const UserMgt = () => {
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-bold mb-6">User Management</h1>
+      
+      {usersError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>
+            {(usersError as Error).message || 'Failed to load users'}
+          </AlertDescription>
+        </Alert>
+      )}
       
       <Card className="p-6 max-w-md">
         <h2 className="text-lg font-semibold mb-4">Create New User</h2>
