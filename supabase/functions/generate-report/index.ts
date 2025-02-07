@@ -8,6 +8,217 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+interface ReportTemplate {
+  name: string;
+  report_type: 'metrics' | 'sustainability' | 'combined';
+  visualization_config: {
+    showBarCharts: boolean;
+    showPieCharts: boolean;
+    showTables: boolean;
+    showTimeline: boolean;
+  };
+  page_orientation: 'portrait' | 'landscape';
+}
+
+interface ReportData {
+  metrics: Record<string, number>;
+  charts?: Record<string, any>;
+  sustainability?: {
+    environmental_impact: string;
+    recommendations: string[];
+    year_over_year_improvement: number;
+  };
+  tables?: {
+    monthlyMetrics: {
+      headers: string[];
+      rows: string[][];
+    };
+  };
+}
+
+async function generateReportData(reportType: string, visualConfig: Record<string, boolean>): Promise<ReportData> {
+  const reportData: ReportData = {
+    generated_at: new Date().toISOString(),
+    metrics: {},
+    charts: {},
+  };
+
+  // Add metrics based on report type
+  if (reportType === 'metrics' || reportType === 'combined') {
+    reportData.metrics = {
+      total_emissions: 1000,
+      water_usage: 5000,
+      sustainability_score: 85,
+    };
+
+    if (visualConfig.showBarCharts) {
+      reportData.charts.monthlyEmissions = {
+        type: 'bar',
+        title: 'Monthly Emissions',
+        data: [
+          { month: 'Jan', value: 850 },
+          { month: 'Feb', value: 920 },
+          { month: 'Mar', value: 780 },
+          { month: 'Apr', value: 850 },
+          { month: 'May', value: 920 },
+          { month: 'Jun', value: 780 },
+        ],
+      };
+    }
+
+    if (visualConfig.showPieCharts) {
+      reportData.charts.resourceDistribution = {
+        type: 'pie',
+        title: 'Resource Distribution',
+        data: [
+          { label: 'Water', value: 35 },
+          { label: 'Energy', value: 45 },
+          { label: 'Materials', value: 20 },
+        ],
+      };
+    }
+  }
+
+  // Add sustainability data if applicable
+  if (reportType === 'sustainability' || reportType === 'combined') {
+    reportData.sustainability = {
+      environmental_impact: 'Medium',
+      recommendations: [
+        'Implement water recycling system',
+        'Switch to renewable energy sources',
+        'Optimize waste management',
+      ],
+      year_over_year_improvement: 15,
+    };
+
+    if (visualConfig.showTimeline) {
+      reportData.charts.sustainabilityProgress = {
+        type: 'line',
+        title: 'Sustainability Progress',
+        data: [
+          { quarter: 'Q1', score: 75 },
+          { quarter: 'Q2', score: 78 },
+          { quarter: 'Q3', score: 82 },
+          { quarter: 'Q4', score: 85 },
+        ],
+      };
+    }
+  }
+
+  if (visualConfig.showTables) {
+    reportData.tables = {
+      monthlyMetrics: {
+        headers: ['Month', 'Emissions', 'Water Usage', 'Score'],
+        rows: [
+          ['January', '850kg', '4500L', '82'],
+          ['February', '920kg', '4800L', '80'],
+          ['March', '780kg', '4200L', '85'],
+        ],
+      },
+    };
+  }
+
+  return reportData;
+}
+
+async function createPDFDocument(template: ReportTemplate, reportData: ReportData): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const page = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
+  const { width, height } = page.getSize();
+  
+  // Add title and date
+  page.drawText(template.name, {
+    x: 50,
+    y: height - 50,
+    size: 20,
+    font: timesRomanFont,
+    color: rgb(0, 0, 0),
+  });
+
+  page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
+    x: 50,
+    y: height - 80,
+    size: 12,
+    font: timesRomanFont,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+
+  // Draw metrics
+  let yPosition = height - 120;
+  Object.entries(reportData.metrics).forEach(([key, value]) => {
+    const label = key.replace(/_/g, ' ').toUpperCase();
+    page.drawText(`${label}: ${value}`, {
+      x: 50,
+      y: yPosition,
+      size: 12,
+      font: timesRomanFont,
+      color: rgb(0, 0, 0),
+    });
+    yPosition -= 25;
+  });
+
+  // Draw table if available
+  if (reportData.tables) {
+    yPosition = drawTable(page, reportData.tables.monthlyMetrics, {
+      x: 50,
+      y: yPosition - 40,
+      width: width - 100,
+      font: timesRomanFont,
+    });
+  }
+
+  return await pdfDoc.save();
+}
+
+function drawTable(
+  page: PDFPage,
+  table: { headers: string[]; rows: string[][] },
+  options: { x: number; y: number; width: number; font: PDFFont }
+): number {
+  const { x, y, width, font } = options;
+  let currentY = y;
+
+  // Draw table title
+  page.drawText('Monthly Metrics', {
+    x,
+    y: currentY,
+    size: 14,
+    font,
+    color: rgb(0, 0, 0),
+  });
+  currentY -= 25;
+
+  const columnWidth = width / table.headers.length;
+
+  // Draw headers
+  table.headers.forEach((header, index) => {
+    page.drawText(header, {
+      x: x + (columnWidth * index),
+      y: currentY,
+      size: 10,
+      font,
+      color: rgb(0, 0, 0),
+    });
+  });
+
+  // Draw rows
+  table.rows.forEach((row) => {
+    currentY -= 20;
+    row.forEach((cell, cellIndex) => {
+      page.drawText(cell, {
+        x: x + (columnWidth * cellIndex),
+        y: currentY,
+        size: 10,
+        font,
+        color: rgb(0, 0, 0),
+      });
+    });
+  });
+
+  return currentY;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -42,186 +253,25 @@ serve(async (req) => {
       throw reportError;
     }
 
-    // Get the template settings
+    // Get template settings and generate report data
     const template = report.report_template;
-    const reportType = template?.report_type || 'combined';
-    const visualConfig = template?.visualization_config || {
-      showBarCharts: true,
-      showPieCharts: true,
-      showTables: true,
-      showTimeline: true,
-    };
-
-    // Generate report data based on type and visualization config
-    const reportData: Record<string, any> = {
-      generated_at: new Date().toISOString(),
-      metrics: {},
-      charts: {},
-    };
-
-    // Add metrics based on report type
-    if (reportType === 'metrics' || reportType === 'combined') {
-      reportData.metrics = {
-        total_emissions: 1000,
-        water_usage: 5000,
-        sustainability_score: 85,
-      };
-
-      if (visualConfig.showBarCharts) {
-        reportData.charts.monthlyEmissions = {
-          type: 'bar',
-          title: 'Monthly Emissions',
-          data: [
-            { month: 'Jan', value: 850 },
-            { month: 'Feb', value: 920 },
-            { month: 'Mar', value: 780 },
-            { month: 'Apr', value: 850 },
-            { month: 'May', value: 920 },
-            { month: 'Jun', value: 780 },
-          ],
-        };
+    const reportData = await generateReportData(
+      template?.report_type || 'combined',
+      template?.visualization_config || {
+        showBarCharts: true,
+        showPieCharts: true,
+        showTables: true,
+        showTimeline: true,
       }
+    );
 
-      if (visualConfig.showPieCharts) {
-        reportData.charts.resourceDistribution = {
-          type: 'pie',
-          title: 'Resource Distribution',
-          data: [
-            { label: 'Water', value: 35 },
-            { label: 'Energy', value: 45 },
-            { label: 'Materials', value: 20 },
-          ],
-        };
-      }
-    }
+    // Generate PDF
+    const pdfBuffer = await createPDFDocument(template, reportData);
 
-    // Add sustainability data if applicable
-    if (reportType === 'sustainability' || reportType === 'combined') {
-      reportData.sustainability = {
-        environmental_impact: 'Medium',
-        recommendations: [
-          'Implement water recycling system',
-          'Switch to renewable energy sources',
-          'Optimize waste management',
-        ],
-        year_over_year_improvement: 15,
-      };
-
-      if (visualConfig.showTimeline) {
-        reportData.charts.sustainabilityProgress = {
-          type: 'line',
-          title: 'Sustainability Progress',
-          data: [
-            { quarter: 'Q1', score: 75 },
-            { quarter: 'Q2', score: 78 },
-            { quarter: 'Q3', score: 82 },
-            { quarter: 'Q4', score: 85 },
-          ],
-        };
-      }
-    }
-
-    if (visualConfig.showTables) {
-      reportData.tables = {
-        monthlyMetrics: {
-          headers: ['Month', 'Emissions', 'Water Usage', 'Score'],
-          rows: [
-            ['January', '850kg', '4500L', '82'],
-            ['February', '920kg', '4800L', '80'],
-            ['March', '780kg', '4200L', '85'],
-          ],
-        },
-      };
-    }
-
-    // Create PDF document
-    const pdfDoc = await PDFDocument.create();
-    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-    const page = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
-    const { width, height } = page.getSize();
-    
-    // Add title
-    page.drawText(template.name, {
-      x: 50,
-      y: height - 50,
-      size: 20,
-      font: timesRomanFont,
-      color: rgb(0, 0, 0),
-    });
-
-    // Add generation date
-    page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
-      x: 50,
-      y: height - 80,
-      size: 12,
-      font: timesRomanFont,
-      color: rgb(0.4, 0.4, 0.4),
-    });
-
-    // Add metrics
-    let yPosition = height - 120;
-    Object.entries(reportData.metrics).forEach(([key, value]) => {
-      const label = key.replace(/_/g, ' ').toUpperCase();
-      page.drawText(`${label}: ${value}`, {
-        x: 50,
-        y: yPosition,
-        size: 12,
-        font: timesRomanFont,
-        color: rgb(0, 0, 0),
-      });
-      yPosition -= 25;
-    });
-
-    // Add table if available
-    if (reportData.tables) {
-      yPosition -= 40;
-      page.drawText('Monthly Metrics', {
-        x: 50,
-        y: yPosition,
-        size: 14,
-        font: timesRomanFont,
-        color: rgb(0, 0, 0),
-      });
-      
-      yPosition -= 25;
-      const tableHeaders = reportData.tables.monthlyMetrics.headers;
-      const columnWidth = (width - 100) / tableHeaders.length;
-      
-      // Draw headers
-      tableHeaders.forEach((header: string, index: number) => {
-        page.drawText(header, {
-          x: 50 + (columnWidth * index),
-          y: yPosition,
-          size: 10,
-          font: timesRomanFont,
-          color: rgb(0, 0, 0),
-        });
-      });
-
-      // Draw rows
-      reportData.tables.monthlyMetrics.rows.forEach((row: string[], rowIndex: number) => {
-        yPosition -= 20;
-        row.forEach((cell: string, cellIndex: number) => {
-          page.drawText(cell, {
-            x: 50 + (columnWidth * cellIndex),
-            y: yPosition,
-            size: 10,
-            font: timesRomanFont,
-            color: rgb(0, 0, 0),
-          });
-        });
-      });
-    }
-
-    // Generate PDF buffer
-    const pdfBytes = await pdfDoc.save();
-    const pdfBuffer = new Uint8Array(pdfBytes);
-
-    // Generate PDF file name
+    // Generate PDF file name and upload
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const pdfFileName = `report_${report_id}_${timestamp}.pdf`;
     
-    // Upload PDF to storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('reports')
       .upload(pdfFileName, pdfBuffer, {
@@ -233,12 +283,12 @@ serve(async (req) => {
       throw uploadError;
     }
 
-    // Get public URL for the uploaded PDF
+    // Get public URL
     const { data: { publicUrl: pdfUrl } } = supabase.storage
       .from('reports')
       .getPublicUrl(pdfFileName);
 
-    // Update the report with completed status and generated data
+    // Update report status
     const { error: updateError } = await supabase
       .from('generated_reports')
       .update({
@@ -246,7 +296,7 @@ serve(async (req) => {
         report_data: reportData,
         pdf_url: pdfUrl,
         file_size: pdfBuffer.length,
-        page_count: reportType === 'combined' ? 8 : 5,
+        page_count: reportData.sustainability ? 8 : 5,
       })
       .eq('id', report_id);
 
