@@ -28,6 +28,23 @@ export const UserMgt = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editUserData, setEditUserData] = useState<EditUserData | null>(null);
 
+  // Check if current user is super admin
+  const { data: isSuperAdmin, isLoading: isCheckingAdmin } = useQuery({
+    queryKey: ['is-super-admin'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+      
+      const { data: isSuper, error } = await supabase
+        .rpc('is_super_admin_no_rls', {
+          user_id: user.id
+        });
+        
+      if (error) throw error;
+      return isSuper;
+    },
+  });
+
   // Fetch admin users
   const { data: adminUsers, isLoading: isLoadingUsers, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users'],
@@ -62,7 +79,28 @@ export const UserMgt = () => {
         created_at: user.created_at,
       })) as AdminUser[];
     },
+    enabled: isSuperAdmin, // Only fetch if user is super admin
   });
+
+  if (isCheckingAdmin) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-6 w-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertDescription>
+            You do not have permission to access this page. Super admin privileges required.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
