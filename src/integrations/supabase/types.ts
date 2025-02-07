@@ -898,6 +898,12 @@ export type Database = {
       }
     }
     Functions: {
+      check_admin_user_access: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       create_admin_user: {
         Args: {
           user_id: string
