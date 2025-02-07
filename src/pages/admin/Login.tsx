@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,10 +7,18 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginType, setLoginType] = useState<"super_admin" | "business">("business");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -33,20 +42,20 @@ const AdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user is an admin using the is_admin function
-      const { data: isAdminResult, error: adminCheckError } = await supabase
-        .rpc('is_admin', {
+      // Check user type based on login selection
+      const { data: checkResult, error: checkError } = await supabase
+        .rpc(loginType === "super_admin" ? 'is_super_admin' : 'is_business_admin', {
           user_id: authData.user.id
         });
 
-      if (adminCheckError) {
-        throw adminCheckError;
+      if (checkError) {
+        throw checkError;
       }
 
-      if (!isAdminResult) {
-        // If not an admin, sign them out
+      if (!checkResult) {
+        // If not authorized, sign them out
         await supabase.auth.signOut();
-        throw new Error("Unauthorized access. Admin privileges required.");
+        throw new Error(`Unauthorized access. ${loginType === "super_admin" ? "Super admin" : "Business admin"} privileges required.`);
       }
 
       toast({
@@ -54,7 +63,7 @@ const AdminLogin = () => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Explicitly navigate to the admin dashboard
+      // Navigate to the appropriate dashboard
       navigate("/admin", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
@@ -105,6 +114,23 @@ const AdminLogin = () => {
                 disabled={isLoading}
                 required
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Login Type
+              </label>
+              <Select
+                value={loginType}
+                onValueChange={(value: "super_admin" | "business") => setLoginType(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select login type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="business">Business Admin</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <Button
