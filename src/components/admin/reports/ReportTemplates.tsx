@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportTemplate } from "@/types/reports";
-import { BarChart3, FileText, PieChart, Table, Timeline } from "lucide-react";
+import { BarChart3, FileText, PieChart, Table, LineChart } from "lucide-react";
 
 interface ReportTemplatesProps {
   businessId?: string;
@@ -88,7 +88,7 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
                   <Table className="h-4 w-4 text-gray-500" />
                 )}
                 {template.visualization_config?.showTimeline && (
-                  <Timeline className="h-4 w-4 text-gray-500" />
+                  <LineChart className="h-4 w-4 text-gray-500" />
                 )}
               </div>
             </div>

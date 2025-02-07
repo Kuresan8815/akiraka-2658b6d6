@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,7 +68,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                 <CardTitle className="flex items-center gap-2">
                   Report #{report.id.slice(0, 8)}
                   <Badge variant={
-                    report.status === 'completed' ? 'success' :
+                    report.status === 'completed' ? 'default' :
                     report.status === 'failed' ? 'destructive' :
                     'secondary'
                   }>
