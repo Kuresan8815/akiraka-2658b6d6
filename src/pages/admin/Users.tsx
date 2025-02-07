@@ -23,7 +23,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Trash2, UserCog } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Loader2, Trash2, UserCog, Edit2 } from 'lucide-react';
 
 interface AdminUser {
   id: string;
@@ -33,11 +35,21 @@ interface AdminUser {
   created_at: string;
 }
 
+interface EditUserData {
+  id: string;
+  email: string;
+  role: 'admin' | 'business_user';
+  account_level: 'super_admin' | 'regional_admin' | 'business';
+}
+
 export const AdminUsers = () => {
   const [email, setEmail] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [role, setRole] = useState<'admin' | 'business_user'>('business_user');
+  const [accountLevel, setAccountLevel] = useState<'super_admin' | 'regional_admin' | 'business'>('business');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editUserData, setEditUserData] = useState<EditUserData | null>(null);
   const { toast } = useToast();
 
   // Fetch admin users
@@ -90,7 +102,11 @@ export const AdminUsers = () => {
           const { error: adminError } = await supabase
             .from('admin_users')
             .insert([
-              { id: authData.user.id, role }
+              { 
+                id: authData.user.id, 
+                role,
+                account_level: accountLevel
+              }
             ]);
 
           if (adminError) throw adminError;
@@ -105,6 +121,7 @@ export const AdminUsers = () => {
         setEmail('');
         setIsAdmin(false);
         setRole('business_user');
+        setAccountLevel('business');
         refetchUsers();
       }
     } catch (error: any) {
@@ -115,6 +132,37 @@ export const AdminUsers = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUserData) return;
+
+    try {
+      const { error } = await supabase
+        .from('admin_users')
+        .update({ 
+          role: editUserData.role,
+          account_level: editUserData.account_level
+        })
+        .eq('id', editUserData.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "User updated successfully",
+      });
+
+      setIsEditDialogOpen(false);
+      refetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -168,9 +216,7 @@ export const AdminUsers = () => {
         <h2 className="text-lg font-semibold mb-4">Create New User</h2>
         <form onSubmit={handleCreateUser} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               type="email"
@@ -182,9 +228,7 @@ export const AdminUsers = () => {
           </div>
 
           <div className="flex items-center justify-between">
-            <label htmlFor="isAdmin" className="text-sm font-medium">
-              Admin Access
-            </label>
+            <Label htmlFor="isAdmin">Admin Access</Label>
             <Switch
               id="isAdmin"
               checked={isAdmin}
@@ -193,23 +237,40 @@ export const AdminUsers = () => {
           </div>
 
           {isAdmin && (
-            <div className="space-y-2">
-              <label htmlFor="role" className="text-sm font-medium">
-                Role
-              </label>
-              <Select
-                value={role}
-                onValueChange={(value: 'admin' | 'business_user') => setRole(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="business_user">Business User</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={role}
+                  onValueChange={(value: 'admin' | 'business_user') => setRole(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="business_user">Business User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountLevel">Account Level</Label>
+                <Select
+                  value={accountLevel}
+                  onValueChange={(value: 'super_admin' | 'regional_admin' | 'business') => setAccountLevel(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                    <SelectItem value="regional_admin">Regional Admin</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
 
           <Button type="submit" className="w-full" disabled={isLoading}>
@@ -258,6 +319,17 @@ export const AdminUsers = () => {
                       <Button
                         variant="outline"
                         size="icon"
+                        onClick={() => {
+                          setEditUserData(user);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="icon"
                         onClick={() => handleResetPassword(user.email)}
                       >
                         <UserCog className="h-4 w-4" />
@@ -299,7 +371,69 @@ export const AdminUsers = () => {
           </Table>
         )}
       </Card>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>
+              Update user role and account level
+            </DialogDescription>
+          </DialogHeader>
+          {editUserData && (
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input value={editUserData.email} disabled />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Role</Label>
+                <Select
+                  value={editUserData.role}
+                  onValueChange={(value: 'admin' | 'business_user') => 
+                    setEditUserData({ ...editUserData, role: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="business_user">Business User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Account Level</Label>
+                <Select
+                  value={editUserData.account_level}
+                  onValueChange={(value: 'super_admin' | 'regional_admin' | 'business') => 
+                    setEditUserData({ ...editUserData, account_level: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="super_admin">Super Admin</SelectItem>
+                    <SelectItem value="regional_admin">Regional Admin</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Save Changes</Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-
