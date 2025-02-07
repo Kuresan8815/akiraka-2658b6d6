@@ -33,17 +33,18 @@ const BusinessLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user is a business user
-      const { data: checkResult, error: checkError } = await supabase
-        .rpc('is_business_user', {
-          user_id: authData.user.id
-        });
+      // Check if user exists in admin_users table with correct account_level
+      const { data: adminUser, error: adminError } = await supabase
+        .from('admin_users')
+        .select('account_level')
+        .eq('id', authData.user.id)
+        .single();
 
-      if (checkError) {
-        throw checkError;
+      if (adminError) {
+        throw adminError;
       }
 
-      if (!checkResult) {
+      if (!adminUser || adminUser.account_level !== 'business') {
         await supabase.auth.signOut();
         throw new Error("Unauthorized access. Business admin privileges required.");
       }
