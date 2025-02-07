@@ -41,29 +41,23 @@ export const AdminRoutes = () => {
 
   return (
     <Routes>
-      {/* Public Admin Routes */}
+      {/* Public Routes */}
       <Route path="login" element={<BusinessLogin />} />
       <Route path="super" element={<SuperAdminLogin />} />
       
-      {/* Super Admin Only Routes */}
-      {adminLevel === "super_admin" && (
+      {/* Super Admin Routes */}
+      {adminLevel === "super_admin" ? (
         <>
-          <Route path="" element={
-            <AdminLayout role="admin">
-              <Navigate to="/admin/users" replace />
-            </AdminLayout>
-          } />
+          <Route path="" element={<Navigate to="/admin/users" replace />} />
           <Route path="users" element={
             <AdminLayout role="admin">
               <AdminUsers />
             </AdminLayout>
           } />
         </>
-      )}
-      
-      {/* Protected Business Admin Routes - Only accessible if NOT super_admin */}
-      {adminLevel !== "super_admin" && (
+      ) : (
         <>
+          {/* Business Admin Routes */}
           <Route path="" element={
             <AdminLayout role="admin">
               {adminLevel === "regional_admin" ? (
