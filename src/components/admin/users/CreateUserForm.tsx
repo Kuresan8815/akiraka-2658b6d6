@@ -31,10 +31,7 @@ export const CreateUserForm = ({ onSuccess }: { onSuccess: () => void }) => {
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email,
         email_confirm: true,
-        user_metadata: { 
-          role,
-          account_level: accountLevel
-        }
+        user_metadata: { role }
       });
 
       if (authError) throw authError;
