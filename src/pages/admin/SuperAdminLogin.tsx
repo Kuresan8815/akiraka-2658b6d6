@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -51,7 +52,8 @@ const SuperAdminLogin = () => {
         description: "Welcome to the super admin dashboard",
       });
       
-      navigate("/admin/usermgt", { replace: true });
+      // Update the navigation route
+      navigate("/admin/usermgt");
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in");

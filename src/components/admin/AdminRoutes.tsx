@@ -1,3 +1,4 @@
+
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { AdminDashboard } from "@/pages/admin/Dashboard";
 import { UserMgt } from "@/pages/admin/UserMgt";
@@ -44,7 +45,7 @@ export const AdminRoutes = () => {
       <Route path="super" element={<SuperAdminLogin />} />
       
       {/* Super Admin Routes */}
-      {adminLevel === "super_admin" ? (
+      {adminLevel === "super_admin" && (
         <>
           <Route path="" element={<Navigate to="/admin/usermgt" replace />} />
           <Route path="usermgt" element={
@@ -53,9 +54,11 @@ export const AdminRoutes = () => {
             </AdminLayout>
           } />
         </>
-      ) : (
+      )}
+      
+      {/* Business Admin Routes */}
+      {adminLevel !== "super_admin" && (
         <>
-          {/* Business Admin Routes */}
           <Route path="" element={
             <AdminLayout role="admin">
               {adminLevel === "regional_admin" ? (
