@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +32,6 @@ const SuperAdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Use the no_rls function to check super admin status
       const { data: isSuperAdmin, error: checkError } = await supabase
         .rpc('is_super_admin_no_rls', {
           user_id: authData.user.id
@@ -53,7 +51,6 @@ const SuperAdminLogin = () => {
         description: "Welcome to the super admin dashboard",
       });
       
-      // Route to the users management page instead of the default dashboard
       navigate("/admin/users", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);

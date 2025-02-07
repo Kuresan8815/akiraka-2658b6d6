@@ -45,22 +45,14 @@ export const AdminRoutes = () => {
       <Route path="login" element={<BusinessLogin />} />
       <Route path="super" element={<SuperAdminLogin />} />
       
-      {/* Protected Admin Routes */}
-      <Route path="" element={
-        <AdminLayout role="admin">
-          {adminLevel === "super_admin" ? (
-            <Navigate to="/admin/users" replace />
-          ) : adminLevel === "regional_admin" ? (
-            <RegionalAdminDashboard />
-          ) : (
-            <AdminDashboard />
-          )}
-        </AdminLayout>
-      } />
-      
       {/* Super Admin Only Routes */}
       {adminLevel === "super_admin" && (
         <>
+          <Route path="" element={
+            <AdminLayout role="admin">
+              <Navigate to="/admin/users" replace />
+            </AdminLayout>
+          } />
           <Route path="users" element={
             <AdminLayout role="admin">
               <AdminUsers />
@@ -69,48 +61,68 @@ export const AdminRoutes = () => {
         </>
       )}
       
-      {/* Business Admin Routes */}
-      <Route path="dashboard" element={
-        <AdminLayout role="admin">
-          <AdminDashboard />
-        </AdminLayout>
-      } />
-      
-      <Route path="products" element={
-        <AdminLayout role="admin">
-          <AdminProducts />
-        </AdminLayout>
-      } />
-      <Route path="widgets" element={
-        <AdminLayout role="admin">
-          <AdminWidgets />
-        </AdminLayout>
-      } />
-      <Route path="data" element={
-        <AdminLayout role="admin">
-          <AdminData />
-        </AdminLayout>
-      } />
-      <Route path="reports" element={
-        <AdminLayout role="admin">
-          <Reports />
-        </AdminLayout>
-      } />
-      <Route path="analytics" element={
-        <AdminLayout role="admin">
-          <AdminAnalytics />
-        </AdminLayout>
-      } />
-      <Route path="rewards" element={
-        <AdminLayout role="admin">
-          <AdminRewards />
-        </AdminLayout>
-      } />
-      <Route path="settings" element={
-        <AdminLayout role="admin">
-          <AdminSettings />
-        </AdminLayout>
-      } />
+      {/* Protected Business Admin Routes - Only accessible if NOT super_admin */}
+      {adminLevel !== "super_admin" && (
+        <>
+          <Route path="" element={
+            <AdminLayout role="admin">
+              {adminLevel === "regional_admin" ? (
+                <RegionalAdminDashboard />
+              ) : (
+                <AdminDashboard />
+              )}
+            </AdminLayout>
+          } />
+          
+          <Route path="dashboard" element={
+            <AdminLayout role="admin">
+              <AdminDashboard />
+            </AdminLayout>
+          } />
+          
+          <Route path="products" element={
+            <AdminLayout role="admin">
+              <AdminProducts />
+            </AdminLayout>
+          } />
+          
+          <Route path="widgets" element={
+            <AdminLayout role="admin">
+              <AdminWidgets />
+            </AdminLayout>
+          } />
+          
+          <Route path="data" element={
+            <AdminLayout role="admin">
+              <AdminData />
+            </AdminLayout>
+          } />
+          
+          <Route path="reports" element={
+            <AdminLayout role="admin">
+              <Reports />
+            </AdminLayout>
+          } />
+          
+          <Route path="analytics" element={
+            <AdminLayout role="admin">
+              <AdminAnalytics />
+            </AdminLayout>
+          } />
+          
+          <Route path="rewards" element={
+            <AdminLayout role="admin">
+              <AdminRewards />
+            </AdminLayout>
+          } />
+          
+          <Route path="settings" element={
+            <AdminLayout role="admin">
+              <AdminSettings />
+            </AdminLayout>
+          } />
+        </>
+      )}
       
       {/* Catch all redirect */}
       <Route path="*" element={<Navigate to="/admin" replace />} />
