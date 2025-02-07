@@ -9,8 +9,6 @@ import { AdminRewards } from "@/pages/admin/Rewards";
 import { AdminWidgets } from "@/pages/admin/Widgets";
 import { AdminData } from "@/pages/admin/Data";
 import { Reports } from "@/pages/admin/Reports";
-import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
-import { RegionalAdminDashboard } from "@/components/admin/RegionalAdminDashboard";
 import BusinessLogin from "@/pages/admin/BusinessLogin";
 import SuperAdminLogin from "@/pages/admin/SuperAdminLogin";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -44,7 +42,7 @@ export const AdminRoutes = () => {
       <Route path="login" element={<BusinessLogin />} />
       <Route path="super" element={<SuperAdminLogin />} />
       
-      {/* Super Admin Routes */}
+      {/* Super Admin Routes - Only UserMgt access */}
       {adminLevel === "super_admin" && (
         <>
           <Route path="usermgt" element={
@@ -52,6 +50,10 @@ export const AdminRoutes = () => {
               <UserMgt />
             </AdminLayout>
           } />
+          {/* Default route for super admin */}
+          <Route path="" element={<Navigate to="usermgt" replace />} />
+          {/* Catch all for super admin */}
+          <Route path="*" element={<Navigate to="usermgt" replace />} />
         </>
       )}
       
@@ -60,11 +62,7 @@ export const AdminRoutes = () => {
         <>
           <Route path="" element={
             <AdminLayout role="admin">
-              {adminLevel === "regional_admin" ? (
-                <RegionalAdminDashboard />
-              ) : (
-                <AdminDashboard />
-              )}
+              <AdminDashboard />
             </AdminLayout>
           } />
           
@@ -115,21 +113,11 @@ export const AdminRoutes = () => {
               <AdminSettings />
             </AdminLayout>
           } />
+          
+          {/* Catch all for business admin */}
+          <Route path="*" element={<Navigate to="" replace />} />
         </>
       )}
-      
-      {/* Handle root path for super admin */}
-      {adminLevel === "super_admin" && (
-        <Route path="" element={<Navigate to="usermgt" replace />} />
-      )}
-      
-      {/* Catch all redirect - Only redirect if not already on a valid route */}
-      <Route path="*" element={
-        adminLevel === "super_admin" ? 
-          <Navigate to="usermgt" replace /> : 
-          <Navigate to="" replace />
-      } />
     </Routes>
   );
 };
-
