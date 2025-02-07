@@ -49,7 +49,6 @@ export const UserMgt = () => {
   const { data: adminUsers, isLoading: isLoadingUsers, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
-      console.log('Fetching admin users...');
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
         .select(`
@@ -63,12 +62,7 @@ export const UserMgt = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (adminError) {
-        console.error('Error fetching admin users:', adminError);
-        throw adminError;
-      }
-      
-      console.log('Admin users data:', adminData);
+      if (adminError) throw adminError;
       
       // Transform the data to match our AdminUser interface
       return adminData.map((user: any) => ({
