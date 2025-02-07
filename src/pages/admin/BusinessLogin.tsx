@@ -33,19 +33,17 @@ const BusinessLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Use direct query with RPC instead of table query
-      const { data: adminUser, error: adminError } = await supabase
-        .from('admin_users')
-        .select('account_level')
-        .eq('id', authData.user.id)
-        .limit(1)
-        .maybeSingle();
+      // Use the no_rls function to check business admin status
+      const { data: isBusinessAdmin, error: checkError } = await supabase
+        .rpc('is_business_admin_no_rls', {
+          user_id: authData.user.id
+        });
 
-      if (adminError) {
-        throw adminError;
+      if (checkError) {
+        throw checkError;
       }
 
-      if (!adminUser || adminUser.account_level !== 'business') {
+      if (!isBusinessAdmin) {
         await supabase.auth.signOut();
         throw new Error("Unauthorized access. Business admin privileges required.");
       }
@@ -55,7 +53,8 @@ const BusinessLogin = () => {
         description: "Welcome to the business admin dashboard",
       });
       
-      navigate("/admin", { replace: true });
+      // Redirect to the admin dashboard
+      navigate("/admin/dashboard", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in");
