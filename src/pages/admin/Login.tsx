@@ -44,7 +44,7 @@ const AdminLogin = () => {
 
       // Check user type based on login selection
       const { data: checkResult, error: checkError } = await supabase
-        .rpc(loginType === "super_admin" ? 'is_super_admin' : 'is_business_admin', {
+        .rpc(loginType === "super_admin" ? 'is_super_admin' : 'is_business_user', {
           user_id: authData.user.id
         });
 
@@ -55,7 +55,7 @@ const AdminLogin = () => {
       if (!checkResult) {
         // If not authorized, sign them out
         await supabase.auth.signOut();
-        throw new Error(`Unauthorized access. ${loginType === "super_admin" ? "Super admin" : "Business admin"} privileges required.`);
+        throw new Error(`Unauthorized access. ${loginType === "super_admin" ? "Super admin" : "Business"} privileges required.`);
       }
 
       toast({
