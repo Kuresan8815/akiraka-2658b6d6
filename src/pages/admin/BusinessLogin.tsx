@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +32,7 @@ const BusinessLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Use the no_rls function to check business admin status
+      // Check if user is a business admin
       const { data: isBusinessAdmin, error: checkError } = await supabase
         .rpc('is_business_admin_no_rls', {
           user_id: authData.user.id
@@ -48,13 +47,28 @@ const BusinessLogin = () => {
         throw new Error("Unauthorized access. Business admin privileges required.");
       }
 
+      // Check if user has any business profiles
+      const { data: businessProfiles, error: profileError } = await supabase
+        .from('business_profiles')
+        .select('*')
+        .eq('user_id', authData.user.id);
+
+      if (profileError) {
+        throw profileError;
+      }
+
       toast({
         title: "Success",
         description: "Welcome to the business admin dashboard",
       });
       
-      // Redirect to the admin dashboard
-      navigate("/admin/dashboard", { replace: true });
+      // If user has no business profiles, redirect to settings to create one
+      if (!businessProfiles || businessProfiles.length === 0) {
+        navigate("/admin/settings", { replace: true });
+      } else {
+        // Otherwise, redirect to the dashboard
+        navigate("/admin/dashboard", { replace: true });
+      }
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in");
