@@ -975,6 +975,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin_no_rls: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       mark_notifications_as_read: {
         Args: {
           notification_ids: string[]
