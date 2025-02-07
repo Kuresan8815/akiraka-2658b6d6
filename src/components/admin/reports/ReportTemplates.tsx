@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportTemplate } from "@/types/reports";
-import { BarChart3, FileText } from "lucide-react";
+import { BarChart3, FileText, PieChart, Table, Timeline } from "lucide-react";
 
 interface ReportTemplatesProps {
   businessId?: string;
@@ -55,6 +55,9 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
               <div>
                 <CardTitle className="text-lg">{template.name}</CardTitle>
                 <CardDescription>{template.description}</CardDescription>
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Type: {template.report_type.charAt(0).toUpperCase() + template.report_type.slice(1)}
+                </div>
               </div>
               {template.layout_type === "infographic" ? (
                 <BarChart3 className="h-5 w-5 text-eco-primary" />
@@ -64,14 +67,30 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-2 flex-wrap">
-              {template.theme_colors.map((color, index) => (
-                <div
-                  key={index}
-                  className="w-6 h-6 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-              ))}
+            <div className="space-y-4">
+              <div className="flex gap-2 flex-wrap">
+                {template.theme_colors.map((color, index) => (
+                  <div
+                    key={index}
+                    className="w-6 h-6 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-3">
+                {template.visualization_config?.showBarCharts && (
+                  <BarChart3 className="h-4 w-4 text-gray-500" />
+                )}
+                {template.visualization_config?.showPieCharts && (
+                  <PieChart className="h-4 w-4 text-gray-500" />
+                )}
+                {template.visualization_config?.showTables && (
+                  <Table className="h-4 w-4 text-gray-500" />
+                )}
+                {template.visualization_config?.showTimeline && (
+                  <Timeline className="h-4 w-4 text-gray-500" />
+                )}
+              </div>
             </div>
           </CardContent>
         </Card>

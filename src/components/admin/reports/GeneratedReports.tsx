@@ -3,9 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GeneratedReport } from "@/types/reports";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2, BarChart3, PieChart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
+import { Badge } from "@/components/ui/badge";
 
 interface GeneratedReportsProps {
   businessId?: string;
@@ -19,7 +20,10 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("generated_reports")
-        .select("*")
+        .select(`
+          *,
+          report_template:report_templates(*)
+        `)
         .eq("business_id", businessId)
         .order("generated_at", { ascending: false });
 
@@ -31,7 +35,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
           start: report.date_range.start,
           end: report.date_range.end
         } : null
-      })) as GeneratedReport[];
+      })) as (GeneratedReport & { report_template: any })[];
     },
   });
 
@@ -60,12 +64,26 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       {reports.map((report) => (
         <Card key={report.id}>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Report #{report.id.slice(0, 8)}</CardTitle>
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <CardTitle className="flex items-center gap-2">
+                  Report #{report.id.slice(0, 8)}
+                  <Badge variant={
+                    report.status === 'completed' ? 'success' :
+                    report.status === 'failed' ? 'destructive' :
+                    'secondary'
+                  }>
+                    {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                  </Badge>
+                </CardTitle>
                 <CardDescription>
                   Generated on {format(new Date(report.generated_at), "PPP")}
                 </CardDescription>
+                {report.report_template && (
+                  <div className="text-sm text-muted-foreground">
+                    Template: {report.report_template.name} ({report.report_template.report_type})
+                  </div>
+                )}
               </div>
               {report.pdf_url && report.status === 'completed' && (
                 <Button variant="outline" size="sm" asChild>
@@ -79,6 +97,9 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                     )}
                   </a>
                 </Button>
+              )}
+              {report.status === 'processing' && (
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               )}
             </div>
           </CardHeader>
@@ -99,17 +120,16 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                   Pages: {report.page_count}
                 </div>
               )}
-              <div className={`text-sm flex items-center gap-2 ${
-                report.status === 'completed' ? 'text-green-600' :
-                report.status === 'failed' ? 'text-red-600' :
-                report.status === 'processing' ? 'text-blue-600' :
-                'text-yellow-600'
-              }`}>
-                Status: {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-                {report.status === 'processing' && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
-              </div>
+              {report.report_template?.visualization_config && (
+                <div className="flex gap-2 mt-2">
+                  {report.report_template.visualization_config.showBarCharts && (
+                    <BarChart3 className="h-4 w-4 text-gray-400" />
+                  )}
+                  {report.report_template.visualization_config.showPieCharts && (
+                    <PieChart className="h-4 w-4 text-gray-400" />
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
