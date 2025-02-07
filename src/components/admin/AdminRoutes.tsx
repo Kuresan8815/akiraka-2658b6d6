@@ -36,9 +36,12 @@ export const AdminRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/login" element={<BusinessLogin />} />
-      <Route path="/super" element={<SuperAdminLogin />} />
-      <Route path="/" element={
+      {/* Public Admin Routes */}
+      <Route path="login" element={<BusinessLogin />} />
+      <Route path="super" element={<SuperAdminLogin />} />
+      
+      {/* Protected Admin Routes */}
+      <Route path="" element={
         <AdminLayout role="admin">
           {adminLevel === "super_admin" ? (
             <SuperAdminDashboard />
@@ -49,6 +52,7 @@ export const AdminRoutes = () => {
           )}
         </AdminLayout>
       } />
+      
       {adminLevel === "super_admin" && (
         <>
           <Route path="users" element={
@@ -58,6 +62,7 @@ export const AdminRoutes = () => {
           } />
         </>
       )}
+      
       <Route path="products" element={
         <AdminLayout role="admin">
           <AdminProducts />
@@ -93,6 +98,8 @@ export const AdminRoutes = () => {
           <AdminSettings />
         </AdminLayout>
       } />
+      
+      {/* Catch all redirect */}
       <Route path="*" element={<Navigate to="/admin" replace />} />
     </Routes>
   );

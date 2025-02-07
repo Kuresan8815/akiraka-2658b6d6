@@ -43,12 +43,8 @@ function App() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             
-            {/* Admin Routes */}
-            <Route path="/admin/*" element={
-              <AdminRoute>
-                <AdminRoutes />
-              </AdminRoute>
-            } />
+            {/* Admin Routes - AdminRoutes component handles both public and protected admin routes */}
+            <Route path="/admin/*" element={<AdminRoutes />} />
 
             {/* Protected User Routes */}
             <Route path="/*" element={
