@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
+import { renderPdf } from "https://deno.land/x/pdfme@0.1.9/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -133,13 +134,76 @@ serve(async (req) => {
       };
     }
 
+    // Generate PDF content
+    const pdfContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            .header { text-align: center; margin-bottom: 20px; }
+            .section { margin: 20px 0; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f5f5f5; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>${template.name}</h1>
+            <p>Generated on ${new Date().toLocaleDateString()}</p>
+          </div>
+          ${Object.entries(reportData.metrics).map(([key, value]) => `
+            <div class="section">
+              <h3>${key.replace(/_/g, ' ').toUpperCase()}</h3>
+              <p>${value}</p>
+            </div>
+          `).join('')}
+          ${reportData.tables ? `
+            <div class="section">
+              <h3>Monthly Metrics</h3>
+              <table>
+                <tr>${reportData.tables.monthlyMetrics.headers.map((header: string) => `
+                  <th>${header}</th>
+                `).join('')}</tr>
+                ${reportData.tables.monthlyMetrics.rows.map((row: string[]) => `
+                  <tr>${row.map((cell: string) => `
+                    <td>${cell}</td>
+                  `).join('')}</tr>
+                `).join('')}
+              </table>
+            </div>
+          ` : ''}
+        </body>
+      </html>
+    `;
+
+    // Generate PDF buffer
+    const pdfBuffer = await renderPdf({
+      content: pdfContent,
+      format: template.page_orientation === 'landscape' ? 'A4L' : 'A4',
+    });
+
     // Generate PDF file name
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const pdfFileName = `report_${report_id}_${timestamp}.pdf`;
     
-    // For now, we'll simulate PDF generation with a placeholder URL
-    // In a real implementation, you would generate a PDF and upload it to storage
-    const pdfUrl = `${Deno.env.get('SUPABASE_URL')}/storage/v1/object/public/reports/${pdfFileName}`;
+    // Upload PDF to storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('reports')
+      .upload(pdfFileName, pdfBuffer, {
+        contentType: 'application/pdf',
+        upsert: false
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    // Get public URL for the uploaded PDF
+    const { data: { publicUrl: pdfUrl } } = supabase.storage
+      .from('reports')
+      .getPublicUrl(pdfFileName);
 
     // Update the report with completed status and generated data
     const { error: updateError } = await supabase
@@ -148,7 +212,7 @@ serve(async (req) => {
         status: 'completed',
         report_data: reportData,
         pdf_url: pdfUrl,
-        file_size: 1024 * 1024, // 1MB placeholder
+        file_size: pdfBuffer.length,
         page_count: reportType === 'combined' ? 8 : 5,
       })
       .eq('id', report_id);
@@ -158,7 +222,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, pdfUrl }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
