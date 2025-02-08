@@ -1,18 +1,38 @@
+
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, signOut } from '@/integrations/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 
 export const useAuthSession = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const { data: session, isLoading } = useQuery({
+  const { data: session, isLoading, error } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      return session;
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Session error:", sessionError);
+          throw sessionError;
+        }
+        
+        if (!session) {
+          throw new Error("No active session");
+        }
+        
+        return session;
+      } catch (error: any) {
+        // Handle token refresh errors
+        if (error.message?.includes('refresh_token_not_found')) {
+          await handleSignOut();
+          throw new Error('Your session has expired. Please sign in again.');
+        }
+        throw error;
+      }
     },
     retry: false,
     meta: {
@@ -24,22 +44,32 @@ export const useAuthSession = () => {
   });
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-    toast({
-      title: "Session Expired",
-      description: "Please sign in again to continue.",
-      variant: "destructive",
-    });
+    try {
+      await signOut();
+      navigate("/admin/login");
+      toast({
+        title: "Session Expired",
+        description: "Please sign in again to continue.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error("Sign out error:", error);
+      // Force navigation even if sign out fails
+      navigate("/admin/login");
+    }
   };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_OUT") {
-          navigate("/");
+        console.log("Auth state changed:", event);
+        
+        if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+          navigate("/admin/login");
         } else if (!session && !isLoading) {
-          navigate("/");
+          navigate("/admin/login");
+        } else if (event === "TOKEN_REFRESHED") {
+          console.log("Token refreshed successfully");
         }
       }
     );
@@ -49,5 +79,5 @@ export const useAuthSession = () => {
     };
   }, [navigate, isLoading]);
 
-  return { session, isLoading };
+  return { session, isLoading, error };
 };

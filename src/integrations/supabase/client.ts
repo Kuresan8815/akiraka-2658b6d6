@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
@@ -10,8 +11,23 @@ export const supabase = createClient<Database>(
   {
     auth: {
       persistSession: true,
+      storageKey: 'admin-auth-token',
+      storage: localStorage,
       autoRefreshToken: true,
-      detectSessionInUrl: true
+      detectSessionInUrl: false
     }
   }
 );
+
+// Add helper to handle sign out cleanly
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    console.error('Error signing out:', error.message);
+    throw error;
+  }
+  
+  // Clear any stored tokens/session data
+  localStorage.removeItem('admin-auth-token');
+  localStorage.removeItem('supabase.auth.token');
+};
