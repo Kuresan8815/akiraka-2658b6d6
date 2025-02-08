@@ -89,6 +89,9 @@ export const useAuthSession = () => {
                 description: "You do not have admin access.",
                 variant: "destructive",
               });
+            } else {
+              // Successfully authenticated as admin
+              navigate("/admin/dashboard");
             }
           } catch (error) {
             console.error("Admin check error:", error);

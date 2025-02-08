@@ -41,57 +41,93 @@ export const AdminRoutes = () => {
       
       {/* Protected Admin Routes */}
       <Route path="" element={
-        <AdminLayout role="admin">
-          <AdminDashboard />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminDashboard />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="dashboard" element={
-        <AdminLayout role="admin">
-          <AdminDashboard />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminDashboard />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="products" element={
-        <AdminLayout role="admin">
-          <AdminProducts />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminProducts />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="widgets" element={
-        <AdminLayout role="admin">
-          <AdminWidgets />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminWidgets />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="data" element={
-        <AdminLayout role="admin">
-          <AdminData />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminData />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="reports" element={
-        <AdminLayout role="admin">
-          <Reports />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <Reports />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="analytics" element={
-        <AdminLayout role="admin">
-          <AdminAnalytics />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminAnalytics />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="rewards" element={
-        <AdminLayout role="admin">
-          <AdminRewards />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminRewards />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
       
       <Route path="settings" element={
-        <AdminLayout role="admin">
-          <AdminSettings />
-        </AdminLayout>
+        adminLevel ? (
+          <AdminLayout role="admin">
+            <AdminSettings />
+          </AdminLayout>
+        ) : (
+          <Navigate to="/admin/login" replace />
+        )
       } />
 
       {/* Catch all redirect */}

@@ -53,7 +53,8 @@ const BusinessLogin = () => {
         description: "Welcome to the admin dashboard",
       });
       
-      navigate("/admin/dashboard", { replace: true });
+      // Explicitly navigate to the admin dashboard after successful login
+      navigate("/admin/dashboard");
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in");
