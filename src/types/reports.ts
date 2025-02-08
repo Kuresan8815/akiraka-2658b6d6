@@ -24,7 +24,7 @@ export type ReportTemplate = {
     showPieCharts: boolean;
     showTables: boolean;
     showTimeline: boolean;
-  };
+  } | null;
   ai_generated?: boolean;
   ai_prompt?: string;
 };

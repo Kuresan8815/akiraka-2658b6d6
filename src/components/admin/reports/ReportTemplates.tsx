@@ -26,12 +26,14 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
       // Transform the visualization_config from JSON to the expected format
       return (data as any[]).map(template => ({
         ...template,
-        visualization_config: {
-          showBarCharts: template.visualization_config?.showBarCharts ?? true,
-          showPieCharts: template.visualization_config?.showPieCharts ?? true,
-          showTables: template.visualization_config?.showTables ?? true,
-          showTimeline: template.visualization_config?.showTimeline ?? true,
-        }
+        visualization_config: template.visualization_config ? {
+          showBarCharts: template.visualization_config.showBarCharts ?? true,
+          showPieCharts: template.visualization_config.showPieCharts ?? true,
+          showTables: template.visualization_config.showTables ?? true,
+          showTimeline: template.visualization_config.showTimeline ?? true,
+        } : null,
+        included_metrics: template.included_metrics || [],
+        theme_colors: template.theme_colors || [],
       })) as ReportTemplate[];
     },
   });
@@ -108,3 +110,4 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
     </div>
   );
 };
+
