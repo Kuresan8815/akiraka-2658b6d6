@@ -34,12 +34,16 @@ const AdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
+      console.log('User logged in:', authData.user.id);
+
       // Check if user exists in admin_users table
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
-        .select('account_level')
+        .select('*')
         .eq('id', authData.user.id)
         .single();
+
+      console.log('Admin check result:', { adminData, adminError });
 
       if (adminError || !adminData) {
         // If not an admin, sign them out

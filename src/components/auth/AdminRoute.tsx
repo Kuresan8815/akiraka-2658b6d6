@@ -15,7 +15,9 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return null;
       
-      // Directly query admin_users table
+      // Add console log to debug
+      console.log('Checking admin access for user:', session.user.id);
+      
       const { data, error } = await supabase
         .from('admin_users')
         .select('account_level')
@@ -27,10 +29,10 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
         return null;
       }
       
+      console.log('Admin data:', data);
       return data;
     },
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    retry: false
+    staleTime: 0, // Disable caching temporarily for debugging
   });
 
   if (isLoading) {
@@ -42,10 +44,9 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }
 
   if (!adminUser) {
-    // Clear any stale session data when access is denied
-    supabase.auth.signOut();
     return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;
 };
+
