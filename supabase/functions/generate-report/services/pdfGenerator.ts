@@ -1,7 +1,89 @@
 
-import { PDFDocument, rgb, StandardFonts, PDFPage } from 'https://esm.sh/pdf-lib@1.17.1';
+import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont } from 'https://esm.sh/pdf-lib@1.17.1';
 import { hexToRGB } from '../utils/colors.ts';
 import { ReportTemplate, ReportData } from '../types.ts';
+
+function drawExecutiveSummary(
+  page: PDFPage,
+  summary: any,
+  options: { x: number; y: number; width: number; font: PDFFont; titleFont: PDFFont }
+): number {
+  const { x, y, width, font, titleFont } = options;
+  let currentY = y;
+  
+  // Draw section title
+  page.drawText('Executive Summary', {
+    x,
+    y: currentY,
+    size: 24,
+    font: titleFont,
+    color: rgb(0.2, 0.2, 0.2),
+  });
+  currentY -= 40;
+
+  // Draw key insights
+  page.drawText('Key Insights:', {
+    x,
+    y: currentY,
+    size: 16,
+    font: titleFont,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  currentY -= 25;
+
+  summary.key_insights.forEach((insight: string) => {
+    page.drawText(`• ${insight}`, {
+      x: x + 20,
+      y: currentY,
+      size: 12,
+      font: font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+    currentY -= 20;
+  });
+  currentY -= 10;
+
+  // Draw performance highlights
+  page.drawText('Performance Highlights:', {
+    x,
+    y: currentY,
+    size: 16,
+    font: titleFont,
+    color: rgb(0.3, 0.3, 0.3),
+  });
+  currentY -= 25;
+
+  // Split text into lines if too long
+  const words = summary.performance_highlights.split(' ');
+  let line = '';
+  words.forEach((word: string) => {
+    if ((line + word).length > 80) {
+      page.drawText(line, {
+        x: x + 20,
+        y: currentY,
+        size: 12,
+        font: font,
+        color: rgb(0.2, 0.2, 0.2),
+      });
+      currentY -= 20;
+      line = word + ' ';
+    } else {
+      line += word + ' ';
+    }
+  });
+  if (line) {
+    page.drawText(line, {
+      x: x + 20,
+      y: currentY,
+      size: 12,
+      font: font,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+    currentY -= 30;
+  }
+
+  return currentY;
+}
 
 function drawTable(
   page: PDFPage,
@@ -22,7 +104,7 @@ function drawTable(
     color: rgb(0.61, 0.53, 0.96),
   });
 
-  page.drawText('Monthly Metrics', {
+  page.drawText('ESG Metrics Overview', {
     x: x + 10,
     y: currentY + 10,
     size: 14,
@@ -79,34 +161,36 @@ function drawTable(
 
 export async function createPDFDocument(template: ReportTemplate, reportData: ReportData): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
-  const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const page = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
-  const { width, height } = page.getSize();
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  
+  // Create first page for executive summary
+  const firstPage = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
+  const { width, height } = firstPage.getSize();
   
   // Use template colors or fallback to defaults
   const colors = template.theme_colors.length > 0 ? template.theme_colors : 
     ['#9b87f5', '#7E69AB', '#6E59A5', '#8B5CF6', '#D946EF'];
 
   // Add header with gradient background
-  page.drawRectangle({
+  firstPage.drawRectangle({
     x: 0,
     y: height - 100,
-    width: width,
+    width,
     height: 100,
     color: rgb(0.61, 0.53, 0.96),
   });
 
-  // Add title and date with better styling
-  page.drawText(template.name, {
+  // Add title and date
+  firstPage.drawText('ESG Sustainability Metrics Report', {
     x: 50,
     y: height - 60,
     size: 28,
-    font: helveticaFont,
+    font: helveticaBold,
     color: rgb(1, 1, 1),
   });
 
-  page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
+  firstPage.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
     x: 50,
     y: height - 90,
     size: 14,
@@ -114,75 +198,124 @@ export async function createPDFDocument(template: ReportTemplate, reportData: Re
     color: rgb(0.4, 0.4, 0.4),
   });
 
+  // Draw executive summary if available
+  let currentY = height - 150;
+  if (reportData.executive_summary) {
+    currentY = drawExecutiveSummary(firstPage, reportData.executive_summary, {
+      x: 50,
+      y: currentY,
+      width: width - 100,
+      font: helveticaFont,
+      titleFont: helveticaBold,
+    });
+  }
+
+  // Create new page for metrics and charts
+  const metricsPage = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
+  currentY = height - 100;
+
   // Draw metrics section with colorful boxes
-  let yPosition = height - 150;
   Object.entries(reportData.metrics).forEach(([key, value], index) => {
     const label = key.replace(/_/g, ' ').toUpperCase();
     const boxColor = colors[index % colors.length];
     const [r, g, b] = hexToRGB(boxColor);
     
-    // Draw metric box
-    page.drawRectangle({
+    metricsPage.drawRectangle({
       x: 50,
-      y: yPosition - 40,
+      y: currentY - 40,
       width: 200,
       height: 60,
       color: rgb(r/255, g/255, b/255),
-      borderColor: rgb(0, 0, 0),
-      borderWidth: 1,
       opacity: 0.1,
     });
 
-    // Draw metric value
-    page.drawText(`${value}`, {
+    metricsPage.drawText(`${value}`, {
       x: 60,
-      y: yPosition - 10,
+      y: currentY - 10,
       size: 24,
-      font: helveticaFont,
+      font: helveticaBold,
       color: rgb(0, 0, 0),
     });
 
-    // Draw metric label
-    page.drawText(label, {
+    metricsPage.drawText(label, {
       x: 60,
-      y: yPosition - 30,
+      y: currentY - 30,
       size: 12,
       font: helveticaFont,
       color: rgb(0.4, 0.4, 0.4),
     });
 
-    yPosition -= 80;
+    currentY -= 80;
   });
 
   // Draw sustainability section if available
   if (reportData.sustainability) {
-    yPosition -= 20;
-    page.drawText('SUSTAINABILITY INSIGHTS', {
+    const sustainabilityPage = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
+    currentY = height - 100;
+
+    sustainabilityPage.drawText('SUSTAINABILITY INSIGHTS', {
       x: 50,
-      y: yPosition,
-      size: 18,
-      font: helveticaFont,
+      y: currentY,
+      size: 24,
+      font: helveticaBold,
       color: rgb(0, 0, 0),
     });
 
-    yPosition -= 30;
-    reportData.sustainability.recommendations.forEach((recommendation) => {
-      page.drawText(`• ${recommendation}`, {
-        x: 60,
-        y: yPosition,
+    currentY -= 50;
+    
+    // Draw key achievements
+    sustainabilityPage.drawText('Key Achievements:', {
+      x: 50,
+      y: currentY,
+      size: 18,
+      font: helveticaBold,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+    
+    currentY -= 30;
+    reportData.sustainability.key_achievements.forEach((achievement) => {
+      sustainabilityPage.drawText(`• ${achievement}`, {
+        x: 70,
+        y: currentY,
         size: 12,
         font: helveticaFont,
         color: rgb(0, 0, 0),
       });
-      yPosition -= 20;
+      currentY -= 20;
+    });
+
+    currentY -= 30;
+
+    // Draw recommendations
+    sustainabilityPage.drawText('Recommendations:', {
+      x: 50,
+      y: currentY,
+      size: 18,
+      font: helveticaBold,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+
+    currentY -= 30;
+    reportData.sustainability.recommendations.forEach((recommendation) => {
+      sustainabilityPage.drawText(`• ${recommendation}`, {
+        x: 70,
+        y: currentY,
+        size: 12,
+        font: helveticaFont,
+        color: rgb(0, 0, 0),
+      });
+      currentY -= 20;
     });
   }
 
-  // Draw table if available
+  // Draw table if available on a new page
   if (reportData.tables) {
-    yPosition = drawTable(page, reportData.tables.monthlyMetrics, {
+    const tablePage = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
+    currentY = height - 100;
+    
+    currentY = drawTable(tablePage, reportData.tables.monthlyMetrics, {
       x: 50,
-      y: yPosition - 40,
+      y: currentY,
       width: width - 100,
       font: helveticaFont,
       colors,
@@ -191,4 +324,3 @@ export async function createPDFDocument(template: ReportTemplate, reportData: Re
 
   return await pdfDoc.save();
 }
-

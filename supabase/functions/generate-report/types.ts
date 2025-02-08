@@ -12,6 +12,13 @@ export interface ReportTemplate {
   theme_colors: string[];
 }
 
+export interface ExecutiveSummary {
+  key_insights: string[];
+  performance_highlights: string;
+  areas_for_improvement: string;
+  recommendations: string[];
+}
+
 export interface ReportData {
   metrics: Record<string, number>;
   charts?: Record<string, any>;
@@ -19,6 +26,7 @@ export interface ReportData {
     environmental_impact: string;
     recommendations: string[];
     year_over_year_improvement: number;
+    key_achievements: string[];
   };
   tables?: {
     monthlyMetrics: {
@@ -27,5 +35,5 @@ export interface ReportData {
     };
   };
   generated_at?: string;
+  executive_summary?: ExecutiveSummary;
 }
-
