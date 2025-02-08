@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportTemplates } from "./ReportTemplates";
 import { GeneratedReports } from "./GeneratedReports";
 import { CreateReportDialog } from "./CreateReportDialog";
+import { AIReportGenerator } from "./AIReportGenerator";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -42,18 +43,22 @@ export const ReportsDashboard = () => {
         </Button>
       </div>
 
-      <Tabs defaultValue="templates" className="w-full">
-        <TabsList>
-          <TabsTrigger value="templates">Report Templates</TabsTrigger>
-          <TabsTrigger value="generated">Generated Reports</TabsTrigger>
-        </TabsList>
-        <TabsContent value="templates">
-          <ReportTemplates businessId={currentBusiness?.id} />
-        </TabsContent>
-        <TabsContent value="generated">
-          <GeneratedReports businessId={currentBusiness?.id} />
-        </TabsContent>
-      </Tabs>
+      <div className="grid gap-6 grid-cols-1">
+        <AIReportGenerator businessId={currentBusiness?.id} />
+        
+        <Tabs defaultValue="templates" className="w-full">
+          <TabsList>
+            <TabsTrigger value="templates">Report Templates</TabsTrigger>
+            <TabsTrigger value="generated">Generated Reports</TabsTrigger>
+          </TabsList>
+          <TabsContent value="templates">
+            <ReportTemplates businessId={currentBusiness?.id} />
+          </TabsContent>
+          <TabsContent value="generated">
+            <GeneratedReports businessId={currentBusiness?.id} />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <CreateReportDialog
         open={showCreateDialog}

@@ -33,6 +33,58 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_report_requests: {
+        Row: {
+          business_id: string
+          created_at: string
+          error_message: string | null
+          generated_config: Json
+          id: string
+          prompt: string
+          status: Database["public"]["Enums"]["report_processing_status"] | null
+          template_id: string | null
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          error_message?: string | null
+          generated_config?: Json
+          id?: string
+          prompt: string
+          status?:
+            | Database["public"]["Enums"]["report_processing_status"]
+            | null
+          template_id?: string | null
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          error_message?: string | null
+          generated_config?: Json
+          id?: string
+          prompt?: string
+          status?:
+            | Database["public"]["Enums"]["report_processing_status"]
+            | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_report_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_report_requests_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "report_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_profiles: {
         Row: {
           business_id: string
@@ -519,6 +571,8 @@ export type Database = {
       }
       report_templates: {
         Row: {
+          ai_generated: boolean | null
+          ai_prompt: string | null
           business_id: string
           charts_config: Json | null
           config: Json
@@ -541,6 +595,8 @@ export type Database = {
           visualization_config: Json | null
         }
         Insert: {
+          ai_generated?: boolean | null
+          ai_prompt?: string | null
           business_id: string
           charts_config?: Json | null
           config?: Json
@@ -563,6 +619,8 @@ export type Database = {
           visualization_config?: Json | null
         }
         Update: {
+          ai_generated?: boolean | null
+          ai_prompt?: string | null
           business_id?: string
           charts_config?: Json | null
           config?: Json
