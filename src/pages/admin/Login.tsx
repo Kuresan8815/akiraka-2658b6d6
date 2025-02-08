@@ -36,10 +36,10 @@ const AdminLogin = () => {
 
       console.log('User logged in:', authData.user.id);
 
-      // Check if user exists in admin_users table with explicit select
+      // Check if user exists in admin_users table with explicit role and account_level
       const { data: adminData, error: adminError } = await supabase
         .from('admin_users')
-        .select('*')
+        .select('role, account_level')
         .eq('id', authData.user.id)
         .maybeSingle();
 
@@ -49,7 +49,7 @@ const AdminLogin = () => {
         throw adminError;
       }
 
-      if (!adminData) {
+      if (!adminData || (adminData.role !== 'admin')) {
         // If not an admin, sign them out
         await supabase.auth.signOut();
         throw new Error("Unauthorized access. Admin privileges required.");
@@ -57,7 +57,7 @@ const AdminLogin = () => {
 
       toast({
         title: "Success",
-        description: "Welcome to the admin dashboard",
+        description: `Welcome to the ${adminData.account_level} dashboard`,
       });
       
       navigate("/admin");

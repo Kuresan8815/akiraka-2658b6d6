@@ -22,7 +22,7 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       
       const { data, error } = await supabase
         .from('admin_users')
-        .select('*')
+        .select('role, account_level')
         .eq('id', session.user.id)
         .maybeSingle();
       
