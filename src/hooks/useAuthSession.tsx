@@ -12,14 +12,21 @@ export const useAuthSession = () => {
   const { data: session, isLoading } = useQuery({
     queryKey: ['session'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Session error:", error);
+        if (error.message.includes("Invalid Refresh Token")) {
+          await handleSignOut();
+          return null;
+        }
+        throw error;
+      }
       return session;
     },
     retry: false,
     meta: {
       onError: (error: Error) => {
         console.error("Auth error:", error);
-        // Only handle signout if there's an actual error, not just no session
         if (error.message !== "Session not found") {
           handleSignOut();
         }
@@ -30,6 +37,8 @@ export const useAuthSession = () => {
   const handleSignOut = async () => {
     try {
       await supabase.auth.signOut();
+      // Clear any stored tokens
+      window.localStorage.removeItem('supabase.auth.token');
       navigate("/login");
       toast({
         title: "Session Expired",
@@ -38,7 +47,6 @@ export const useAuthSession = () => {
       });
     } catch (error) {
       console.error("Sign out error:", error);
-      // Even if sign out fails, redirect to login
       navigate("/login");
     }
   };
@@ -46,10 +54,12 @@ export const useAuthSession = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === "SIGNED_OUT") {
-          navigate("/login");
-        } else if (!session && !isLoading) {
-          navigate("/login");
+        console.log("Auth state changed:", event, session?.user?.id);
+        
+        if (event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+          if (!session) {
+            navigate("/login");
+          }
         }
       }
     );
@@ -57,7 +67,7 @@ export const useAuthSession = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate, isLoading]);
+  }, [navigate]);
 
   return { session, isLoading };
 };
