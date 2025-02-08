@@ -1,34 +1,86 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronRight, QrCode, Award, ChartBar } from "lucide-react";
+import { ChevronRight, Factory, Building2, ChartBar, Target } from "lucide-react";
+import { IndustryStep } from "./onboarding/steps/IndustryStep";
+import { BusinessStep } from "./onboarding/steps/BusinessStep";
+import { ActivitiesStep } from "./onboarding/steps/ActivitiesStep";
+import { GoalsStep } from "./onboarding/steps/GoalsStep";
+import { OnboardingNavigation } from "./onboarding/components/OnboardingNavigation";
+import { OnboardingSlide } from "./onboarding/components/OnboardingSlide";
+import { useOnboarding } from "./onboarding/hooks/useOnboarding";
 
 const slides = [
   {
-    title: "Scan and Verify Products",
-    description: "Scan QR codes for real-time sustainability data",
-    icon: QrCode,
+    title: "Select Industry",
+    description: "Choose your primary industry sector",
+    icon: Factory,
+    component: "IndustryStep",
   },
   {
-    title: "Earn Rewards",
-    description: "Get points for sustainable purchases",
-    icon: Award,
+    title: "Create Your Business",
+    description: "Set up your business profile",
+    icon: Building2,
+    component: "BusinessStep",
   },
   {
-    title: "Track Your Impact",
-    description: "Monitor your sustainability journey",
+    title: "Business Activities",
+    description: "Select your sustainability activities",
     icon: ChartBar,
+    component: "ActivitiesStep",
+  },
+  {
+    title: "Sustainability Goals",
+    description: "Set your environmental targets",
+    icon: Target,
+    component: "GoalsStep",
   },
 ];
 
 export const OnboardingCarousel = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const {
+    currentSlide,
+    selectedIndustry,
+    setSelectedIndustry,
+    selectedActivities,
+    setSelectedActivities,
+    selectedGoals,
+    setSelectedGoals,
+    handleBusinessCreated,
+    nextSlide,
+    previousSlide,
+  } = useOnboarding();
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev === slides.length - 1 ? prev : prev + 1));
-  };
-
-  const skipOnboarding = () => {
-    // Handle skip action
+  const renderComponent = (componentName: string) => {
+    switch (componentName) {
+      case "IndustryStep":
+        return (
+          <IndustryStep
+            selectedIndustry={selectedIndustry}
+            onSelect={setSelectedIndustry}
+          />
+        );
+      case "BusinessStep":
+        return (
+          <BusinessStep
+            selectedIndustry={selectedIndustry}
+            onBusinessCreated={handleBusinessCreated}
+          />
+        );
+      case "ActivitiesStep":
+        return (
+          <ActivitiesStep
+            selectedActivities={selectedActivities}
+            onSelect={setSelectedActivities}
+          />
+        );
+      case "GoalsStep":
+        return (
+          <GoalsStep
+            selectedGoals={selectedGoals}
+            onSelect={setSelectedGoals}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -39,38 +91,24 @@ export const OnboardingCarousel = () => {
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
           {slides.map((slide, index) => (
-            <div key={index} className="w-full flex-shrink-0">
-              <div className="flex flex-col items-center gap-4 text-center p-4">
-                <div className="w-16 h-16 bg-eco-primary/10 rounded-full flex items-center justify-center">
-                  <slide.icon className="w-8 h-8 text-eco-primary" />
-                </div>
-                <h3 className="text-xl font-bold text-eco-primary">{slide.title}</h3>
-                <p className="text-gray-600">{slide.description}</p>
-              </div>
-            </div>
+            <OnboardingSlide
+              key={index}
+              title={slide.title}
+              description={slide.description}
+              icon={slide.icon}
+            >
+              {slide.component && renderComponent(slide.component)}
+            </OnboardingSlide>
           ))}
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-8">
-        <Button variant="ghost" onClick={skipOnboarding}>
-          Skip
-        </Button>
-        <div className="flex gap-2">
-          {slides.map((_, index) => (
-            <div
-              key={index}
-              className={`w-2 h-2 rounded-full ${
-                currentSlide === index ? "bg-eco-primary" : "bg-gray-300"
-              }`}
-            />
-          ))}
-        </div>
-        <Button onClick={nextSlide} disabled={currentSlide === slides.length - 1}>
-          Next
-          <ChevronRight className="ml-2 h-4 w-4" />
-        </Button>
-      </div>
+      <OnboardingNavigation
+        currentSlide={currentSlide}
+        totalSlides={slides.length}
+        onNext={nextSlide}
+        onPrevious={previousSlide}
+      />
     </div>
   );
 };

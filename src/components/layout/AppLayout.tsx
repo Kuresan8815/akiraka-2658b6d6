@@ -1,14 +1,38 @@
-import { Outlet } from "react-router-dom";
-import { useAuthSession } from "@/hooks/useAuthSession";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppLayoutProps {
   children?: React.ReactNode;
 }
 
 export const AppLayout = ({ children }: AppLayoutProps) => {
-  const { session, isLoading } = useAuthSession();
+  const { data: session, isLoading: sessionLoading } = useQuery({
+    queryKey: ["session"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      return session;
+    },
+  });
 
-  if (isLoading) {
+  const { data: businessProfile } = useQuery({
+    queryKey: ["current-business", session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const currentBusinessId = session?.user?.user_metadata?.current_business_id;
+      
+      if (!currentBusinessId) return null;
+
+      const { data: business } = await supabase
+        .from("businesses")
+        .select("*")
+        .eq("id", currentBusinessId)
+        .single();
+
+      return business;
+    },
+  });
+
+  if (sessionLoading) {
     return <div>Loading...</div>;
   }
 
@@ -18,7 +42,20 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {children || <Outlet />}
+      {/* Top bar */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm text-gray-500">Current Business:</span>
+          <span className="font-medium">
+            {businessProfile?.name || "No business selected"}
+          </span>
+        </div>
+      </div>
+      
+      {/* Main content */}
+      <div className="container mx-auto px-4 py-6">
+        {children}
+      </div>
     </div>
   );
 };

@@ -1,29 +1,40 @@
-import { useNotificationPreferences } from "@/hooks/useNotificationPreferences";
-import { PreferenceCard } from "./PreferenceCard";
-import { notificationTypes } from "@/config/notificationTypes";
-import { NotificationPreferences as NotificationPreferencesType } from "@/types/notifications";
+import { ProfilePreferences } from "@/types/profile";
 
-export const NotificationPreferences = () => {
-  const { preferences, isLoading, updatePreference } = useNotificationPreferences();
+interface NotificationPreferencesProps {
+  preferences: ProfilePreferences;
+  onUpdate: (preferences: ProfilePreferences) => Promise<void>;
+}
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
+export const NotificationPreferences = ({ preferences, onUpdate }: NotificationPreferencesProps) => {
+  const handleToggle = async (key: keyof ProfilePreferences) => {
+    const updatedPreferences = {
+      ...preferences,
+      [key]: !preferences[key],
+    };
+    await onUpdate(updatedPreferences);
+  };
 
   return (
-    <div className="space-y-4">
-      {notificationTypes.map((type) => (
-        <PreferenceCard
-          key={type.id}
-          type={type}
-          checked={preferences?.notifications?.[type.id as keyof NotificationPreferencesType["notifications"]] ?? true}
-          onCheckedChange={(checked) => updatePreference(type.id, checked)}
-        />
-      ))}
+    <div>
+      <h3 className="text-lg font-semibold">Notification Preferences</h3>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <label className="text-sm">Enable Notifications</label>
+          <input
+            type="checkbox"
+            checked={preferences.notifications}
+            onChange={() => handleToggle("notifications")}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <label className="text-sm">Dark Theme</label>
+          <input
+            type="checkbox"
+            checked={preferences.darkTheme}
+            onChange={() => handleToggle("darkTheme")}
+          />
+        </div>
+      </div>
     </div>
   );
 };
