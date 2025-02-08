@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const SuperAdminLogin = () => {
+const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,6 +21,7 @@ const SuperAdminLogin = () => {
     setIsLoading(true);
 
     try {
+      // First, attempt to sign in
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -33,29 +33,32 @@ const SuperAdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      const { data: isSuperAdmin, error: checkError } = await supabase
-        .rpc('is_super_admin_no_rls', {
+      // Check if user is an admin using the is_admin function
+      const { data: isAdminResult, error: adminCheckError } = await supabase
+        .rpc('is_admin', {
           user_id: authData.user.id
         });
 
-      if (checkError) {
-        throw checkError;
+      if (adminCheckError) {
+        throw adminCheckError;
       }
 
-      if (!isSuperAdmin) {
+      if (!isAdminResult) {
+        // If not an admin, sign them out
         await supabase.auth.signOut();
-        throw new Error("Unauthorized access. Super admin privileges required.");
+        throw new Error("Unauthorized access. Admin privileges required.");
       }
 
       toast({
         title: "Success",
-        description: "Welcome to the super admin dashboard",
+        description: "Welcome to the admin dashboard",
       });
       
-      navigate("/admin/usermgt", { replace: true });
+      // Explicitly navigate to the admin dashboard
+      navigate("/admin", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
-      setError(error.message || "Failed to sign in");
+      setError(error.message || "Failed to sign in. Please check your credentials.");
       toast({
         title: "Error",
         description: error.message || "Failed to sign in",
@@ -70,11 +73,8 @@ const SuperAdminLogin = () => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center text-eco-primary mb-6">
-          Super Admin Login
+          Admin Login
         </h1>
-        <div className="mb-4 text-center text-sm text-gray-600">
-          This login is restricted to super administrators only.
-        </div>
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{error}</AlertDescription>
@@ -120,4 +120,4 @@ const SuperAdminLogin = () => {
   );
 };
 
-export default SuperAdminLogin;
+export default AdminLogin;

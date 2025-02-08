@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
-import { Json } from "@/integrations/supabase/types";
 
 interface ProductAuditLogProps {
   productId: string;
@@ -10,10 +9,10 @@ interface ProductAuditLogProps {
 interface AuditLog {
   id: string;
   action: string;
-  changes: Json;
+  changes: any;
   created_at: string;
   created_by: string | null;
-  user_profile: {
+  profiles: {
     name: string | null;
   } | null;
 }
@@ -30,13 +29,15 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
           changes,
           created_at,
           created_by,
-          user_profile:profiles(name)
+          profiles!product_audit_logs_created_by_fkey (
+            name
+          )
         `)
         .eq("product_id", productId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as unknown as AuditLog[];
+      return data as AuditLog[];
     },
   });
 
@@ -49,22 +50,18 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {auditLogs.map((log) => (
-        <div key={log.id} className="border rounded-lg p-4 bg-white shadow-sm">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-medium text-gray-900">{log.action}</h3>
-              <p className="text-sm text-gray-500">
-                By: {log.user_profile?.name || "Unknown"}
-              </p>
-            </div>
-            <time className="text-sm text-gray-500">
-              {format(new Date(log.created_at), "PPp")}
-            </time>
-          </div>
+        <div key={log.id} className="text-sm">
+          <p className="font-medium">{log.action}</p>
+          <p className="text-gray-600">
+            By: {log.profiles?.name || "Unknown"}
+          </p>
+          <p className="text-gray-600">
+            {format(new Date(log.created_at), "PPp")}
+          </p>
           {log.changes && (
-            <pre className="mt-2 text-xs bg-gray-50 p-2 rounded overflow-auto">
+            <pre className="mt-1 text-xs bg-gray-50 p-2 rounded">
               {JSON.stringify(log.changes, null, 2)}
             </pre>
           )}

@@ -24,7 +24,6 @@ export const ProfileForm = ({ profile, isEditing, onSubmit, onEdit, onCancel }: 
       sustainabilityGoals: sustainabilityGoals ? sustainabilityGoals.split(',').map(goal => goal.trim()) : [],
       notifications: formData.get("notifications") === "on",
       darkTheme: formData.get("darkTheme") === "on",
-      has_completed_onboarding: formData.get("has_completed_onboarding") === "on",
     });
   };
 
@@ -90,17 +89,6 @@ export const ProfileForm = ({ profile, isEditing, onSubmit, onEdit, onCancel }: 
               id="darkTheme"
               name="darkTheme"
               defaultChecked={profile.preferences?.darkTheme}
-              disabled={!isEditing}
-            />
-          </div>
-          <div className="flex items-center justify-between">
-            <label htmlFor="has_completed_onboarding" className="text-sm">
-              Skip Onboarding
-            </label>
-            <Switch
-              id="has_completed_onboarding"
-              name="has_completed_onboarding"
-              defaultChecked={profile.has_completed_onboarding || false}
               disabled={!isEditing}
             />
           </div>

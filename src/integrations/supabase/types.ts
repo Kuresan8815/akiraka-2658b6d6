@@ -11,298 +11,22 @@ export type Database = {
     Tables: {
       admin_users: {
         Row: {
-          account_level: Database["public"]["Enums"]["account_level"]
           created_at: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
-          account_level?: Database["public"]["Enums"]["account_level"]
           created_at?: string
           id: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
-          account_level?: Database["public"]["Enums"]["account_level"]
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
-        }
-        Relationships: []
-      }
-      business_profiles: {
-        Row: {
-          business_id: string
-          created_at: string
-          id: string
-          role: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          id?: string
-          role: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          id?: string
-          role?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "business_profiles_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      business_widgets: {
-        Row: {
-          business_id: string
-          created_at: string
-          id: string
-          is_active: boolean | null
-          position: number
-          updated_at: string
-          widget_id: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          position: number
-          updated_at?: string
-          widget_id: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          position?: number
-          updated_at?: string
-          widget_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "business_widgets_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "business_widgets_widget_id_fkey"
-            columns: ["widget_id"]
-            isOneToOne: false
-            referencedRelation: "widgets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      businesses: {
-        Row: {
-          activities: string[] | null
-          business_type: Database["public"]["Enums"]["business_type"]
-          created_at: string
-          created_by: string
-          description: string | null
-          id: string
-          industry_type: string
-          is_active: boolean | null
-          logo_url: string | null
-          name: string
-          region_id: string | null
-          sustainability_goals: string[] | null
-          updated_at: string
-          website: string | null
-        }
-        Insert: {
-          activities?: string[] | null
-          business_type: Database["public"]["Enums"]["business_type"]
-          created_at?: string
-          created_by: string
-          description?: string | null
-          id?: string
-          industry_type: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          name: string
-          region_id?: string | null
-          sustainability_goals?: string[] | null
-          updated_at?: string
-          website?: string | null
-        }
-        Update: {
-          activities?: string[] | null
-          business_type?: Database["public"]["Enums"]["business_type"]
-          created_at?: string
-          created_by?: string
-          description?: string | null
-          id?: string
-          industry_type?: string
-          is_active?: boolean | null
-          logo_url?: string | null
-          name?: string
-          region_id?: string | null
-          sustainability_goals?: string[] | null
-          updated_at?: string
-          website?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "businesses_region_id_fkey"
-            columns: ["region_id"]
-            isOneToOne: false
-            referencedRelation: "regions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      carbon_emissions: {
-        Row: {
-          business_id: string
-          created_at: string
-          emission_source: string | null
-          emission_value: number
-          id: string
-          recorded_date: string
-          scope: Database["public"]["Enums"]["emission_scope"]
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          emission_source?: string | null
-          emission_value: number
-          id?: string
-          recorded_date?: string
-          scope: Database["public"]["Enums"]["emission_scope"]
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          emission_source?: string | null
-          emission_value?: number
-          id?: string
-          recorded_date?: string
-          scope?: Database["public"]["Enums"]["emission_scope"]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "carbon_emissions_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      generated_reports: {
-        Row: {
-          business_id: string
-          date_range: Json | null
-          file_size: number | null
-          generated_at: string
-          generated_by: string
-          id: string
-          metadata: Json | null
-          page_count: number | null
-          pdf_url: string | null
-          report_data: Json
-          status: Database["public"]["Enums"]["report_processing_status"]
-          template_id: string | null
-        }
-        Insert: {
-          business_id: string
-          date_range?: Json | null
-          file_size?: number | null
-          generated_at?: string
-          generated_by: string
-          id?: string
-          metadata?: Json | null
-          page_count?: number | null
-          pdf_url?: string | null
-          report_data?: Json
-          status?: Database["public"]["Enums"]["report_processing_status"]
-          template_id?: string | null
-        }
-        Update: {
-          business_id?: string
-          date_range?: Json | null
-          file_size?: number | null
-          generated_at?: string
-          generated_by?: string
-          id?: string
-          metadata?: Json | null
-          page_count?: number | null
-          pdf_url?: string | null
-          report_data?: Json
-          status?: Database["public"]["Enums"]["report_processing_status"]
-          template_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "generated_reports_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "generated_reports_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "report_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      industry_templates: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          industry_type: string
-          is_active: boolean | null
-          name: string
-          updated_at: string
-          widget_ids: string[]
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          industry_type: string
-          is_active?: boolean | null
-          name: string
-          updated_at?: string
-          widget_ids: string[]
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          industry_type?: string
-          is_active?: boolean | null
-          name?: string
-          updated_at?: string
-          widget_ids?: string[]
         }
         Relationships: []
       }
@@ -457,142 +181,6 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
-      }
-      regional_admins: {
-        Row: {
-          created_at: string
-          id: string
-          region_id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          region_id: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          region_id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "regional_admins_region_id_fkey"
-            columns: ["region_id"]
-            isOneToOne: false
-            referencedRelation: "regions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      regions: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          is_active: boolean | null
-          name: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          id?: string
-          is_active?: boolean | null
-          name: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      report_templates: {
-        Row: {
-          business_id: string
-          charts_config: Json | null
-          config: Json
-          created_at: string
-          custom_css: string | null
-          description: string | null
-          font_family: string | null
-          footer_text: string | null
-          header_image_url: string | null
-          id: string
-          included_metrics: string[] | null
-          is_active: boolean | null
-          last_generated: string | null
-          layout_type: string
-          name: string
-          page_orientation: string | null
-          report_type: Database["public"]["Enums"]["report_type"] | null
-          theme_colors: string[] | null
-          updated_at: string
-          visualization_config: Json | null
-        }
-        Insert: {
-          business_id: string
-          charts_config?: Json | null
-          config?: Json
-          created_at?: string
-          custom_css?: string | null
-          description?: string | null
-          font_family?: string | null
-          footer_text?: string | null
-          header_image_url?: string | null
-          id?: string
-          included_metrics?: string[] | null
-          is_active?: boolean | null
-          last_generated?: string | null
-          layout_type?: string
-          name: string
-          page_orientation?: string | null
-          report_type?: Database["public"]["Enums"]["report_type"] | null
-          theme_colors?: string[] | null
-          updated_at?: string
-          visualization_config?: Json | null
-        }
-        Update: {
-          business_id?: string
-          charts_config?: Json | null
-          config?: Json
-          created_at?: string
-          custom_css?: string | null
-          description?: string | null
-          font_family?: string | null
-          footer_text?: string | null
-          header_image_url?: string | null
-          id?: string
-          included_metrics?: string[] | null
-          is_active?: boolean | null
-          last_generated?: string | null
-          layout_type?: string
-          name?: string
-          page_orientation?: string | null
-          report_type?: Database["public"]["Enums"]["report_type"] | null
-          theme_colors?: string[] | null
-          updated_at?: string
-          visualization_config?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "report_templates_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       reward_redemptions: {
         Row: {
@@ -772,112 +360,8 @@ export type Database = {
         }
         Relationships: []
       }
-      widget_metrics: {
-        Row: {
-          blockchain_hash: string | null
-          blockchain_tx_id: string | null
-          business_id: string
-          created_at: string
-          id: string
-          recorded_at: string
-          updated_at: string
-          value: number
-          widget_id: string
-        }
-        Insert: {
-          blockchain_hash?: string | null
-          blockchain_tx_id?: string | null
-          business_id: string
-          created_at?: string
-          id?: string
-          recorded_at?: string
-          updated_at?: string
-          value: number
-          widget_id: string
-        }
-        Update: {
-          blockchain_hash?: string | null
-          blockchain_tx_id?: string | null
-          business_id?: string
-          created_at?: string
-          id?: string
-          recorded_at?: string
-          updated_at?: string
-          value?: number
-          widget_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "widget_metrics_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "widget_metrics_widget_id_fkey"
-            columns: ["widget_id"]
-            isOneToOne: false
-            referencedRelation: "widgets"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      widgets: {
-        Row: {
-          category: Database["public"]["Enums"]["widget_category"]
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean | null
-          metric_type: string
-          name: string
-          unit: string | null
-          updated_at: string
-        }
-        Insert: {
-          category: Database["public"]["Enums"]["widget_category"]
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          metric_type: string
-          name: string
-          unit?: string | null
-          updated_at?: string
-        }
-        Update: {
-          category?: Database["public"]["Enums"]["widget_category"]
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          metric_type?: string
-          name?: string
-          unit?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
-      emissions_summary: {
-        Row: {
-          business_id: string | null
-          month: string | null
-          scope: Database["public"]["Enums"]["emission_scope"] | null
-          total_emissions: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "carbon_emissions_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       monthly_scanning_activity: {
         Row: {
           month: string | null
@@ -898,12 +382,6 @@ export type Database = {
       }
     }
     Functions: {
-      check_admin_user_access: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
       create_admin_user: {
         Args: {
           user_id: string
@@ -922,16 +400,6 @@ export type Database = {
           total_carbon_saved: number
           total_water_saved: number
           avg_sustainability_score: number
-        }[]
-      }
-      get_emissions_summary: {
-        Args: {
-          business_id_param: string
-        }
-        Returns: {
-          scope: Database["public"]["Enums"]["emission_scope"]
-          monthly_total: number
-          year_to_date: number
         }[]
       }
       get_top_products: {
@@ -969,54 +437,17 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_regional_admin: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
-      is_super_admin: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
-      is_super_admin_no_rls: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
       mark_notifications_as_read: {
         Args: {
           notification_ids: string[]
         }
         Returns: string[]
       }
-      process_pending_reports: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
     }
     Enums: {
-      account_level: "super_admin" | "regional_admin" | "business"
-      business_type:
-        | "manufacturer"
-        | "retailer"
-        | "distributor"
-        | "supplier"
-        | "public_institution"
-      emission_scope: "scope_1" | "scope_2" | "scope_3"
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
-      report_processing_status:
-        | "pending"
-        | "processing"
-        | "completed"
-        | "failed"
-      report_type: "metrics" | "sustainability" | "combined"
       reward_type: "discount" | "voucher" | "product" | "service"
       user_role: "admin" | "business_user"
-      widget_category: "environmental" | "social" | "governance"
     }
     CompositeTypes: {
       [_ in never]: never
