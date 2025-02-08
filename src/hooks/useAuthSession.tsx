@@ -31,14 +31,6 @@ export const useAuthSession = () => {
     retry: false,
     refetchOnWindowFocus: true,
     refetchOnMount: true,
-    meta: {
-      onError: (error: Error) => {
-        console.error("Auth error:", error);
-        if (error.message !== "Session not found") {
-          handleSignOut();
-        }
-      },
-    },
   });
 
   const handleSignOut = async () => {
@@ -58,7 +50,6 @@ export const useAuthSession = () => {
       });
     } catch (error) {
       console.error("Sign out error:", error);
-      // Force navigate to login even if sign out fails
       navigate("/admin/login");
     }
   };
@@ -72,7 +63,6 @@ export const useAuthSession = () => {
       if (event === "SIGNED_OUT") {
         navigate("/admin/login");
       } else if (event === "SIGNED_IN") {
-        // Check admin status on sign in
         if (session?.user?.id) {
           try {
             const { data: isAdmin, error: checkError } = await supabase.rpc(
@@ -98,8 +88,6 @@ export const useAuthSession = () => {
             await handleSignOut();
           }
         }
-      } else if (event === "TOKEN_REFRESHED") {
-        console.log("Token refreshed successfully");
       }
     });
 

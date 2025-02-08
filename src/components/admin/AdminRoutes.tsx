@@ -20,13 +20,18 @@ export const AdminRoutes = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
-      const { data: adminUser } = await supabase
-        .from("admin_users")
-        .select("account_level")
-        .eq("id", user.id)
-        .single();
+      try {
+        const { data: isAdmin, error } = await supabase.rpc(
+          'check_admin_user_access',
+          { user_id: user.id }
+        );
 
-      return adminUser?.account_level;
+        if (error) throw error;
+        return isAdmin;
+      } catch (error) {
+        console.error("Admin check error:", error);
+        return null;
+      }
     },
   });
 
@@ -131,7 +136,7 @@ export const AdminRoutes = () => {
       } />
 
       {/* Catch all redirect */}
-      <Route path="*" element={<Navigate to="" replace />} />
+      <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
     </Routes>
   );
 };

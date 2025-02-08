@@ -34,14 +34,12 @@ const BusinessLogin = () => {
       }
 
       // Check if user is an admin
-      const { data: isAdmin, error: checkError } = await supabase
-        .rpc('check_admin_user_access', {
-          user_id: authData.user.id
-        });
+      const { data: isAdmin, error: checkError } = await supabase.rpc(
+        'check_admin_user_access',
+        { user_id: authData.user.id }
+      );
 
-      if (checkError) {
-        throw checkError;
-      }
+      if (checkError) throw checkError;
 
       if (!isAdmin) {
         await supabase.auth.signOut();
@@ -53,8 +51,8 @@ const BusinessLogin = () => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Explicitly navigate to the admin dashboard after successful login
-      navigate("/admin/dashboard");
+      // Navigate to admin dashboard and force a page reload to ensure proper state
+      window.location.href = "/admin/dashboard";
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in");
