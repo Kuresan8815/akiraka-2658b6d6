@@ -2,6 +2,7 @@
 import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from "lucide-react";
 
 interface AdminRouteProps {
   children: React.ReactNode;
@@ -27,11 +28,23 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       
       return data ? { role: 'admin' } : null;
     },
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    retry: false
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
-  return adminUser ? children : <Navigate to="/admin/login" />;
+  if (!adminUser) {
+    // Clear any stale session data when access is denied
+    supabase.auth.signOut();
+    return <Navigate to="/admin/login" replace />;
+  }
+
+  return <>{children}</>;
 };

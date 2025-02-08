@@ -55,8 +55,8 @@ const AdminLogin = () => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Navigate to the admin dashboard with a full page reload
-      window.location.href = "/admin";
+      // Use navigate instead of window.location for a smoother transition
+      navigate("/admin");
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in. Please check your credentials.");
