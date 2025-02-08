@@ -64,7 +64,7 @@ export const useAuthSession = () => {
       async (event, session) => {
         console.log("Auth state changed:", event);
         
-        if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+        if (event === "SIGNED_OUT") {
           navigate("/admin/login");
         } else if (!session && !isLoading) {
           navigate("/admin/login");
