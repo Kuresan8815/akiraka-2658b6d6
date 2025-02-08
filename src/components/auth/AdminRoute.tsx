@@ -15,18 +15,19 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return null;
       
-      // Use the check_admin_user_access function
+      // Directly query admin_users table
       const { data, error } = await supabase
-        .rpc('check_admin_user_access', {
-          user_id: session.user.id
-        });
+        .from('admin_users')
+        .select('account_level')
+        .eq('id', session.user.id)
+        .single();
       
       if (error) {
         console.error('Error checking admin access:', error);
         return null;
       }
       
-      return data ? { role: 'admin' } : null;
+      return data;
     },
     staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     retry: false

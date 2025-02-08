@@ -34,17 +34,14 @@ const AdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user is an admin using the check_admin_user_access function
-      const { data: isAdmin, error: adminCheckError } = await supabase
-        .rpc('check_admin_user_access', {
-          user_id: authData.user.id
-        });
+      // Check if user exists in admin_users table
+      const { data: adminData, error: adminError } = await supabase
+        .from('admin_users')
+        .select('account_level')
+        .eq('id', authData.user.id)
+        .single();
 
-      if (adminCheckError) {
-        throw adminCheckError;
-      }
-
-      if (!isAdmin) {
+      if (adminError || !adminData) {
         // If not an admin, sign them out
         await supabase.auth.signOut();
         throw new Error("Unauthorized access. Admin privileges required.");
@@ -55,7 +52,6 @@ const AdminLogin = () => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Use navigate instead of window.location for a smoother transition
       navigate("/admin");
     } catch (error: any) {
       console.error("Login error:", error);
