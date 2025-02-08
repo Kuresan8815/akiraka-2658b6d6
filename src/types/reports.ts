@@ -25,6 +25,8 @@ export type ReportTemplate = {
     showTables: boolean;
     showTimeline: boolean;
   };
+  ai_generated?: boolean;
+  ai_prompt?: string;
 };
 
 export type GeneratedReport = {

@@ -22,7 +22,17 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as ReportTemplate[];
+      
+      // Transform the visualization_config from JSON to the expected format
+      return (data as any[]).map(template => ({
+        ...template,
+        visualization_config: {
+          showBarCharts: template.visualization_config?.showBarCharts ?? true,
+          showPieCharts: template.visualization_config?.showPieCharts ?? true,
+          showTables: template.visualization_config?.showTables ?? true,
+          showTimeline: template.visualization_config?.showTimeline ?? true,
+        }
+      })) as ReportTemplate[];
     },
   });
 
