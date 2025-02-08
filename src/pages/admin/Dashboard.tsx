@@ -3,7 +3,6 @@ import React from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SuperAdminDashboard } from '@/components/admin/SuperAdminDashboard';
-import { BusinessProfileManager } from '@/components/business/BusinessProfileManager';
 import { DashboardMetrics } from '@/components/admin/dashboard/DashboardMetrics';
 import { DashboardCharts } from '@/components/admin/dashboard/DashboardCharts';
 import { DashboardWidgets } from '@/components/admin/dashboard/DashboardWidgets';
@@ -33,7 +32,7 @@ export const AdminDashboard = () => {
       if (!user) return null;
 
       const { data } = await supabase
-        .from("business_users")
+        .from("business_profiles")
         .select("business_id")
         .eq("user_id", user.id)
         .single();

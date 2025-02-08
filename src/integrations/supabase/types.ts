@@ -85,6 +85,51 @@ export type Database = {
           },
         ]
       }
+      business_metrics: {
+        Row: {
+          active_users: number
+          business_id: string
+          created_at: string
+          id: string
+          total_points: number
+          total_scans: number
+          updated_at: string
+        }
+        Insert: {
+          active_users?: number
+          business_id: string
+          created_at?: string
+          id?: string
+          total_points?: number
+          total_scans?: number
+          updated_at?: string
+        }
+        Update: {
+          active_users?: number
+          business_id?: string
+          created_at?: string
+          id?: string
+          total_points?: number
+          total_scans?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_business"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_profiles: {
         Row: {
           business_id: string
