@@ -36,11 +36,12 @@ export const AdminRoutes = () => {
     <Routes>
       <Route path="/" element={
         <AdminLayout role="admin">
-          {adminLevel === "super_admin" ? (
-            <SuperAdminDashboard />
-          ) : (
-            <BusinessProfileManager />
-          )}
+          <AdminDashboard />
+        </AdminLayout>
+      } />
+      <Route path="dashboard" element={
+        <AdminLayout role="admin">
+          <AdminDashboard />
         </AdminLayout>
       } />
       {adminLevel === "super_admin" && (
