@@ -33,8 +33,8 @@ const BusinessLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user is a business admin using the new function name
-      const { data: isBusinessAdmin, error: checkError } = await supabase
+      // Check if user is an admin
+      const { data: isAdmin, error: checkError } = await supabase
         .rpc('check_admin_user_access', {
           user_id: authData.user.id
         });
@@ -43,33 +43,17 @@ const BusinessLogin = () => {
         throw checkError;
       }
 
-      if (!isBusinessAdmin) {
+      if (!isAdmin) {
         await supabase.auth.signOut();
-        throw new Error("Unauthorized access. Business admin privileges required.");
-      }
-
-      // Check if user has any business profiles
-      const { data: businessProfiles, error: profileError } = await supabase
-        .from('business_profiles')
-        .select('*')
-        .eq('user_id', authData.user.id);
-
-      if (profileError) {
-        throw profileError;
+        throw new Error("Unauthorized access. Admin privileges required.");
       }
 
       toast({
         title: "Success",
-        description: "Welcome to the business admin dashboard",
+        description: "Welcome to the admin dashboard",
       });
       
-      // If user has no business profiles, redirect to settings to create one
-      if (!businessProfiles || businessProfiles.length === 0) {
-        navigate("/admin/settings", { replace: true });
-      } else {
-        // Otherwise, redirect to the dashboard
-        navigate("/admin/dashboard", { replace: true });
-      }
+      navigate("/admin/dashboard", { replace: true });
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in");
@@ -87,7 +71,7 @@ const BusinessLogin = () => {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-center text-eco-primary mb-6">
-          Business Admin Login
+          Admin Login
         </h1>
         {error && (
           <Alert variant="destructive" className="mb-4">

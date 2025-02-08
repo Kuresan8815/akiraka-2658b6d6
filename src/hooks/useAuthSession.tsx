@@ -50,7 +50,7 @@ export const useAuthSession = () => {
         window.localStorage.removeItem('supabase.auth.expires_at');
         window.localStorage.removeItem('supabase.auth.refresh_token');
       }
-      navigate("/login");
+      navigate("/admin/login");
       toast({
         title: "Session Expired",
         description: "Please sign in again to continue.",
@@ -59,7 +59,7 @@ export const useAuthSession = () => {
     } catch (error) {
       console.error("Sign out error:", error);
       // Force navigate to login even if sign out fails
-      navigate("/login");
+      navigate("/admin/login");
     }
   };
 
@@ -70,7 +70,7 @@ export const useAuthSession = () => {
       console.log("Auth state changed:", event, session?.user?.id);
 
       if (event === "SIGNED_OUT") {
-        navigate("/login");
+        navigate("/admin/login");
       } else if (event === "SIGNED_IN") {
         // Check admin status on sign in
         if (session?.user?.id) {
