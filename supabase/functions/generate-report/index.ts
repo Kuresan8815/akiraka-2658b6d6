@@ -18,6 +18,7 @@ interface ReportTemplate {
     showTimeline: boolean;
   };
   page_orientation: 'portrait' | 'landscape';
+  theme_colors: string[];
 }
 
 interface ReportData {
@@ -37,6 +38,7 @@ interface ReportData {
 }
 
 async function generateReportData(reportType: string, visualConfig: Record<string, boolean>): Promise<ReportData> {
+  const colors = ['#9b87f5', '#7E69AB', '#6E59A5', '#8B5CF6', '#D946EF', '#F97316', '#0EA5E9'];
   const reportData: ReportData = {
     generated_at: new Date().toISOString(),
     metrics: {},
@@ -56,12 +58,12 @@ async function generateReportData(reportType: string, visualConfig: Record<strin
         type: 'bar',
         title: 'Monthly Emissions',
         data: [
-          { month: 'Jan', value: 850 },
-          { month: 'Feb', value: 920 },
-          { month: 'Mar', value: 780 },
-          { month: 'Apr', value: 850 },
-          { month: 'May', value: 920 },
-          { month: 'Jun', value: 780 },
+          { month: 'Jan', value: 850, color: colors[0] },
+          { month: 'Feb', value: 920, color: colors[1] },
+          { month: 'Mar', value: 780, color: colors[2] },
+          { month: 'Apr', value: 850, color: colors[3] },
+          { month: 'May', value: 920, color: colors[4] },
+          { month: 'Jun', value: 780, color: colors[5] },
         ],
       };
     }
@@ -71,9 +73,9 @@ async function generateReportData(reportType: string, visualConfig: Record<strin
         type: 'pie',
         title: 'Resource Distribution',
         data: [
-          { label: 'Water', value: 35 },
-          { label: 'Energy', value: 45 },
-          { label: 'Materials', value: 20 },
+          { label: 'Water', value: 35, color: colors[0] },
+          { label: 'Energy', value: 45, color: colors[1] },
+          { label: 'Materials', value: 20, color: colors[2] },
         ],
       };
     }
@@ -96,10 +98,10 @@ async function generateReportData(reportType: string, visualConfig: Record<strin
         type: 'line',
         title: 'Sustainability Progress',
         data: [
-          { quarter: 'Q1', score: 75 },
-          { quarter: 'Q2', score: 78 },
-          { quarter: 'Q3', score: 82 },
-          { quarter: 'Q4', score: 85 },
+          { quarter: 'Q1', score: 75, color: colors[0] },
+          { quarter: 'Q2', score: 78, color: colors[1] },
+          { quarter: 'Q3', score: 82, color: colors[2] },
+          { quarter: 'Q4', score: 85, color: colors[3] },
         ],
       };
     }
@@ -124,39 +126,103 @@ async function generateReportData(reportType: string, visualConfig: Record<strin
 async function createPDFDocument(template: ReportTemplate, reportData: ReportData): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
   const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const page = pdfDoc.addPage(template.page_orientation === 'landscape' ? [842, 595] : [595, 842]);
   const { width, height } = page.getSize();
   
-  // Add title and date
+  // Use template colors or fallback to defaults
+  const colors = template.theme_colors.length > 0 ? template.theme_colors : 
+    ['#9b87f5', '#7E69AB', '#6E59A5', '#8B5CF6', '#D946EF'];
+
+  // Add header with gradient background
+  page.drawRectangle({
+    x: 0,
+    y: height - 100,
+    width: width,
+    height: 100,
+    color: rgb(0.61, 0.53, 0.96), // Purple background
+  });
+
+  // Add title and date with better styling
   page.drawText(template.name, {
     x: 50,
-    y: height - 50,
-    size: 20,
-    font: timesRomanFont,
-    color: rgb(0, 0, 0),
+    y: height - 60,
+    size: 28,
+    font: helveticaFont,
+    color: rgb(1, 1, 1),
   });
 
   page.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
     x: 50,
-    y: height - 80,
-    size: 12,
-    font: timesRomanFont,
+    y: height - 90,
+    size: 14,
+    font: helveticaFont,
     color: rgb(0.4, 0.4, 0.4),
   });
 
-  // Draw metrics
-  let yPosition = height - 120;
-  Object.entries(reportData.metrics).forEach(([key, value]) => {
+  // Draw metrics section with colorful boxes
+  let yPosition = height - 150;
+  Object.entries(reportData.metrics).forEach(([key, value], index) => {
     const label = key.replace(/_/g, ' ').toUpperCase();
-    page.drawText(`${label}: ${value}`, {
+    const boxColor = colors[index % colors.length];
+    const [r, g, b] = hexToRGB(boxColor);
+    
+    // Draw metric box
+    page.drawRectangle({
       x: 50,
-      y: yPosition,
-      size: 12,
-      font: timesRomanFont,
+      y: yPosition - 40,
+      width: 200,
+      height: 60,
+      color: rgb(r/255, g/255, b/255),
+      borderColor: rgb(0, 0, 0),
+      borderWidth: 1,
+      opacity: 0.1,
+    });
+
+    // Draw metric value
+    page.drawText(`${value}`, {
+      x: 60,
+      y: yPosition - 10,
+      size: 24,
+      font: helveticaFont,
       color: rgb(0, 0, 0),
     });
-    yPosition -= 25;
+
+    // Draw metric label
+    page.drawText(label, {
+      x: 60,
+      y: yPosition - 30,
+      size: 12,
+      font: helveticaFont,
+      color: rgb(0.4, 0.4, 0.4),
+    });
+
+    yPosition -= 80;
   });
+
+  // Draw sustainability section if available
+  if (reportData.sustainability) {
+    yPosition -= 20;
+    page.drawText('SUSTAINABILITY INSIGHTS', {
+      x: 50,
+      y: yPosition,
+      size: 18,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+
+    yPosition -= 30;
+    reportData.sustainability.recommendations.forEach((recommendation) => {
+      page.drawText(`• ${recommendation}`, {
+        x: 60,
+        y: yPosition,
+        size: 12,
+        font: helveticaFont,
+        color: rgb(0, 0, 0),
+      });
+      yPosition -= 20;
+    });
+  }
 
   // Draw table if available
   if (reportData.tables) {
@@ -164,7 +230,8 @@ async function createPDFDocument(template: ReportTemplate, reportData: ReportDat
       x: 50,
       y: yPosition - 40,
       width: width - 100,
-      font: timesRomanFont,
+      font: helveticaFont,
+      colors,
     });
   }
 
@@ -174,41 +241,67 @@ async function createPDFDocument(template: ReportTemplate, reportData: ReportDat
 function drawTable(
   page: PDFPage,
   table: { headers: string[]; rows: string[][] },
-  options: { x: number; y: number; width: number; font: PDFFont }
+  options: { x: number; y: number; width: number; font: PDFFont; colors: string[] }
 ): number {
-  const { x, y, width, font } = options;
+  const { x, y, width, font, colors } = options;
   let currentY = y;
-
-  // Draw table title
-  page.drawText('Monthly Metrics', {
-    x,
-    y: currentY,
-    size: 14,
-    font,
-    color: rgb(0, 0, 0),
-  });
-  currentY -= 25;
-
+  const rowHeight = 30;
   const columnWidth = width / table.headers.length;
 
-  // Draw headers
+  // Draw table title with background
+  page.drawRectangle({
+    x,
+    y: currentY,
+    width,
+    height: rowHeight,
+    color: rgb(0.61, 0.53, 0.96),
+  });
+
+  page.drawText('Monthly Metrics', {
+    x: x + 10,
+    y: currentY + 10,
+    size: 14,
+    font,
+    color: rgb(1, 1, 1),
+  });
+  currentY -= rowHeight;
+
+  // Draw headers with background
+  page.drawRectangle({
+    x,
+    y: currentY,
+    width,
+    height: rowHeight,
+    color: rgb(0.95, 0.95, 0.95),
+  });
+
   table.headers.forEach((header, index) => {
     page.drawText(header, {
-      x: x + (columnWidth * index),
-      y: currentY,
-      size: 10,
+      x: x + (columnWidth * index) + 10,
+      y: currentY + 10,
+      size: 12,
       font,
       color: rgb(0, 0, 0),
     });
   });
 
-  // Draw rows
-  table.rows.forEach((row) => {
-    currentY -= 20;
+  // Draw rows with alternating backgrounds
+  table.rows.forEach((row, rowIndex) => {
+    currentY -= rowHeight;
+    
+    // Draw row background
+    page.drawRectangle({
+      x,
+      y: currentY,
+      width,
+      height: rowHeight,
+      color: rowIndex % 2 === 0 ? rgb(1, 1, 1) : rgb(0.98, 0.98, 0.98),
+    });
+
     row.forEach((cell, cellIndex) => {
       page.drawText(cell, {
-        x: x + (columnWidth * cellIndex),
-        y: currentY,
+        x: x + (columnWidth * cellIndex) + 10,
+        y: currentY + 10,
         size: 10,
         font,
         color: rgb(0, 0, 0),
@@ -217,6 +310,14 @@ function drawTable(
   });
 
   return currentY;
+}
+
+// Helper function to convert hex color to RGB
+function hexToRGB(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return [r, g, b];
 }
 
 serve(async (req) => {
@@ -323,3 +424,4 @@ serve(async (req) => {
     );
   }
 });
+
