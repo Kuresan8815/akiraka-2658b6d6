@@ -11,21 +11,21 @@ export type Database = {
     Tables: {
       admin_users: {
         Row: {
-          account_level: Database["public"]["Enums"]["account_level"]
+          account_level: Database["public"]["Enums"]["account_level"] | null
           created_at: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
-          account_level?: Database["public"]["Enums"]["account_level"]
+          account_level?: Database["public"]["Enums"]["account_level"] | null
           created_at?: string
           id: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
-          account_level?: Database["public"]["Enums"]["account_level"]
+          account_level?: Database["public"]["Enums"]["account_level"] | null
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -898,12 +898,6 @@ export type Database = {
       }
     }
     Functions: {
-      check_admin_user_access: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
       create_admin_user: {
         Args: {
           user_id: string
@@ -976,12 +970,6 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
-      is_super_admin_no_rls: {
         Args: {
           user_id: string
         }
