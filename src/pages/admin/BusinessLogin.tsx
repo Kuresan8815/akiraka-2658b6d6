@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,9 +33,9 @@ const BusinessLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user is a business admin
+      // Check if user is a business admin using the new function name
       const { data: isBusinessAdmin, error: checkError } = await supabase
-        .rpc('is_business_admin_no_rls', {
+        .rpc('check_admin_user_access', {
           user_id: authData.user.id
         });
 
