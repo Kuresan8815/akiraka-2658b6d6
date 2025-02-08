@@ -963,12 +963,6 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_business_admin_no_rls: {
-        Args: {
-          user_id: string
-        }
-        Returns: boolean
-      }
       is_business_user: {
         Args: {
           user_id: string
