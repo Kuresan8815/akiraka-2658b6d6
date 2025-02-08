@@ -14,7 +14,17 @@ export const supabase = createClient<Database>(
       autoRefreshToken: true,
       detectSessionInUrl: true,
       flowType: 'pkce',
-      storage: window.localStorage
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      debug: process.env.NODE_ENV === 'development'
     }
   }
 );
+
+// Initialize auth state from storage
+if (typeof window !== 'undefined') {
+  supabase.auth.getSession().then(({ data: { session }}) => {
+    if (session) {
+      console.log('Session initialized from storage');
+    }
+  });
+}
