@@ -10,7 +10,7 @@ import { AdminWidgets } from "@/pages/admin/Widgets";
 import { AdminData } from "@/pages/admin/Data";
 import { Reports } from "@/pages/admin/Reports";
 import { SuperAdminDashboard } from "@/components/admin/SuperAdminDashboard";
-import { RegionalAdminDashboard } from "@/components/admin/RegionalAdminDashboard";
+import { BusinessProfileManager } from "@/components/business/BusinessProfileManager";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,10 +38,8 @@ export const AdminRoutes = () => {
         <AdminLayout role="admin">
           {adminLevel === "super_admin" ? (
             <SuperAdminDashboard />
-          ) : adminLevel === "regional_admin" ? (
-            <RegionalAdminDashboard />
           ) : (
-            <AdminDashboard />
+            <BusinessProfileManager />
           )}
         </AdminLayout>
       } />
