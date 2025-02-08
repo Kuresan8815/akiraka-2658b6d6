@@ -15,6 +15,11 @@ serve(async (req) => {
 
   try {
     const { requestId, prompt } = await req.json();
+    console.log('Processing AI report request:', { requestId, prompt });
+
+    if (!requestId || !prompt) {
+      throw new Error('Missing required parameters: requestId and prompt are required');
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -28,19 +33,36 @@ serve(async (req) => {
       .eq('id', requestId)
       .single();
 
-    if (requestError) throw requestError;
+    if (requestError) {
+      console.error('Error fetching request data:', requestError);
+      throw requestError;
+    }
+
+    console.log('Found request data:', requestData);
 
     // Update request status to processing
-    await supabase
+    const { error: updateError } = await supabase
       .from('ai_report_requests')
       .update({ status: 'processing' })
       .eq('id', requestId);
 
+    if (updateError) {
+      console.error('Error updating request status:', updateError);
+      throw updateError;
+    }
+
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    console.log('Calling OpenAI API...');
+    
     // Use OpenAI to analyze the prompt and generate report configuration
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${Deno.env.get('OPENAI_API_KEY')}`,
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -49,7 +71,14 @@ serve(async (req) => {
           {
             role: 'system',
             content: `You are a report configuration expert. Convert user requests into structured report configurations. 
-            Focus on visualization types, metrics, and layout preferences. Return only valid JSON.`
+            Focus on visualization types, metrics, and layout preferences. Return only valid JSON with the following structure:
+            {
+              "name": "string",
+              "description": "string",
+              "visualizations": ["bar", "pie", "table", "timeline"],
+              "type": "metrics" | "sustainability" | "combined",
+              "colors": ["string", "string", "string"]
+            }`
           },
           {
             role: 'user',
@@ -60,8 +89,21 @@ serve(async (req) => {
       }),
     });
 
+    if (!openAIResponse.ok) {
+      const errorText = await openAIResponse.text();
+      console.error('OpenAI API error:', errorText);
+      throw new Error(`OpenAI API error: ${errorText}`);
+    }
+
     const aiResponse = await openAIResponse.json();
+    console.log('OpenAI response received:', aiResponse);
+
+    if (!aiResponse.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response from OpenAI');
+    }
+
     const config = JSON.parse(aiResponse.choices[0].message.content);
+    console.log('Parsed configuration:', config);
 
     // Create a new report template
     const { data: template, error: templateError } = await supabase
@@ -87,7 +129,12 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (templateError) throw templateError;
+    if (templateError) {
+      console.error('Error creating template:', templateError);
+      throw templateError;
+    }
+
+    console.log('Created template:', template);
 
     // Generate the report using the template
     const { data: report, error: reportError } = await supabase
@@ -103,10 +150,15 @@ serve(async (req) => {
       .select()
       .single();
 
-    if (reportError) throw reportError;
+    if (reportError) {
+      console.error('Error creating report:', reportError);
+      throw reportError;
+    }
+
+    console.log('Created report:', report);
 
     // Update the AI request with the success status
-    await supabase
+    const { error: finalUpdateError } = await supabase
       .from('ai_report_requests')
       .update({
         status: 'completed',
@@ -115,22 +167,42 @@ serve(async (req) => {
       })
       .eq('id', requestId);
 
+    if (finalUpdateError) {
+      console.error('Error updating request status:', finalUpdateError);
+      throw finalUpdateError;
+    }
+
     // Trigger the report generation
     const { error: genError } = await supabase.functions.invoke('generate-report', {
       body: { report_id: report.id }
     });
 
-    if (genError) throw genError;
+    if (genError) {
+      console.error('Error triggering report generation:', genError);
+      throw genError;
+    }
+
+    console.log('Successfully completed AI report generation process');
 
     return new Response(
-      JSON.stringify({ success: true, templateId: template.id, reportId: report.id }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        templateId: template.id, 
+        reportId: report.id 
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
     );
   } catch (error) {
     console.error('Error in generate-ai-report function:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
