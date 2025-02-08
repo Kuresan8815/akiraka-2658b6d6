@@ -13,16 +13,18 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
     queryKey: ['admin-user'],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return null;
+      if (!session) {
+        console.log('No session found, redirecting to login');
+        return null;
+      }
       
-      // Add console log to debug
       console.log('Checking admin access for user:', session.user.id);
       
       const { data, error } = await supabase
         .from('admin_users')
-        .select('account_level')
+        .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error('Error checking admin access:', error);
@@ -32,7 +34,6 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       console.log('Admin data:', data);
       return data;
     },
-    staleTime: 0, // Disable caching temporarily for debugging
   });
 
   if (isLoading) {
@@ -44,9 +45,9 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
   }
 
   if (!adminUser) {
+    console.log('No admin user found, redirecting to login');
     return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;
 };
-
