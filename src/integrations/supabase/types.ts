@@ -969,6 +969,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_check: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
       is_business_user: {
         Args: {
           user_id: string
