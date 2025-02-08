@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,9 +34,9 @@ const AdminLogin = () => {
         throw new Error("No user data returned after login");
       }
 
-      // Check if user is an admin using the is_admin function
-      const { data: isAdminResult, error: adminCheckError } = await supabase
-        .rpc('is_admin', {
+      // Check if user is an admin using the check_admin_user_access function
+      const { data: isAdmin, error: adminCheckError } = await supabase
+        .rpc('check_admin_user_access', {
           user_id: authData.user.id
         });
 
@@ -43,7 +44,7 @@ const AdminLogin = () => {
         throw adminCheckError;
       }
 
-      if (!isAdminResult) {
+      if (!isAdmin) {
         // If not an admin, sign them out
         await supabase.auth.signOut();
         throw new Error("Unauthorized access. Admin privileges required.");
@@ -54,8 +55,8 @@ const AdminLogin = () => {
         description: "Welcome to the admin dashboard",
       });
       
-      // Explicitly navigate to the admin dashboard
-      navigate("/admin", { replace: true });
+      // Navigate to the admin dashboard with a full page reload
+      window.location.href = "/admin";
     } catch (error: any) {
       console.error("Login error:", error);
       setError(error.message || "Failed to sign in. Please check your credentials.");

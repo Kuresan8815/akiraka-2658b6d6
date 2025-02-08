@@ -1,3 +1,4 @@
+
 import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,13 +14,18 @@ export const AdminRoute = ({ children }: AdminRouteProps) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return null;
       
-      const { data } = await supabase
-        .from('admin_users')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
+      // Use the check_admin_user_access function
+      const { data, error } = await supabase
+        .rpc('check_admin_user_access', {
+          user_id: session.user.id
+        });
       
-      return data;
+      if (error) {
+        console.error('Error checking admin access:', error);
+        return null;
+      }
+      
+      return data ? { role: 'admin' } : null;
     },
   });
 
