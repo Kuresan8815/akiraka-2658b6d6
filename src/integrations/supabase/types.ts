@@ -883,6 +883,9 @@ export type Database = {
           created_at: string
           id: string
           recorded_at: string
+          tezos_block_level: number | null
+          tezos_contract_address: string | null
+          tezos_operation_hash: string | null
           updated_at: string
           value: number
           widget_id: string
@@ -894,6 +897,9 @@ export type Database = {
           created_at?: string
           id?: string
           recorded_at?: string
+          tezos_block_level?: number | null
+          tezos_contract_address?: string | null
+          tezos_operation_hash?: string | null
           updated_at?: string
           value: number
           widget_id: string
@@ -905,6 +911,9 @@ export type Database = {
           created_at?: string
           id?: string
           recorded_at?: string
+          tezos_block_level?: number | null
+          tezos_contract_address?: string | null
+          tezos_operation_hash?: string | null
           updated_at?: string
           value?: number
           widget_id?: string

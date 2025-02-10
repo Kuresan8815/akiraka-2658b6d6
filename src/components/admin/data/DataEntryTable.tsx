@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,8 +19,9 @@ interface MetricData {
   id: string;
   value: number;
   recorded_at: string;
-  blockchain_hash?: string;
-  blockchain_tx_id?: string;
+  tezos_operation_hash?: string;
+  tezos_block_level?: number;
+  tezos_contract_address?: string;
 }
 
 export const DataEntryTable = ({ category }: { category: "environmental" | "social" | "governance" }) => {
@@ -29,7 +29,6 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
   const [metricValue, setMetricValue] = useState<string>("");
   const { toast } = useToast();
 
-  // First, get the current user's business profile
   const { data: businessProfile } = useQuery({
     queryKey: ["business-profile"],
     queryFn: async () => {
@@ -47,7 +46,6 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
     },
   });
 
-  // Then fetch only active widgets for this business
   const { data: activeWidgets, isLoading } = useQuery({
     queryKey: ["active-widgets", businessProfile?.business_id, category],
     enabled: !!businessProfile?.business_id,
@@ -69,7 +67,6 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
 
       if (error) throw error;
 
-      // Filter widgets by category and ensure they're active
       return data
         .filter(bw => bw.widget?.category === category)
         .map(bw => bw.widget)
@@ -92,7 +89,6 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
 
       if (error) throw error;
 
-      // Create a map of latest values for each widget
       const metricsMap = new Map<string, MetricData>();
       data.forEach(metric => {
         if (!metricsMap.has(metric.widget_id)) {
@@ -100,8 +96,9 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
             id: metric.id,
             value: metric.value,
             recorded_at: metric.recorded_at,
-            blockchain_hash: metric.blockchain_hash,
-            blockchain_tx_id: metric.blockchain_tx_id
+            tezos_operation_hash: metric.tezos_operation_hash,
+            tezos_block_level: metric.tezos_block_level,
+            tezos_contract_address: metric.tezos_contract_address
           });
         }
       });
@@ -117,19 +114,31 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
         throw new Error("Please enter a valid number");
       }
 
-      const { error } = await supabase
+      const { data: metricData, error } = await supabase
         .from("widget_metrics")
         .insert({
           widget_id: widgetId,
           business_id: businessProfile?.business_id,
           value: value,
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
 
+      const { error: verificationError } = await supabase.functions.invoke('verify-tezos-metric', {
+        body: {
+          metricId: metricData.id,
+          value: value,
+          businessId: businessProfile?.business_id
+        }
+      });
+
+      if (verificationError) throw verificationError;
+
       toast({
         title: "Success",
-        description: "Metric value has been recorded and verified on blockchain",
+        description: "Metric value has been recorded and verified on Tezos blockchain",
       });
 
       setEditingMetric(null);
@@ -197,9 +206,11 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
                 </TableCell>
                 <TableCell>{widget.unit}</TableCell>
                 <TableCell>
-                  {currentMetric?.blockchain_hash ? (
+                  {currentMetric?.tezos_operation_hash ? (
                     <span className="text-xs text-gray-500">
-                      Verified (TX: {currentMetric.blockchain_tx_id?.slice(0, 8)}...)
+                      Verified on Tezos (Block: {currentMetric.tezos_block_level})
+                      <br />
+                      TX: {currentMetric.tezos_operation_hash.slice(0, 8)}...
                     </span>
                   ) : (
                     "Not verified"
