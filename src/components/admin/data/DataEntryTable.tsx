@@ -2,11 +2,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save } from "lucide-react";
-import { MetricRow } from "@/types/metrics";
+import { Loader2 } from "lucide-react";
+import { MetricRowActions } from "./MetricRowActions";
+import { BlockchainVerification } from "./BlockchainVerification";
+import { MetricData, Widget } from "@/types/metric-entry";
 import { 
   Table, 
   TableBody, 
@@ -15,15 +16,6 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-
-interface MetricData {
-  id: string;
-  value: number;
-  recorded_at: string;
-  tezos_operation_hash?: string;
-  tezos_block_level?: number;
-  tezos_contract_address?: string;
-}
 
 export const DataEntryTable = ({ category }: { category: "environmental" | "social" | "governance" }) => {
   const [editingMetric, setEditingMetric] = useState<string | null>(null);
@@ -71,7 +63,7 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
       return data
         .filter(bw => bw.widget?.category === category)
         .map(bw => bw.widget)
-        .filter(widget => widget !== null);
+        .filter((widget): widget is Widget => widget !== null);
     },
   });
 
@@ -207,49 +199,21 @@ export const DataEntryTable = ({ category }: { category: "environmental" | "soci
                 </TableCell>
                 <TableCell>{widget.unit}</TableCell>
                 <TableCell>
-                  {currentMetric?.tezos_operation_hash ? (
-                    <span className="text-xs text-gray-500">
-                      Verified on Tezos (Block: {currentMetric.tezos_block_level})
-                      <br />
-                      TX: {currentMetric.tezos_operation_hash.slice(0, 8)}...
-                    </span>
-                  ) : (
-                    "Not verified"
-                  )}
+                  <BlockchainVerification metric={currentMetric} />
                 </TableCell>
                 <TableCell>
-                  {isEditing ? (
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSave(widget.id)}
-                      >
-                        <Save className="h-4 w-4 mr-1" />
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setEditingMetric(null);
-                          setMetricValue("");
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setEditingMetric(widget.id);
-                        setMetricValue(currentMetric?.value?.toString() || "");
-                      }}
-                    >
-                      Update
-                    </Button>
-                  )}
+                  <MetricRowActions
+                    isEditing={isEditing}
+                    onSave={() => handleSave(widget.id)}
+                    onEdit={() => {
+                      setEditingMetric(widget.id);
+                      setMetricValue(currentMetric?.value?.toString() || "");
+                    }}
+                    onCancel={() => {
+                      setEditingMetric(null);
+                      setMetricValue("");
+                    }}
+                  />
                 </TableCell>
               </TableRow>
             );
