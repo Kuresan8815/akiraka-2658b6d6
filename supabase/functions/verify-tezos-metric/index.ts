@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { TezosToolkit } from 'https://esm.sh/@taquito/taquito';
 import { InMemorySigner } from 'https://esm.sh/@taquito/signer';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
