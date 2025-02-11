@@ -15,8 +15,8 @@ serve(async (req) => {
   }
 
   try {
-    const { metricId, value, businessId } = await req.json();
-    console.log('Processing Tezos verification for metric:', { metricId, value, businessId });
+    const { metricId, value, businessId, action } = await req.json();
+    console.log('Processing Tezos request:', { metricId, value, businessId, action });
 
     // Initialize Tezos client
     const Tezos = new TezosToolkit(Deno.env.get('TEZOS_RPC_URL') || '');
@@ -32,48 +32,68 @@ serve(async (req) => {
     const contract = await Tezos.wallet.at(contractAddress);
     console.log('Connected to Tezos contract:', contractAddress);
 
-    // Call the smart contract to record the metric
-    const op = await contract.methods.recordMetric(
-      metricId,
-      value.toString(),
-      businessId
-    ).send();
-
-    console.log('Waiting for Tezos operation confirmation...');
-    const confirmation = await op.confirmation(1);
+    let result;
     
-    const operationHash = op.hash;
-    const blockLevel = confirmation.block.header.level;
+    switch (action) {
+      case 'getStorage':
+        // Get contract storage
+        const storage = await contract.storage();
+        console.log('Contract storage:', storage);
+        result = { storage };
+        break;
 
-    // Create Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase configuration missing');
-    }
+      case 'recordMetric':
+        // Record metric on blockchain
+        const op = await contract.methods.recordMetric(
+          metricId,
+          value.toString(),
+          businessId
+        ).send();
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+        console.log('Waiting for Tezos operation confirmation...');
+        const confirmation = await op.confirmation(1);
+        
+        const operationHash = op.hash;
+        const blockLevel = confirmation.block.header.level;
 
-    // Update the metric with Tezos transaction details
-    const { error: updateError } = await supabase
-      .from('widget_metrics')
-      .update({
-        tezos_operation_hash: operationHash,
-        tezos_block_level: blockLevel,
-        tezos_contract_address: contractAddress
-      })
-      .eq('id', metricId);
+        // Create Supabase client
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error('Supabase configuration missing');
+        }
 
-    if (updateError) {
-      throw updateError;
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        // Update the metric with Tezos transaction details
+        const { error: updateError } = await supabase
+          .from('widget_metrics')
+          .update({
+            tezos_operation_hash: operationHash,
+            tezos_block_level: blockLevel,
+            tezos_contract_address: contractAddress
+          })
+          .eq('id', metricId);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        result = {
+          operationHash,
+          blockLevel,
+          contractAddress
+        };
+        break;
+
+      default:
+        throw new Error('Invalid action specified');
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        operationHash,
-        blockLevel,
-        contractAddress
+        ...result
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
