@@ -29,10 +29,10 @@ export const BlockchainVerification = ({ metric }: BlockchainVerificationProps) 
         });
 
         const { data, error } = await supabase.functions.invoke('verify-tezos-metric', {
-          body: JSON.stringify({
+          body: {
             action: 'getStorage',
             contractAddress: metric.tezos_contract_address
-          })
+          }
         });
 
         if (error) {
@@ -72,7 +72,7 @@ export const BlockchainVerification = ({ metric }: BlockchainVerificationProps) 
       console.log('Recording metric on blockchain:', payload);
 
       const { data, error } = await supabase.functions.invoke('verify-tezos-metric', {
-        body: JSON.stringify(payload)
+        body: payload
       });
 
       if (error) {
