@@ -31,17 +31,30 @@ serve(async (req) => {
       .from('generated_reports')
       .select(`
         *,
-        report_template:report_templates(*)
+        template:report_templates(*)
       `)
       .eq('id', report_id)
       .single();
 
     if (reportError) {
+      console.error('Error fetching report:', reportError);
       throw reportError;
     }
 
+    if (!report) {
+      throw new Error(`Report ${report_id} not found`);
+    }
+
+    console.log('Found report:', report);
+
     // Get template settings and generate report data
-    const template = report.report_template;
+    const template = report.template;
+    if (!template) {
+      throw new Error(`Template not found for report ${report_id}`);
+    }
+
+    console.log('Generating report data with template:', template);
+
     const reportData = await generateReportData(
       template?.report_type || 'combined',
       template?.visualization_config || {
@@ -52,13 +65,32 @@ serve(async (req) => {
       }
     );
 
+    console.log('Generated report data:', reportData);
+
     // Generate PDF
+    console.log('Generating PDF document...');
     const pdfBuffer = await createPDFDocument(template, reportData);
+    console.log('PDF document generated, size:', pdfBuffer.length);
 
     // Generate PDF file name and upload
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const pdfFileName = `report_${report_id}_${timestamp}.pdf`;
     
+    console.log('Uploading PDF to storage:', pdfFileName);
+    
+    // Create the reports bucket if it doesn't exist
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find(b => b.name === 'reports')) {
+      const { error: bucketError } = await supabase.storage.createBucket('reports', {
+        public: false,
+        fileSizeLimit: 52428800, // 50MB
+      });
+      if (bucketError) {
+        console.error('Error creating reports bucket:', bucketError);
+        throw bucketError;
+      }
+    }
+
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('reports')
       .upload(pdfFileName, pdfBuffer, {
@@ -67,13 +99,18 @@ serve(async (req) => {
       });
 
     if (uploadError) {
+      console.error('Error uploading PDF:', uploadError);
       throw uploadError;
     }
+
+    console.log('PDF uploaded successfully:', uploadData);
 
     // Get public URL
     const { data: { publicUrl: pdfUrl } } = supabase.storage
       .from('reports')
       .getPublicUrl(pdfFileName);
+
+    console.log('Generated public URL:', pdfUrl);
 
     // Update report status
     const { error: updateError } = await supabase
@@ -88,8 +125,11 @@ serve(async (req) => {
       .eq('id', report_id);
 
     if (updateError) {
+      console.error('Error updating report status:', updateError);
       throw updateError;
     }
+
+    console.log('Successfully completed report generation');
 
     return new Response(
       JSON.stringify({ success: true, pdfUrl }),
@@ -102,7 +142,11 @@ serve(async (req) => {
     console.error('Error processing report:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack,
+        details: typeof error === 'object' ? JSON.stringify(error) : error 
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
