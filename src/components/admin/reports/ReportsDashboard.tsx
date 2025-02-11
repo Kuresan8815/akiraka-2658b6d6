@@ -9,26 +9,28 @@ import { CreateReportDialog } from "./CreateReportDialog";
 import { AIReportGenerator } from "./AIReportGenerator";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
-export const ReportsDashboard = () => {
+interface ReportsDashboardProps {
+  businessId?: string;
+}
+
+export const ReportsDashboard = ({ businessId }: ReportsDashboardProps) => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
-  const { data: currentBusiness } = useQuery({
-    queryKey: ["current-business"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.user_metadata?.current_business_id) return null;
-
-      const { data, error } = await supabase
-        .from("businesses")
-        .select("*")
-        .eq("id", user.user_metadata.current_business_id)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-  });
+  if (!businessId) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Please select a business from your profile to access reports.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -44,7 +46,12 @@ export const ReportsDashboard = () => {
       </div>
 
       <div className="grid gap-6 grid-cols-1">
-        <AIReportGenerator businessId={currentBusiness?.id} />
+        <AIReportGenerator 
+          businessId={businessId} 
+          onReportGenerated={(templateId) => {
+            // Handle report generation completion if needed
+          }} 
+        />
         
         <Tabs defaultValue="templates" className="w-full">
           <TabsList>
@@ -52,10 +59,10 @@ export const ReportsDashboard = () => {
             <TabsTrigger value="generated">Generated Reports</TabsTrigger>
           </TabsList>
           <TabsContent value="templates">
-            <ReportTemplates businessId={currentBusiness?.id} />
+            <ReportTemplates businessId={businessId} />
           </TabsContent>
           <TabsContent value="generated">
-            <GeneratedReports businessId={currentBusiness?.id} />
+            <GeneratedReports businessId={businessId} />
           </TabsContent>
         </Tabs>
       </div>
@@ -63,7 +70,7 @@ export const ReportsDashboard = () => {
       <CreateReportDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
-        businessId={currentBusiness?.id}
+        businessId={businessId}
       />
     </div>
   );
