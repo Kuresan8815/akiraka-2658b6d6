@@ -66,7 +66,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o-mini', // Fixed model name
         messages: [
           {
             role: 'system',
@@ -102,8 +102,14 @@ serve(async (req) => {
       throw new Error('Invalid response from OpenAI');
     }
 
-    const config = JSON.parse(aiResponse.choices[0].message.content);
-    console.log('Parsed configuration:', config);
+    let config;
+    try {
+      config = JSON.parse(aiResponse.choices[0].message.content);
+      console.log('Parsed configuration:', config);
+    } catch (error) {
+      console.error('Error parsing OpenAI response:', error);
+      throw new Error('Failed to parse OpenAI response as JSON');
+    }
 
     // Create a new report template
     const { data: template, error: templateError } = await supabase

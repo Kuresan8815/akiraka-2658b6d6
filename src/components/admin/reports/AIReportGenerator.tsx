@@ -20,6 +20,12 @@ export const AIReportGenerator = ({ businessId, onReportGenerated }: AIReportGen
 
   const { mutate: generateReport, isPending } = useMutation({
     mutationFn: async (prompt: string) => {
+      if (!businessId) {
+        throw new Error("Business ID is required to generate a report");
+      }
+
+      console.log('Starting report generation with prompt:', prompt);
+
       // First, create the AI report request
       const { data: request, error: requestError } = await supabase
         .from("ai_report_requests")
@@ -33,14 +39,24 @@ export const AIReportGenerator = ({ businessId, onReportGenerated }: AIReportGen
         .select()
         .single();
 
-      if (requestError) throw requestError;
+      if (requestError) {
+        console.error('Error creating AI report request:', requestError);
+        throw new Error(`Failed to create report request: ${requestError.message}`);
+      }
+
+      console.log('Created AI report request:', request);
 
       // Call the edge function to generate the report
       const { data, error } = await supabase.functions.invoke("generate-ai-report", {
         body: { requestId: request.id, prompt },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Failed to generate report: ${error.message}`);
+      }
+
+      console.log('Report generation successful:', data);
       return data;
     },
     onSuccess: (data) => {
@@ -56,13 +72,36 @@ export const AIReportGenerator = ({ businessId, onReportGenerated }: AIReportGen
       queryClient.invalidateQueries({ queryKey: ["generated-reports"] });
     },
     onError: (error) => {
+      console.error('Report generation error:', error);
       toast({
         title: "Error",
-        description: "Failed to generate report: " + error.message,
+        description: error instanceof Error ? error.message : "Failed to generate report. Please try again.",
         variant: "destructive",
       });
     },
   });
+
+  const handleSubmit = () => {
+    if (!businessId) {
+      toast({
+        title: "Error",
+        description: "Please select a business before generating a report",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!prompt.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a prompt for the report",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    generateReport(prompt);
+  };
 
   return (
     <Card>
@@ -81,8 +120,8 @@ export const AIReportGenerator = ({ businessId, onReportGenerated }: AIReportGen
           className="min-h-[100px]"
         />
         <Button 
-          onClick={() => generateReport(prompt)} 
-          disabled={!prompt.trim() || isPending}
+          onClick={handleSubmit} 
+          disabled={!prompt.trim() || isPending || !businessId}
           className="w-full"
         >
           {isPending ? (
