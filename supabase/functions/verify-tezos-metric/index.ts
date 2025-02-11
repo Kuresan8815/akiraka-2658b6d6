@@ -18,10 +18,15 @@ serve(async (req) => {
     const { metricId, value, businessId, action, contractAddress } = await req.json();
     console.log('Processing Tezos request:', { metricId, value, businessId, action, contractAddress });
 
+    // Log configuration details (without private key)
+    const rpcUrl = Deno.env.get('TEZOS_RPC_URL');
+    console.log('Using Tezos RPC URL:', rpcUrl);
+
     // Initialize Tezos client
-    const Tezos = new TezosToolkit(Deno.env.get('TEZOS_RPC_URL') || '');
+    const Tezos = new TezosToolkit(rpcUrl || '');
     const signer = await InMemorySigner.fromSecretKey(Deno.env.get('TEZOS_PRIVATE_KEY') || '');
-    Tezos.setProvider({ signer });
+    await Tezos.setProvider({ signer });
+    console.log('Tezos client initialized successfully');
 
     let result;
     let contract;
@@ -34,6 +39,7 @@ serve(async (req) => {
 
     console.log('Connecting to Tezos contract:', targetContract);
     contract = await Tezos.wallet.at(targetContract);
+    console.log('Successfully connected to contract');
     
     switch (action) {
       case 'getStorage':
