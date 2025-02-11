@@ -1,6 +1,7 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { TezosToolkit } from 'https://esm.sh/@taquito/taquito';
-import { InMemorySigner } from 'https://esm.sh/@taquito/signer';
+import { TezosToolkit } from 'https://esm.sh/@taquito/taquito@17.5.0';
+import { InMemorySigner } from 'https://esm.sh/@taquito/signer@17.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.1';
 
 const corsHeaders = {
@@ -23,23 +24,27 @@ serve(async (req) => {
     Tezos.setProvider({ signer });
 
     let result;
+    let contract;
+    
+    // Get the contract instance using provided address or default
+    const targetContract = contractAddress || Deno.env.get('TEZOS_CONTRACT_ADDRESS');
+    if (!targetContract) {
+      throw new Error('No contract address provided');
+    }
+
+    console.log('Connecting to Tezos contract:', targetContract);
+    contract = await Tezos.wallet.at(targetContract);
     
     switch (action) {
       case 'getStorage':
-        // Get the contract instance using provided address or default
-        const targetContract = contractAddress || Deno.env.get('TEZOS_CONTRACT_ADDRESS');
-        if (!targetContract) {
-          throw new Error('No contract address provided');
-        }
-
         console.log('Fetching storage for contract:', targetContract);
-        const contract = await Tezos.wallet.at(targetContract);
         const storage = await contract.storage();
         console.log('Contract storage:', storage);
         result = { storage };
         break;
 
       case 'recordMetric':
+        console.log('Recording metric on blockchain:', { metricId, value, businessId });
         // Record metric on blockchain
         const op = await contract.methods.recordMetric(
           metricId,
@@ -68,7 +73,7 @@ serve(async (req) => {
           .update({
             tezos_operation_hash: operationHash,
             tezos_block_level: blockLevel,
-            tezos_contract_address: contractAddress
+            tezos_contract_address: targetContract
           })
           .eq('id', metricId);
 
@@ -76,10 +81,16 @@ serve(async (req) => {
           throw updateError;
         }
 
+        console.log('Successfully recorded metric on blockchain:', {
+          operationHash,
+          blockLevel,
+          contractAddress: targetContract
+        });
+
         result = {
           operationHash,
           blockLevel,
-          contractAddress
+          contractAddress: targetContract
         };
         break;
 
