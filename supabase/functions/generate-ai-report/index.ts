@@ -66,26 +66,28 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',  // Changed to use the correct model name
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
             content: `You are a report configuration expert. Convert user requests into structured report configurations. 
-            Focus on visualization types, metrics, and layout preferences. Return only valid JSON with the following structure:
+            Focus on visualization types, metrics, and layout preferences. Your response MUST be a valid JSON string with this exact structure:
             {
               "name": "string",
               "description": "string",
               "visualizations": ["bar", "pie", "table", "timeline"],
               "type": "metrics" | "sustainability" | "combined",
               "colors": ["string", "string", "string"]
-            }`
+            }
+            Do not include any additional text or explanation, just return the JSON.`
           },
           {
             role: 'user',
             content: prompt
           }
         ],
-        response_format: { type: "json_object" }
+        temperature: 0.7,
+        max_tokens: 500
       }),
     });
 
