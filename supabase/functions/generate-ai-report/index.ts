@@ -66,7 +66,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           {
             role: 'user',
@@ -94,7 +94,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -147,7 +147,7 @@ serve(async (req) => {
       .insert([
         {
           business_id: requestData.business_id,
-          name: config.name || 'AI Generated Report',
+          name: config.name || 'ESG Sustainability Report',
           description: config.description || prompt,
           config: config,
           ai_generated: true,
@@ -159,7 +159,7 @@ serve(async (req) => {
             showTimeline: config.visualizations?.includes('timeline') ?? true,
           },
           report_type: config.type || 'combined',
-          theme_colors: config.colors || ['#9b87f5', '#7E69AB', '#6E59A5'],
+          theme_colors: config.colors || ['#28B463', '#F39C12', '#E74C3C'],
         }
       ])
       .select()
@@ -181,6 +181,11 @@ serve(async (req) => {
           business_id: requestData.business_id,
           generated_by: requestData.business_id,
           status: 'pending',
+          metadata: {
+            generation_date: new Date().toISOString(),
+            prompt: prompt,
+            report_version: '1.0'
+          }
         }
       ])
       .select()
