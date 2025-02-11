@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { TezosToolkit } from 'https://esm.sh/@taquito/taquito@17.5.0';
-import { InMemorySigner } from 'https://esm.sh/@taquito/signer@17.5.0';
+import { TezosToolkit } from 'https://esm.sh/@taquito/taquito@14.0.0';
+import { InMemorySigner } from 'https://esm.sh/@taquito/signer@14.0.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.1';
 
 const corsHeaders = {
