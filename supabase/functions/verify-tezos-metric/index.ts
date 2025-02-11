@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { TezosToolkit } from 'https://esm.sh/@taquito/taquito';
 import { InMemorySigner } from 'https://esm.sh/@taquito/signer';
@@ -15,28 +14,26 @@ serve(async (req) => {
   }
 
   try {
-    const { metricId, value, businessId, action } = await req.json();
-    console.log('Processing Tezos request:', { metricId, value, businessId, action });
+    const { metricId, value, businessId, action, contractAddress } = await req.json();
+    console.log('Processing Tezos request:', { metricId, value, businessId, action, contractAddress });
 
     // Initialize Tezos client
     const Tezos = new TezosToolkit(Deno.env.get('TEZOS_RPC_URL') || '');
     const signer = await InMemorySigner.fromSecretKey(Deno.env.get('TEZOS_PRIVATE_KEY') || '');
     Tezos.setProvider({ signer });
 
-    const contractAddress = Deno.env.get('TEZOS_CONTRACT_ADDRESS');
-    if (!contractAddress) {
-      throw new Error('Tezos contract address not configured');
-    }
-
-    // Get the contract instance
-    const contract = await Tezos.wallet.at(contractAddress);
-    console.log('Connected to Tezos contract:', contractAddress);
-
     let result;
     
     switch (action) {
       case 'getStorage':
-        // Get contract storage
+        // Get the contract instance using provided address or default
+        const targetContract = contractAddress || Deno.env.get('TEZOS_CONTRACT_ADDRESS');
+        if (!targetContract) {
+          throw new Error('No contract address provided');
+        }
+
+        console.log('Fetching storage for contract:', targetContract);
+        const contract = await Tezos.wallet.at(targetContract);
         const storage = await contract.storage();
         console.log('Contract storage:', storage);
         result = { storage };
