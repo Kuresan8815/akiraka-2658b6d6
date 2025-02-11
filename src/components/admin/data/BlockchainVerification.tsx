@@ -29,10 +29,10 @@ export const BlockchainVerification = ({ metric }: BlockchainVerificationProps) 
         });
 
         const { data, error } = await supabase.functions.invoke('verify-tezos-metric', {
-          body: {
+          body: JSON.stringify({
             action: 'getStorage',
             contractAddress: metric.tezos_contract_address
-          }
+          })
         });
 
         if (error) {
@@ -62,19 +62,17 @@ export const BlockchainVerification = ({ metric }: BlockchainVerificationProps) 
     }
 
     try {
-      console.log('Recording metric on blockchain:', {
+      const payload = {
+        action: 'recordMetric',
         metricId: metric.id,
         value: metric.value,
         businessId: "test-business" // This should be dynamic based on context
-      });
+      };
+
+      console.log('Recording metric on blockchain:', payload);
 
       const { data, error } = await supabase.functions.invoke('verify-tezos-metric', {
-        body: {
-          action: 'recordMetric',
-          metricId: metric.id,
-          value: metric.value,
-          businessId: "test-business" // This should be dynamic based on context
-        }
+        body: JSON.stringify(payload)
       });
 
       if (error) {

@@ -10,21 +10,35 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { metricId, value, businessId, action, contractAddress } = await req.json();
+    // Parse request body and log it
+    const body = await req.json();
+    console.log('Request body:', JSON.stringify(body));
+    
+    const { metricId, value, businessId, action, contractAddress } = body;
     console.log('Processing Tezos request:', { metricId, value, businessId, action, contractAddress });
 
     // Log configuration details (without private key)
     const rpcUrl = Deno.env.get('TEZOS_RPC_URL');
     console.log('Using Tezos RPC URL:', rpcUrl);
 
+    if (!rpcUrl) {
+      throw new Error('TEZOS_RPC_URL is not configured');
+    }
+
     // Initialize Tezos client
-    const Tezos = new TezosToolkit(rpcUrl || '');
-    const signer = await InMemorySigner.fromSecretKey(Deno.env.get('TEZOS_PRIVATE_KEY') || '');
+    const Tezos = new TezosToolkit(rpcUrl);
+    const privateKey = Deno.env.get('TEZOS_PRIVATE_KEY');
+    if (!privateKey) {
+      throw new Error('TEZOS_PRIVATE_KEY is not configured');
+    }
+
+    const signer = await InMemorySigner.fromSecretKey(privateKey);
     await Tezos.setProvider({ signer });
     console.log('Tezos client initialized successfully');
 
@@ -50,6 +64,10 @@ serve(async (req) => {
         break;
 
       case 'recordMetric':
+        if (!metricId || !value || !businessId) {
+          throw new Error('Missing required parameters for recordMetric');
+        }
+
         console.log('Recording metric on blockchain:', { metricId, value, businessId });
         // Record metric on blockchain
         const op = await contract.methods.recordMetric(
@@ -84,6 +102,7 @@ serve(async (req) => {
           .eq('id', metricId);
 
         if (updateError) {
+          console.error('Error updating metric:', updateError);
           throw updateError;
         }
 
