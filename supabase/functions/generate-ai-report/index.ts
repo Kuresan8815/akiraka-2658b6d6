@@ -56,7 +56,35 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('Calling OpenAI API...');
+    console.log('Testing OpenAI API configuration...');
+    
+    // Test OpenAI API with a simple request first
+    const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openAIApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'user',
+            content: 'Test connection'
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 50
+      }),
+    });
+
+    if (!testResponse.ok) {
+      const errorText = await testResponse.text();
+      console.error('OpenAI API test failed:', errorText);
+      throw new Error(`OpenAI API configuration test failed: ${errorText}`);
+    }
+
+    console.log('OpenAI API test successful, proceeding with report generation...');
     
     // Use OpenAI to analyze the prompt and generate report configuration
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -66,7 +94,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
