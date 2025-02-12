@@ -54,16 +54,40 @@ serve(async (req) => {
       throw new Error(`Template not found for report ${report_id}`);
     }
 
-    // Fetch business metrics for the report
+    // Fetch business metrics for the report, use maybeSingle() instead of single()
     const { data: businessMetrics, error: metricsError } = await supabase
       .from('business_metrics')
       .select('*')
       .eq('business_id', report.business_id)
-      .single();
+      .maybeSingle();
 
     if (metricsError) {
       console.error('Error fetching business metrics:', metricsError);
       throw metricsError;
+    }
+
+    // If no business metrics exist, create default metrics
+    const defaultBusinessMetrics = {
+      total_scans: 0,
+      active_users: 0,
+      total_points: 0,
+      business_id: report.business_id,
+    };
+
+    // Use existing metrics or defaults
+    const finalBusinessMetrics = businessMetrics || defaultBusinessMetrics;
+
+    // If no metrics exist, create them
+    if (!businessMetrics) {
+      console.log('Creating default business metrics...');
+      const { error: insertError } = await supabase
+        .from('business_metrics')
+        .insert([defaultBusinessMetrics]);
+
+      if (insertError) {
+        console.error('Error creating default metrics:', insertError);
+        // Don't throw, just log the error and continue with defaults
+      }
     }
 
     // Fetch widget metrics for the business
@@ -91,8 +115,8 @@ serve(async (req) => {
         showTables: true,
         showTimeline: true,
       },
-      businessMetrics,
-      widgetMetrics
+      finalBusinessMetrics,
+      widgetMetrics || []
     );
 
     console.log('Generated report data:', reportData);
@@ -185,4 +209,3 @@ serve(async (req) => {
     );
   }
 });
-
