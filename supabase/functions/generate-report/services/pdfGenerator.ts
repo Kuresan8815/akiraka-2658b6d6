@@ -1,163 +1,10 @@
 
-import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont } from 'https://esm.sh/pdf-lib@1.17.1';
-import { hexToRGB } from '../utils/colors.ts';
+import { PDFDocument, rgb, StandardFonts } from 'https://esm.sh/pdf-lib@1.17.1';
+import { drawExecutiveSummary } from './pdf/executiveSummaryService.ts';
+import { drawTable } from './pdf/tableService.ts';
+import { drawReportHeader } from './pdf/headerService.ts';
+import { hexToRGB } from './pdf/utils.ts';
 import { ReportTemplate, ReportData } from '../types.ts';
-
-function drawExecutiveSummary(
-  page: PDFPage,
-  summary: any,
-  options: { x: number; y: number; width: number; font: PDFFont; titleFont: PDFFont }
-): number {
-  const { x, y, width, font, titleFont } = options;
-  let currentY = y;
-  
-  // Draw section title
-  page.drawText('Executive Summary', {
-    x,
-    y: currentY,
-    size: 24,
-    font: titleFont,
-    color: rgb(0.2, 0.2, 0.2),
-  });
-  currentY -= 40;
-
-  // Draw key insights
-  page.drawText('Key Insights:', {
-    x,
-    y: currentY,
-    size: 16,
-    font: titleFont,
-    color: rgb(0.3, 0.3, 0.3),
-  });
-  currentY -= 25;
-
-  summary.key_insights.forEach((insight: string) => {
-    page.drawText(`• ${insight}`, {
-      x: x + 20,
-      y: currentY,
-      size: 12,
-      font: font,
-      color: rgb(0.2, 0.2, 0.2),
-    });
-    currentY -= 20;
-  });
-  currentY -= 10;
-
-  // Draw performance highlights
-  page.drawText('Performance Highlights:', {
-    x,
-    y: currentY,
-    size: 16,
-    font: titleFont,
-    color: rgb(0.3, 0.3, 0.3),
-  });
-  currentY -= 25;
-
-  // Split text into lines if too long
-  const words = summary.performance_highlights.split(' ');
-  let line = '';
-  words.forEach((word: string) => {
-    if ((line + word).length > 80) {
-      page.drawText(line, {
-        x: x + 20,
-        y: currentY,
-        size: 12,
-        font: font,
-        color: rgb(0.2, 0.2, 0.2),
-      });
-      currentY -= 20;
-      line = word + ' ';
-    } else {
-      line += word + ' ';
-    }
-  });
-  if (line) {
-    page.drawText(line, {
-      x: x + 20,
-      y: currentY,
-      size: 12,
-      font: font,
-      color: rgb(0.2, 0.2, 0.2),
-    });
-    currentY -= 30;
-  }
-
-  return currentY;
-}
-
-function drawTable(
-  page: PDFPage,
-  table: { headers: string[]; rows: string[][] },
-  options: { x: number; y: number; width: number; font: PDFFont; colors: string[] }
-): number {
-  const { x, y, width, font, colors } = options;
-  let currentY = y;
-  const rowHeight = 30;
-  const columnWidth = width / table.headers.length;
-
-  // Draw table title with background
-  page.drawRectangle({
-    x,
-    y: currentY,
-    width,
-    height: rowHeight,
-    color: rgb(0.61, 0.53, 0.96),
-  });
-
-  page.drawText('ESG Metrics Overview', {
-    x: x + 10,
-    y: currentY + 10,
-    size: 14,
-    font,
-    color: rgb(1, 1, 1),
-  });
-  currentY -= rowHeight;
-
-  // Draw headers with background
-  page.drawRectangle({
-    x,
-    y: currentY,
-    width,
-    height: rowHeight,
-    color: rgb(0.95, 0.95, 0.95),
-  });
-
-  table.headers.forEach((header, index) => {
-    page.drawText(header, {
-      x: x + (columnWidth * index) + 10,
-      y: currentY + 10,
-      size: 12,
-      font,
-      color: rgb(0, 0, 0),
-    });
-  });
-
-  // Draw rows with alternating backgrounds
-  table.rows.forEach((row, rowIndex) => {
-    currentY -= rowHeight;
-    
-    // Draw row background
-    page.drawRectangle({
-      x,
-      y: currentY,
-      width,
-      height: rowHeight,
-      color: rowIndex % 2 === 0 ? rgb(1, 1, 1) : rgb(0.98, 0.98, 0.98),
-    });
-
-    row.forEach((cell, cellIndex) => {
-      page.drawText(cell, {
-        x: x + (columnWidth * cellIndex) + 10,
-        y: currentY + 10,
-        size: 10,
-        font,
-        color: rgb(0, 0, 0),
-      });
-    });
-  });
-
-  return currentY;
-}
 
 export async function createPDFDocument(template: ReportTemplate, reportData: ReportData): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
@@ -172,34 +19,9 @@ export async function createPDFDocument(template: ReportTemplate, reportData: Re
   const colors = template.theme_colors.length > 0 ? template.theme_colors : 
     ['#9b87f5', '#7E69AB', '#6E59A5', '#8B5CF6', '#D946EF'];
 
-  // Add header with gradient background
-  firstPage.drawRectangle({
-    x: 0,
-    y: height - 100,
-    width,
-    height: 100,
-    color: rgb(0.61, 0.53, 0.96),
-  });
-
-  // Add title and date
-  firstPage.drawText('ESG Sustainability Metrics Report', {
-    x: 50,
-    y: height - 60,
-    size: 28,
-    font: helveticaBold,
-    color: rgb(1, 1, 1),
-  });
-
-  firstPage.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
-    x: 50,
-    y: height - 90,
-    size: 14,
-    font: helveticaFont,
-    color: rgb(0.4, 0.4, 0.4),
-  });
+  let currentY = drawReportHeader(firstPage, height, helveticaFont, helveticaBold);
 
   // Draw executive summary if available
-  let currentY = height - 150;
   if (reportData.executive_summary) {
     currentY = drawExecutiveSummary(firstPage, reportData.executive_summary, {
       x: 50,
