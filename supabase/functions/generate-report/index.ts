@@ -26,12 +26,13 @@ serve(async (req) => {
 
     console.log(`Processing report ${report_id}`);
 
-    // Get the report details
+    // Get the report details with business metrics
     const { data: report, error: reportError } = await supabase
       .from('generated_reports')
       .select(`
         *,
-        template:report_templates(*)
+        template:report_templates(*),
+        business:business_id(*)
       `)
       .eq('id', report_id)
       .single();
@@ -53,6 +54,33 @@ serve(async (req) => {
       throw new Error(`Template not found for report ${report_id}`);
     }
 
+    // Fetch business metrics for the report
+    const { data: businessMetrics, error: metricsError } = await supabase
+      .from('business_metrics')
+      .select('*')
+      .eq('business_id', report.business_id)
+      .single();
+
+    if (metricsError) {
+      console.error('Error fetching business metrics:', metricsError);
+      throw metricsError;
+    }
+
+    // Fetch widget metrics for the business
+    const { data: widgetMetrics, error: widgetError } = await supabase
+      .from('widget_metrics')
+      .select(`
+        *,
+        widget:widget_id(*)
+      `)
+      .eq('business_id', report.business_id)
+      .order('recorded_at', { ascending: false });
+
+    if (widgetError) {
+      console.error('Error fetching widget metrics:', widgetError);
+      throw widgetError;
+    }
+
     console.log('Generating report data with template:', template);
 
     const reportData = await generateReportData(
@@ -62,7 +90,9 @@ serve(async (req) => {
         showPieCharts: true,
         showTables: true,
         showTimeline: true,
-      }
+      },
+      businessMetrics,
+      widgetMetrics
     );
 
     console.log('Generated report data:', reportData);
@@ -74,7 +104,8 @@ serve(async (req) => {
 
     // Generate PDF file name and upload
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const pdfFileName = `report_${report_id}_${timestamp}.pdf`;
+    const sanitizedBusinessName = report.business?.name?.replace(/[^a-zA-Z0-9]/g, '_') || 'business';
+    const pdfFileName = `${sanitizedBusinessName}_report_${timestamp}.pdf`;
     
     console.log('Uploading PDF to storage:', pdfFileName);
     
@@ -105,12 +136,12 @@ serve(async (req) => {
 
     console.log('PDF uploaded successfully:', uploadData);
 
-    // Get public URL
-    const { data: { publicUrl: pdfUrl } } = supabase.storage
+    // Get signed URL that expires in 24 hours
+    const { data: { signedUrl } } = await supabase.storage
       .from('reports')
-      .getPublicUrl(pdfFileName);
+      .createSignedUrl(pdfFileName, 86400); // 24 hours in seconds
 
-    console.log('Generated public URL:', pdfUrl);
+    console.log('Generated signed URL:', signedUrl);
 
     // Update report status
     const { error: updateError } = await supabase
@@ -118,7 +149,7 @@ serve(async (req) => {
       .update({
         status: 'completed',
         report_data: reportData,
-        pdf_url: pdfUrl,
+        pdf_url: signedUrl,
         file_size: pdfBuffer.length,
         page_count: reportData.sustainability ? 8 : 5,
       })
@@ -132,7 +163,7 @@ serve(async (req) => {
     console.log('Successfully completed report generation');
 
     return new Response(
-      JSON.stringify({ success: true, pdfUrl }),
+      JSON.stringify({ success: true, pdfUrl: signedUrl }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
@@ -154,3 +185,4 @@ serve(async (req) => {
     );
   }
 });
+
