@@ -16,8 +16,9 @@ export async function createPDFDocument(template: ReportTemplate, reportData: Re
   const { width, height } = firstPage.getSize();
   
   // Use template colors or fallback to defaults
-  const colors = template.theme_colors.length > 0 ? template.theme_colors : 
-    ['#9b87f5', '#7E69AB', '#6E59A5', '#8B5CF6', '#D946EF'];
+  const defaultColors = ['#3B82F6', '#8B5CF6', '#EC4899', '#10B981', '#F59E0B'];
+  const colors = (template.theme_colors?.length > 0 ? template.theme_colors : defaultColors)
+    .filter(color => typeof color === 'string' && color.startsWith('#'));
 
   let currentY = drawReportHeader(firstPage, height, helveticaFont, helveticaBold);
 
@@ -39,7 +40,7 @@ export async function createPDFDocument(template: ReportTemplate, reportData: Re
   // Draw metrics section with colorful boxes
   Object.entries(reportData.metrics).forEach(([key, value], index) => {
     const label = key.replace(/_/g, ' ').toUpperCase();
-    const boxColor = colors[index % colors.length];
+    const boxColor = colors[index % colors.length] || defaultColors[0];
     const [r, g, b] = hexToRGB(boxColor);
     
     metricsPage.drawRectangle({
