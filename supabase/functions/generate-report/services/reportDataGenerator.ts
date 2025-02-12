@@ -1,23 +1,39 @@
 
 import { ReportData } from '../types.ts';
+import type { Widget } from '@/types/widgets.ts';
+
+interface WidgetMetric {
+  id: string;
+  value: number;
+  recorded_at: string;
+  widget: Widget;
+}
 
 export async function generateReportData(
   reportType: string, 
   visualConfig: Record<string, boolean>,
   businessMetrics: any,
-  widgetMetrics: any[]
+  widgetMetrics: WidgetMetric[]
 ): Promise<ReportData> {
   const colors = ['#28B463', '#F39C12', '#E74C3C', '#3498DB', '#9B59B6', '#1ABC9C', '#34495E'];
   
-  // Group widget metrics by type
-  const metricsByType = widgetMetrics.reduce((acc: any, metric: any) => {
-    const type = metric.widget?.category || 'other';
-    if (!acc[type]) {
-      acc[type] = [];
+  // Group widget metrics by category and type
+  const metricsByCategory = widgetMetrics.reduce((acc: Record<string, WidgetMetric[]>, metric) => {
+    const category = metric.widget?.category || 'other';
+    if (!acc[category]) {
+      acc[category] = [];
     }
-    acc[type].push(metric);
+    acc[category].push(metric);
     return acc;
   }, {});
+
+  // Calculate environmental metrics totals and averages
+  const environmentalMetrics = metricsByCategory['environmental'] || [];
+  const calculateMetricAverage = (metrics: WidgetMetric[]) => {
+    return metrics.length > 0 
+      ? metrics.reduce((sum, m) => sum + m.value, 0) / metrics.length 
+      : 0;
+  };
 
   const reportData: ReportData = {
     generated_at: new Date().toISOString(),
@@ -26,25 +42,35 @@ export async function generateReportData(
       active_users: businessMetrics?.active_users || 0,
       total_points: businessMetrics?.total_points || 0,
       // Add environmental metrics from widgets
+      environmental_metrics_count: environmentalMetrics.length,
+      average_environmental_value: calculateMetricAverage(environmentalMetrics),
+      // Add each environmental metric by type
       ...Object.fromEntries(
-        widgetMetrics
-          .filter(m => m.widget?.category === 'environmental')
-          .map(m => [m.widget?.metric_type, m.value])
+        environmentalMetrics.map(m => [
+          `${m.widget.metric_type}_value`,
+          m.value
+        ])
       )
     },
     charts: {},
     executive_summary: {
       key_insights: [
-        `${businessMetrics?.active_users || 0} active users engaged in sustainability initiatives`,
-        `Total of ${businessMetrics?.total_scans || 0} sustainable product scans`,
-        `${(metricsByType.environmental?.length || 0)} environmental metrics tracked`
+        `${environmentalMetrics.length} environmental metrics being tracked`,
+        `Latest data updated on ${new Date(
+          Math.max(...environmentalMetrics.map(m => new Date(m.recorded_at).getTime()))
+        ).toLocaleDateString()}`,
+        `Total of ${businessMetrics?.total_scans || 0} sustainability scans recorded`,
+        `${businessMetrics?.active_users || 0} active users engaged in sustainability tracking`
       ],
-      performance_highlights: "Business demonstrates strong commitment to sustainability with active user engagement and comprehensive metric tracking.",
-      areas_for_improvement: "Focus needed on expanding environmental metrics coverage and increasing user engagement.",
+      performance_highlights: `The organization is actively monitoring ${environmentalMetrics.length} environmental metrics, demonstrating commitment to sustainability tracking and measurement.`,
+      areas_for_improvement: environmentalMetrics.length < 5 
+        ? "Consider expanding environmental metric coverage for comprehensive sustainability tracking."
+        : "Focus on maintaining consistent data collection and analysis across all metrics.",
       recommendations: [
-        "Implement more comprehensive environmental tracking",
-        "Enhance user engagement through sustainability initiatives",
-        "Expand sustainability reporting metrics"
+        "Continue regular metric data collection and updates",
+        "Expand metric coverage across different environmental aspects",
+        "Implement trend analysis for tracked metrics",
+        "Set specific targets for each environmental metric"
       ]
     }
   };
@@ -55,32 +81,32 @@ export async function generateReportData(
       // Monthly metrics from widget data
       reportData.charts.monthlyMetrics = {
         type: 'bar',
-        title: 'Monthly Environmental Metrics',
-        subtitle: 'Key sustainability indicators over time',
-        data: widgetMetrics
-          .filter(m => m.widget?.category === 'environmental')
-          .slice(0, 6)
-          .map((m, index) => ({
-            metric: m.widget?.name || 'Metric',
-            value: m.value,
-            color: colors[index % colors.length],
-          })),
+        title: 'Environmental Metrics Overview',
+        subtitle: 'Current values across different metrics',
+        data: environmentalMetrics.map((metric, index) => ({
+          metric: metric.widget.name,
+          value: metric.value,
+          unit: metric.widget.unit || 'units',
+          color: colors[index % colors.length],
+        })),
       };
     }
 
     if (visualConfig.showPieCharts) {
       // Distribution of metrics by category
-      const categoryData = Object.entries(metricsByType).map(([category, metrics]: [string, any[]], index) => ({
-        label: category,
-        value: metrics.length,
-        color: colors[index % colors.length],
-      }));
+      const categoryDistribution = Object.entries(metricsByCategory).map(
+        ([category, metrics], index) => ({
+          label: category,
+          value: metrics.length,
+          color: colors[index % colors.length],
+        })
+      );
 
       reportData.charts.metricDistribution = {
         type: 'pie',
-        title: 'Sustainability Metrics Distribution',
-        subtitle: 'Breakdown of metrics by category',
-        data: categoryData,
+        title: 'Metrics Distribution by Category',
+        subtitle: 'Breakdown of metrics across categories',
+        data: categoryDistribution,
         legend: true,
         percentage: true
       };
@@ -89,40 +115,40 @@ export async function generateReportData(
 
   // Add sustainability data if applicable
   if (reportType === 'sustainability' || reportType === 'combined') {
-    const environmentalMetrics = metricsByType.environmental || [];
-    
     reportData.sustainability = {
       environmental_impact: environmentalMetrics.length > 5 ? 'High' : 'Medium',
       recommendations: [
-        'Expand environmental metric tracking',
-        'Implement real-time sustainability monitoring',
-        'Enhance data collection frequency',
-        'Establish clear sustainability goals',
-        'Develop action plans for improvement'
+        'Maintain regular data collection schedule',
+        'Set specific targets for each metric',
+        'Analyze trends and patterns in collected data',
+        'Expand coverage of environmental metrics',
+        'Document data collection methodologies'
       ],
-      year_over_year_improvement: 15, // This should be calculated from historical data
+      year_over_year_improvement: calculateMetricAverage(environmentalMetrics),
       key_achievements: [
-        `Tracking ${environmentalMetrics.length} environmental metrics`,
-        `${businessMetrics?.active_users || 0} users actively participating`,
-        'Implemented comprehensive sustainability reporting'
+        `Successfully tracking ${environmentalMetrics.length} environmental metrics`,
+        `Regular data updates maintained`,
+        `Comprehensive sustainability monitoring system in place`
       ]
     };
 
     if (visualConfig.showTimeline) {
-      // Create timeline data from widget metrics
+      // Create timeline data from environmental metrics
+      const timelineData = environmentalMetrics
+        .sort((a, b) => new Date(b.recorded_at).getTime() - new Date(a.recorded_at).getTime())
+        .slice(0, 6)
+        .map((metric, index) => ({
+          period: new Date(metric.recorded_at).toLocaleDateString(),
+          value: metric.value,
+          metric: metric.widget.name,
+          color: colors[index % colors.length],
+        }));
+
       reportData.charts.sustainabilityProgress = {
         type: 'line',
-        title: 'Sustainability Performance Trend',
-        subtitle: 'Monthly tracking of key sustainability metrics',
-        data: widgetMetrics
-          .filter(m => m.widget?.category === 'environmental')
-          .slice(0, 6)
-          .map((m, index) => ({
-            period: new Date(m.recorded_at).toLocaleDateString(),
-            value: m.value,
-            metric: m.widget?.name || 'Metric',
-            color: colors[index % colors.length],
-          })),
+        title: 'Environmental Metrics Timeline',
+        subtitle: 'Recent trends in environmental metrics',
+        data: timelineData,
         metrics: ['value'],
         legend: true
       };
@@ -132,12 +158,12 @@ export async function generateReportData(
   if (visualConfig.showTables) {
     reportData.tables = {
       monthlyMetrics: {
-        headers: ['Metric', 'Current Value', 'Unit', 'Category', 'Last Updated'],
-        rows: widgetMetrics.slice(0, 10).map(m => [
-          m.widget?.name || 'Unknown',
+        headers: ['Metric Name', 'Current Value', 'Unit', 'Category', 'Last Updated'],
+        rows: environmentalMetrics.map(m => [
+          m.widget.name,
           m.value.toString(),
-          m.widget?.unit || '-',
-          m.widget?.category || 'Other',
+          m.widget.unit || '-',
+          m.widget.category,
           new Date(m.recorded_at).toLocaleDateString()
         ]),
       },
