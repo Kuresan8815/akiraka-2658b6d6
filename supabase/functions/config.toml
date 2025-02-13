@@ -1,0 +1,3 @@
+
+[functions.generate-esg-report]
+verify_jwt = true

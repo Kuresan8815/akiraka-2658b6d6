@@ -310,6 +310,56 @@ export type Database = {
           },
         ]
       }
+      esg_reports: {
+        Row: {
+          business_id: string
+          created_at: string
+          date_range: Json
+          generated_by: string
+          id: string
+          insights: Json
+          pdf_url: string | null
+          recommendations: Json
+          report_data: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          date_range: Json
+          generated_by: string
+          id?: string
+          insights?: Json
+          pdf_url?: string | null
+          recommendations?: Json
+          report_data?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          date_range?: Json
+          generated_by?: string
+          id?: string
+          insights?: Json
+          pdf_url?: string | null
+          recommendations?: Json
+          report_data?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "esg_reports_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_reports: {
         Row: {
           business_id: string
@@ -369,6 +419,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      industry_benchmarks: {
+        Row: {
+          benchmark_value: number
+          category: Database["public"]["Enums"]["esg_metric_category"]
+          created_at: string
+          id: string
+          industry_type: string
+          source: string | null
+          unit: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          benchmark_value: number
+          category: Database["public"]["Enums"]["esg_metric_category"]
+          created_at?: string
+          id?: string
+          industry_type: string
+          source?: string | null
+          unit: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          benchmark_value?: number
+          category?: Database["public"]["Enums"]["esg_metric_category"]
+          created_at?: string
+          id?: string
+          industry_type?: string
+          source?: string | null
+          unit?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
       }
       industry_templates: {
         Row: {
@@ -827,6 +913,53 @@ export type Database = {
           },
         ]
       }
+      sustainability_goals: {
+        Row: {
+          business_id: string
+          category: Database["public"]["Enums"]["esg_metric_category"]
+          created_at: string
+          current_value: number
+          description: string
+          id: string
+          status: string
+          target_date: string
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category: Database["public"]["Enums"]["esg_metric_category"]
+          created_at?: string
+          current_value: number
+          description: string
+          id?: string
+          status?: string
+          target_date: string
+          target_value: number
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: Database["public"]["Enums"]["esg_metric_category"]
+          created_at?: string
+          current_value?: number
+          description?: string
+          id?: string
+          status?: string
+          target_date?: string
+          target_value?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sustainability_goals_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sustainability_impact_metrics: {
         Row: {
           avg_sustainability_score: number | null
@@ -850,6 +983,56 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      sustainability_metrics: {
+        Row: {
+          business_id: string
+          category: Database["public"]["Enums"]["esg_metric_category"]
+          created_at: string
+          data_source: string | null
+          id: string
+          metric_name: string
+          notes: string | null
+          recorded_at: string
+          unit: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          business_id: string
+          category: Database["public"]["Enums"]["esg_metric_category"]
+          created_at?: string
+          data_source?: string | null
+          id?: string
+          metric_name: string
+          notes?: string | null
+          recorded_at?: string
+          unit: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          business_id?: string
+          category?: Database["public"]["Enums"]["esg_metric_category"]
+          created_at?: string
+          data_source?: string | null
+          id?: string
+          metric_name?: string
+          notes?: string | null
+          recorded_at?: string
+          unit?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sustainability_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_engagement_metrics: {
         Row: {
@@ -1131,6 +1314,20 @@ export type Database = {
         | "supplier"
         | "public_institution"
       emission_scope: "scope_1" | "scope_2" | "scope_3"
+      esg_metric_category:
+        | "carbon_emissions"
+        | "energy_consumption"
+        | "water_usage"
+        | "waste_reduction"
+        | "diversity_inclusion"
+        | "human_capital"
+        | "governance_compliance"
+      esg_report_section:
+        | "executive_summary"
+        | "environmental_impact"
+        | "social_contributions"
+        | "governance_performance"
+        | "future_goals"
       notification_type: "rewards" | "sustainability_tips" | "store_alerts"
       report_processing_status:
         | "pending"
