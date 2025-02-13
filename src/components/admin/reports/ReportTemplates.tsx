@@ -1,15 +1,20 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReportTemplate } from "@/types/reports";
 import { BarChart3, FileText, PieChart, Table, LineChart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface ReportTemplatesProps {
   businessId?: string;
 }
 
 export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: templates, isLoading } = useQuery({
     queryKey: ["report-templates", businessId],
     enabled: !!businessId,
@@ -41,6 +46,71 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
       })) as ReportTemplate[];
     },
   });
+
+  const generateReportMutation = useMutation({
+    mutationFn: async (template: ReportTemplate) => {
+      // First create a report record
+      const { data: report, error: reportError } = await supabase
+        .from("generated_reports")
+        .insert([
+          {
+            template_id: template.id,
+            business_id: businessId,
+            status: 'pending',
+            generated_by: (await supabase.auth.getUser()).data.user?.id,
+            date_range: {
+              start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+              end: new Date().toISOString(),
+            },
+            metadata: {
+              template_name: template.name,
+              template_type: template.report_type,
+              visualization_config: template.visualization_config,
+            }
+          }
+        ])
+        .select()
+        .single();
+
+      if (reportError) throw reportError;
+
+      // Then trigger the report generation
+      if (template.report_type === 'esg') {
+        const { error: fnError } = await supabase.functions.invoke('generate-esg-report', {
+          body: { 
+            businessId: businessId,
+            dateRange: report.date_range,
+          }
+        });
+        if (fnError) throw fnError;
+      } else {
+        const { error: fnError } = await supabase.functions.invoke('generate-report', {
+          body: { report_id: report.id }
+        });
+        if (fnError) throw fnError;
+      }
+
+      return report;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['generated-reports'] });
+      toast({
+        title: "Report Generation Started",
+        description: "Your report is being generated. You'll be notified when it's ready.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to generate report: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleGenerateReport = async (template: ReportTemplate) => {
+    generateReportMutation.mutate(template);
+  };
 
   if (isLoading) {
     return <div>Loading templates...</div>;
@@ -107,6 +177,13 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
                   <LineChart className="h-4 w-4 text-gray-500" />
                 )}
               </div>
+              <Button 
+                onClick={() => handleGenerateReport(template)}
+                disabled={generateReportMutation.isPending}
+                className="w-full"
+              >
+                {generateReportMutation.isPending ? "Generating..." : "Generate Report"}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -114,4 +191,3 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
     </div>
   );
 };
-
