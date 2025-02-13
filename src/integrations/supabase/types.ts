@@ -73,6 +73,13 @@ export type Database = {
             foreignKeyName: "ai_report_requests_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "ai_report_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
@@ -118,8 +125,22 @@ export type Database = {
             foreignKeyName: "business_metrics_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "business_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_business"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
           },
           {
             foreignKeyName: "fk_business"
@@ -160,6 +181,13 @@ export type Database = {
             foreignKeyName: "business_profiles_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "business_profiles_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
@@ -194,6 +222,13 @@ export type Database = {
           widget_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "business_widgets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
           {
             foreignKeyName: "business_widgets_business_id_fkey"
             columns: ["business_id"]
@@ -305,6 +340,13 @@ export type Database = {
             foreignKeyName: "carbon_emissions_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "carbon_emissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
@@ -351,6 +393,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "esg_reports_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
           {
             foreignKeyName: "esg_reports_business_id_fkey"
             columns: ["business_id"]
@@ -404,6 +453,13 @@ export type Database = {
           template_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "generated_reports_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
           {
             foreignKeyName: "generated_reports_business_id_fkey"
             columns: ["business_id"]
@@ -778,6 +834,13 @@ export type Database = {
             foreignKeyName: "report_templates_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "report_templates_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
@@ -955,6 +1018,13 @@ export type Database = {
             foreignKeyName: "sustainability_goals_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "sustainability_goals_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
@@ -1025,6 +1095,13 @@ export type Database = {
           value?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "sustainability_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
           {
             foreignKeyName: "sustainability_metrics_business_id_fkey"
             columns: ["business_id"]
@@ -1106,6 +1183,13 @@ export type Database = {
             foreignKeyName: "widget_metrics_business_id_fkey"
             columns: ["business_id"]
             isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "widget_metrics_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
             referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
@@ -1156,6 +1240,16 @@ export type Database = {
       }
     }
     Views: {
+      business_product_analytics: {
+        Row: {
+          avg_sustainability_score: number | null
+          business_id: string | null
+          last_scan_date: string | null
+          total_products: number | null
+          total_scans: number | null
+        }
+        Relationships: []
+      }
       emissions_summary: {
         Row: {
           business_id: string | null
@@ -1164,6 +1258,13 @@ export type Database = {
           total_emissions: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "carbon_emissions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
           {
             foreignKeyName: "carbon_emissions_business_id_fkey"
             columns: ["business_id"]
@@ -1193,6 +1294,12 @@ export type Database = {
       }
     }
     Functions: {
+      business_has_products: {
+        Args: {
+          business_id_param: string
+        }
+        Returns: boolean
+      }
       check_admin_access: {
         Args: {
           user_id: string

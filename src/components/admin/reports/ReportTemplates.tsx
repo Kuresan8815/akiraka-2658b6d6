@@ -15,6 +15,18 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const { data: hasProducts } = useQuery({
+    queryKey: ["business-has-products", businessId],
+    enabled: !!businessId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc('business_has_products', { business_id_param: businessId });
+
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const { data: templates, isLoading } = useQuery({
     queryKey: ["report-templates", businessId],
     enabled: !!businessId,
@@ -24,6 +36,8 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
         .select("*")
         .eq("business_id", businessId)
         .eq("is_active", true)
+        // Only show product-related templates if the business has products
+        .or(hasProducts ? 'report_type.eq.metrics,report_type.eq.sustainability,report_type.eq.combined,report_type.eq.esg' : 'report_type.eq.esg')
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -49,6 +63,10 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
 
   const generateReportMutation = useMutation({
     mutationFn: async (template: ReportTemplate) => {
+      if (!hasProducts && template.report_type !== 'esg') {
+        throw new Error("Cannot generate product-related reports for businesses without products");
+      }
+
       // First create a report record
       const { data: report, error: reportError } = await supabase
         .from("generated_reports")
@@ -179,7 +197,7 @@ export const ReportTemplates = ({ businessId }: ReportTemplatesProps) => {
               </div>
               <Button 
                 onClick={() => handleGenerateReport(template)}
-                disabled={generateReportMutation.isPending}
+                disabled={generateReportMutation.isPending || (!hasProducts && template.report_type !== 'esg')}
                 className="w-full"
               >
                 {generateReportMutation.isPending ? "Generating..." : "Generate Report"}
