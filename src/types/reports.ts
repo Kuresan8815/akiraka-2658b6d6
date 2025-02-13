@@ -18,7 +18,7 @@ export type ReportTemplate = {
   custom_css: string | null;
   page_orientation: 'portrait' | 'landscape' | null;
   charts_config: Record<string, any>[] | null;
-  report_type: 'metrics' | 'sustainability' | 'combined';
+  report_type: 'metrics' | 'sustainability' | 'combined' | 'esg';
   visualization_config: {
     showBarCharts: boolean;
     showPieCharts: boolean;
@@ -46,4 +46,3 @@ export type GeneratedReport = {
   file_size: number | null;
   page_count: number | null;
 };
-
