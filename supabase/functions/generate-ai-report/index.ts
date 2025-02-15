@@ -21,10 +21,45 @@ serve(async (req) => {
       throw new Error('Missing required parameters: requestId and prompt are required');
     }
 
+    // Verify OpenAI API key is available
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIApiKey) {
+      console.error('OpenAI API key not found');
+      throw new Error('OpenAI API key not configured');
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Verify OpenAI API connection
+    try {
+      const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: 'Test connection' },
+            { role: 'user', content: 'Test' }
+          ],
+          max_tokens: 5
+        }),
+      });
+
+      if (!testResponse.ok) {
+        const errorData = await testResponse.json();
+        console.error('OpenAI API connection test failed:', errorData);
+        throw new Error(`OpenAI API connection failed: ${errorData.error?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('OpenAI API connection error:', error);
+      throw new Error(`Failed to connect to OpenAI API: ${error.message}`);
+    }
 
     // Get the AI request details
     const { data: requestData, error: requestError } = await supabase
@@ -71,11 +106,6 @@ serve(async (req) => {
       throw updateError;
     }
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
-    }
-
     // Create a detailed system prompt with business data
     const systemPrompt = `You are a professional report generator that creates comprehensive business sustainability reports. 
 You have access to the following business data:
@@ -86,6 +116,14 @@ ${JSON.stringify({
 
 Generate a detailed report configuration that includes multiple sections and pages, using this data to create meaningful insights.
 Focus on creating visually appealing sections with charts and tables. Each section should be on its own page.
+
+Each section should include:
+1. Title
+2. Detailed analysis of the data
+3. Specific metrics to visualize
+4. Recommended chart types
+5. Color scheme suggestions
+
 Required sections:
 1. Executive Summary
 2. Business Overview
@@ -112,7 +150,7 @@ Your response MUST be a valid JSON string with this structure:
   "totalPages": number
 }`;
 
-    // Get OpenAI's analysis
+    // Get OpenAI's analysis with improved error handling
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -156,6 +194,11 @@ Your response MUST be a valid JSON string with this structure:
     } catch (error) {
       console.error('Error parsing OpenAI response:', error);
       throw new Error('Failed to parse OpenAI response as JSON');
+    }
+
+    // Validate the config structure
+    if (!config.sections || !Array.isArray(config.sections) || config.sections.length === 0) {
+      throw new Error('Invalid configuration: sections array is required and must not be empty');
     }
 
     // Create a new report template with sections
