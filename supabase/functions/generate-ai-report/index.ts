@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
@@ -33,7 +32,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify OpenAI API connection
+    // Verify OpenAI API connection with correct model name
     try {
       const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -42,7 +41,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: 'gpt-4',
           messages: [
             { role: 'system', content: 'Test connection' },
             { role: 'user', content: 'Test' }
@@ -158,7 +157,7 @@ Your response MUST be a valid JSON string with this structure:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4',
         messages: [
           {
             role: 'system',
@@ -175,25 +174,28 @@ Your response MUST be a valid JSON string with this structure:
     });
 
     if (!openAIResponse.ok) {
-      const errorText = await openAIResponse.text();
-      console.error('OpenAI API error:', errorText);
-      throw new Error(`OpenAI API error: ${errorText}`);
+      const errorData = await openAIResponse.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const aiResponse = await openAIResponse.json();
     console.log('OpenAI response received:', aiResponse);
 
     if (!aiResponse.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response from OpenAI');
+      throw new Error('Invalid response from OpenAI: No content in response');
     }
 
     let config;
     try {
-      config = JSON.parse(aiResponse.choices[0].message.content);
-      console.log('Parsed configuration:', config);
+      const content = aiResponse.choices[0].message.content.trim();
+      console.log('Attempting to parse JSON content:', content);
+      config = JSON.parse(content);
+      console.log('Successfully parsed configuration:', config);
     } catch (error) {
       console.error('Error parsing OpenAI response:', error);
-      throw new Error('Failed to parse OpenAI response as JSON');
+      console.error('Raw response content:', aiResponse.choices[0].message.content);
+      throw new Error(`Failed to parse OpenAI response as JSON: ${error.message}`);
     }
 
     // Validate the config structure
@@ -309,11 +311,13 @@ Your response MUST be a valid JSON string with this structure:
     );
   } catch (error) {
     console.error('Error in generate-ai-report function:', error);
+    console.error('Error stack:', error.stack);
     
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        details: error.stack
+        details: error.stack,
+        timestamp: new Date().toISOString()
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
