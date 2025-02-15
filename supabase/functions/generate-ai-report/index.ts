@@ -29,7 +29,7 @@ serve(async (req) => {
     // Get the AI request details
     const { data: requestData, error: requestError } = await supabase
       .from('ai_report_requests')
-      .select('*')
+      .select('*, business:business_id(*)')
       .eq('id', requestId)
       .single();
 
@@ -39,6 +39,26 @@ serve(async (req) => {
     }
 
     console.log('Found request data:', requestData);
+
+    // Fetch business metrics and data
+    const { data: businessMetrics } = await supabase
+      .from('business_product_analytics')
+      .select('*')
+      .eq('business_id', requestData.business_id)
+      .single();
+
+    // Fetch sustainability metrics
+    const { data: sustainabilityMetrics } = await supabase
+      .from('widget_metrics')
+      .select(`
+        *,
+        widget:widget_id(*)
+      `)
+      .eq('business_id', requestData.business_id)
+      .order('recorded_at', { ascending: false })
+      .limit(50);
+
+    console.log('Fetched business data:', { businessMetrics, sustainabilityMetrics });
 
     // Update request status to processing
     const { error: updateError } = await supabase
@@ -56,37 +76,43 @@ serve(async (req) => {
       throw new Error('OpenAI API key not configured');
     }
 
-    console.log('Testing OpenAI API configuration...');
-    
-    // Test OpenAI API with a simple request first
-    const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'user',
-            content: 'Test connection'
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 50
-      }),
-    });
+    // Create a detailed system prompt with business data
+    const systemPrompt = `You are a professional report generator that creates comprehensive business sustainability reports. 
+You have access to the following business data:
+${JSON.stringify({
+  businessMetrics,
+  sustainabilityMetrics,
+}, null, 2)}
 
-    if (!testResponse.ok) {
-      const errorText = await testResponse.text();
-      console.error('OpenAI API test failed:', errorText);
-      throw new Error(`OpenAI API configuration test failed: ${errorText}`);
+Generate a detailed report configuration that includes multiple sections and pages, using this data to create meaningful insights.
+Focus on creating visually appealing sections with charts and tables. Each section should be on its own page.
+Required sections:
+1. Executive Summary
+2. Business Overview
+3. Sustainability Metrics
+4. Environmental Impact
+5. Recommendations
+6. Future Projections
+
+Your response MUST be a valid JSON string with this structure:
+{
+  "name": "string",
+  "description": "string",
+  "sections": [
+    {
+      "title": "string",
+      "content": "string",
+      "visualizations": ["bar", "pie", "table", "timeline"],
+      "metrics": [],
+      "colors": ["string"]
     }
+  ],
+  "type": "metrics" | "sustainability" | "combined",
+  "colors": ["string"],
+  "totalPages": number
+}`;
 
-    console.log('OpenAI API test successful, proceeding with report generation...');
-    
-    // Use OpenAI to analyze the prompt and generate report configuration
+    // Get OpenAI's analysis
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -94,20 +120,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'gpt-4o',
         messages: [
           {
             role: 'system',
-            content: `You are a report configuration expert. Convert user requests into structured report configurations. 
-            Focus on visualization types, metrics, and layout preferences. Your response MUST be a valid JSON string with this exact structure:
-            {
-              "name": "string",
-              "description": "string",
-              "visualizations": ["bar", "pie", "table", "timeline"],
-              "type": "metrics" | "sustainability" | "combined",
-              "colors": ["string", "string", "string"]
-            }
-            Do not include any additional text or explanation, just return the JSON.`
+            content: systemPrompt
           },
           {
             role: 'user',
@@ -115,7 +132,7 @@ serve(async (req) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 500
+        max_tokens: 2000
       }),
     });
 
@@ -141,22 +158,26 @@ serve(async (req) => {
       throw new Error('Failed to parse OpenAI response as JSON');
     }
 
-    // Create a new report template
+    // Create a new report template with sections
     const { data: template, error: templateError } = await supabase
       .from('report_templates')
       .insert([
         {
           business_id: requestData.business_id,
-          name: config.name || 'ESG Sustainability Report',
+          name: config.name || 'AI Generated Sustainability Report',
           description: config.description || prompt,
-          config: config,
+          config: {
+            ...config,
+            sections: config.sections,
+            pageCount: config.sections.length + 1 // +1 for cover page
+          },
           ai_generated: true,
           ai_prompt: prompt,
           visualization_config: {
-            showBarCharts: config.visualizations?.includes('bar') ?? true,
-            showPieCharts: config.visualizations?.includes('pie') ?? true,
-            showTables: config.visualizations?.includes('table') ?? true,
-            showTimeline: config.visualizations?.includes('timeline') ?? true,
+            showBarCharts: true,
+            showPieCharts: true,
+            showTables: true,
+            showTimeline: true,
           },
           report_type: config.type || 'combined',
           theme_colors: config.colors || ['#28B463', '#F39C12', '#E74C3C'],
@@ -170,7 +191,7 @@ serve(async (req) => {
       throw templateError;
     }
 
-    console.log('Created template:', template);
+    console.log('Created template with sections:', template);
 
     // Generate the report using the template
     const { data: report, error: reportError } = await supabase
@@ -179,12 +200,14 @@ serve(async (req) => {
         {
           template_id: template.id,
           business_id: requestData.business_id,
-          generated_by: requestData.business_id,
+          generated_by: requestData.created_by,
           status: 'pending',
           metadata: {
             generation_date: new Date().toISOString(),
             prompt: prompt,
-            report_version: '1.0'
+            report_version: '1.0',
+            sections: config.sections,
+            pageCount: config.sections.length + 1
           }
         }
       ])
@@ -213,9 +236,13 @@ serve(async (req) => {
       throw finalUpdateError;
     }
 
-    // Trigger the report generation
+    // Trigger the report generation with the new sections
     const { error: genError } = await supabase.functions.invoke('generate-report', {
-      body: { report_id: report.id }
+      body: { 
+        report_id: report.id,
+        sections: config.sections,
+        pageCount: config.sections.length + 1
+      }
     });
 
     if (genError) {
@@ -229,7 +256,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         templateId: template.id, 
-        reportId: report.id 
+        reportId: report.id,
+        pageCount: config.sections.length + 1
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

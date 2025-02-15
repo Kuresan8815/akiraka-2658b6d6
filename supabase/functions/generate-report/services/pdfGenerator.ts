@@ -11,135 +11,79 @@ export async function createPDFDocument(template: ReportTemplate, reportData: Re
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   
-  // Create first page with a landscape orientation for better chart visibility
-  const page = pdfDoc.addPage([842, 595]); // A4 Landscape
-  const { width, height } = page.getSize();
+  // Calculate actual page count based on sections
+  const sections = template.config.sections || [];
+  const pageCount = sections.length + 1; // +1 for cover page
   
-  // Define a more professional color palette based on the example
-  const colors = {
-    humanCapacity: '#7E69AB',    // Muted blue
-    wellbeing: '#D3E4FD',        // Light blue
-    community: '#FDE1D3',        // Soft peach
-    diversity: '#ea384c',        // Dark red
-    ethical: '#4A4A8F',          // Dark blue
-    transparency: '#E5DEFF',     // Soft purple
-    sustainable: '#F2FCE2'       // Soft green
-  };
-
-  let currentY = height - 50;
-
-  // Draw title
-  page.drawText('Sustainability Metrics Report', {
+  // Create cover page
+  const coverPage = pdfDoc.addPage([842, 595]); // A4 Landscape
+  const { width: coverWidth, height: coverHeight } = coverPage.getSize();
+  
+  // Draw cover page
+  coverPage.drawText(template.name, {
     x: 50,
-    y: currentY,
-    size: 24,
+    y: coverHeight - 100,
+    size: 32,
     font: helveticaBold,
     color: rgb(0.2, 0.2, 0.2),
   });
 
-  currentY -= 80;
-
-  // Draw social metrics section
-  page.drawText('Social Sustainability Metrics Over Time', {
-    x: 50,
-    y: currentY,
-    size: 18,
-    font: helveticaBold,
-    color: rgb(0.3, 0.3, 0.3),
-  });
-
-  currentY -= 40;
-
-  // Draw metrics grid in a more compact format
-  const metrics = Object.entries(reportData.metrics);
-  const metricsPerRow = 2;
-  const boxWidth = (width - 100) / metricsPerRow;
-  const boxHeight = 80;
-
-  for (let i = 0; i < metrics.length; i += metricsPerRow) {
-    const row = metrics.slice(i, i + metricsPerRow);
-    row.forEach((metric, index) => {
-      const [key, value] = metric;
-      const x = 50 + (index * boxWidth);
-      const [r, g, b] = hexToRGB(colors.humanCapacity);
-
-      // Draw metric box with subtle background
-      page.drawRectangle({
-        x,
-        y: currentY - boxHeight,
-        width: boxWidth - 20,
-        height: boxHeight,
-        color: rgb(r/255, g/255, b/255),
-        opacity: 0.1,
-      });
-
-      // Draw metric value
-      page.drawText(`${value}`, {
-        x: x + 20,
-        y: currentY - 30,
-        size: 24,
-        font: helveticaBold,
-        color: rgb(0.2, 0.2, 0.2),
-      });
-
-      // Draw metric label
-      page.drawText(key.replace(/_/g, ' ').toUpperCase(), {
-        x: x + 20,
-        y: currentY - 60,
-        size: 12,
-        font: helveticaFont,
-        color: rgb(0.4, 0.4, 0.4),
-      });
+  if (template.description) {
+    coverPage.drawText(template.description, {
+      x: 50,
+      y: coverHeight - 150,
+      size: 16,
+      font: helveticaFont,
+      color: rgb(0.4, 0.4, 0.4),
     });
-    currentY -= boxHeight + 20;
   }
 
-  // Draw sustainability section if available
-  if (reportData.sustainability) {
-    currentY -= 40;
+  // Generate a page for each section
+  for (const section of sections) {
+    const page = pdfDoc.addPage([842, 595]); // A4 Landscape
+    const { width, height } = page.getSize();
+    let currentY = height - 50;
 
-    page.drawText('Governance & Sustainability Insights', {
+    // Draw section title
+    page.drawText(section.title, {
       x: 50,
       y: currentY,
-      size: 18,
+      size: 24,
       font: helveticaBold,
-      color: rgb(0.3, 0.3, 0.3),
+      color: rgb(0.2, 0.2, 0.2),
     });
 
-    currentY -= 30;
+    currentY -= 60;
 
-    // Draw key achievements in a compact list
-    reportData.sustainability.key_achievements.forEach((achievement) => {
-      const [r, g, b] = hexToRGB(colors.ethical);
+    // Draw section content
+    const contentLines = section.content.split('\n');
+    for (const line of contentLines) {
+      if (currentY < 50) {
+        // Add new page if content exceeds current page
+        const newPage = pdfDoc.addPage([842, 595]);
+        currentY = height - 50;
+      }
       
-      page.drawCircle({
-        x: 65,
-        y: currentY + 4,
-        size: 3,
-        color: rgb(r/255, g/255, b/255),
-      });
-
-      page.drawText(achievement, {
-        x: 80,
+      page.drawText(line, {
+        x: 50,
         y: currentY,
-        size: 11,
+        size: 12,
         font: helveticaFont,
         color: rgb(0.3, 0.3, 0.3),
       });
       currentY -= 20;
-    });
-  }
+    }
 
-  // Draw tables if available
-  if (reportData.tables && currentY > 100) {
-    currentY -= 40;
-    currentY = drawTable(page, reportData.tables.monthlyMetrics, {
-      x: 50,
-      y: currentY,
-      width: width - 100,
-      font: helveticaFont,
-      colors: Object.values(colors),
-    });
+    // Add visualizations if specified
+    if (section.visualizations?.includes('table') && reportData.tables) {
+      currentY = drawTable(page, reportData.tables.monthlyMetrics, {
+        x: 50,
+        y: currentY - 40,
+        width: width - 100,
+        font: helveticaFont,
+        colors: section.colors || template.theme_colors,
+      });
+    }
   }
 
   return await pdfDoc.save();
