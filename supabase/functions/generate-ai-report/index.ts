@@ -20,7 +20,6 @@ serve(async (req) => {
       throw new Error('Missing required parameters: requestId and prompt are required');
     }
 
-    // Verify OpenAI API key is available
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
       console.error('OpenAI API key not found');
@@ -32,7 +31,6 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Verify OpenAI API connection with correct model name
     try {
       const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -60,7 +58,6 @@ serve(async (req) => {
       throw new Error(`Failed to connect to OpenAI API: ${error.message}`);
     }
 
-    // Get the AI request details
     const { data: requestData, error: requestError } = await supabase
       .from('ai_report_requests')
       .select('*, business:business_id(*)')
@@ -74,27 +71,25 @@ serve(async (req) => {
 
     console.log('Found request data:', requestData);
 
-    // Fetch business metrics and data
     const { data: businessMetrics } = await supabase
       .from('business_product_analytics')
       .select('*')
       .eq('business_id', requestData.business_id)
       .single();
 
-    // Fetch sustainability metrics
     const { data: sustainabilityMetrics } = await supabase
       .from('widget_metrics')
       .select(`
-        *,
-        widget:widget_id(*)
+        value,
+        recorded_at,
+        widget:widget_id(name, category, metric_type, unit)
       `)
       .eq('business_id', requestData.business_id)
       .order('recorded_at', { ascending: false })
-      .limit(50);
+      .limit(10);
 
     console.log('Fetched business data:', { businessMetrics, sustainabilityMetrics });
 
-    // Update request status to processing
     const { error: updateError } = await supabase
       .from('ai_report_requests')
       .update({ status: 'processing' })
@@ -105,33 +100,25 @@ serve(async (req) => {
       throw updateError;
     }
 
-    // Create a detailed system prompt with business data
-    const systemPrompt = `You are a professional report generator that creates comprehensive business sustainability reports. 
-You have access to the following business data:
+    const systemPrompt = `Generate a business sustainability report using this data:
 ${JSON.stringify({
-  businessMetrics,
-  sustainabilityMetrics,
+  metrics: businessMetrics,
+  sustainability: sustainabilityMetrics?.map(m => ({
+    name: m.widget.name,
+    value: m.value,
+    unit: m.widget.unit,
+    date: m.recorded_at
+  }))
 }, null, 2)}
 
-Generate a detailed report configuration that includes multiple sections and pages, using this data to create meaningful insights.
-Focus on creating visually appealing sections with charts and tables. Each section should be on its own page.
-
-Each section should include:
-1. Title
-2. Detailed analysis of the data
-3. Specific metrics to visualize
-4. Recommended chart types
-5. Color scheme suggestions
-
-Required sections:
+Create a JSON report with these sections:
 1. Executive Summary
 2. Business Overview
 3. Sustainability Metrics
 4. Environmental Impact
 5. Recommendations
-6. Future Projections
 
-Your response MUST be a valid JSON string with this structure:
+Response format:
 {
   "name": "string",
   "description": "string",
@@ -145,11 +132,9 @@ Your response MUST be a valid JSON string with this structure:
     }
   ],
   "type": "metrics" | "sustainability" | "combined",
-  "colors": ["string"],
-  "totalPages": number
+  "colors": ["string"]
 }`;
 
-    // Get OpenAI's analysis with improved error handling
     const openAIResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -169,7 +154,7 @@ Your response MUST be a valid JSON string with this structure:
           }
         ],
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 1000
       }),
     });
 
@@ -198,12 +183,10 @@ Your response MUST be a valid JSON string with this structure:
       throw new Error(`Failed to parse OpenAI response as JSON: ${error.message}`);
     }
 
-    // Validate the config structure
     if (!config.sections || !Array.isArray(config.sections) || config.sections.length === 0) {
       throw new Error('Invalid configuration: sections array is required and must not be empty');
     }
 
-    // Create a new report template with sections
     const { data: template, error: templateError } = await supabase
       .from('report_templates')
       .insert([
@@ -238,7 +221,6 @@ Your response MUST be a valid JSON string with this structure:
 
     console.log('Created template with sections:', template);
 
-    // Generate the report using the template
     const { data: report, error: reportError } = await supabase
       .from('generated_reports')
       .insert([
@@ -266,7 +248,6 @@ Your response MUST be a valid JSON string with this structure:
 
     console.log('Created report:', report);
 
-    // Update the AI request with the success status
     const { error: finalUpdateError } = await supabase
       .from('ai_report_requests')
       .update({
@@ -281,7 +262,6 @@ Your response MUST be a valid JSON string with this structure:
       throw finalUpdateError;
     }
 
-    // Trigger the report generation with the new sections
     const { error: genError } = await supabase.functions.invoke('generate-report', {
       body: { 
         report_id: report.id,
