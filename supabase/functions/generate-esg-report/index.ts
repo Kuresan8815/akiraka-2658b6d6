@@ -199,7 +199,6 @@ Structure the response in this exact JSON format:
         throw new Error('Invalid response from OpenAI: No content in response');
       }
 
-      // Parse and validate the response
       let reportContent;
       try {
         reportContent = JSON.parse(aiResponse.choices[0].message.content);
@@ -208,20 +207,39 @@ Structure the response in this exact JSON format:
         throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
       }
 
-      // Save report to database
+      // Create the report metadata
+      const metadata = {
+        generation_date: new Date().toISOString(),
+        version: '1.0',
+        data_sources: ['environmental_metrics', 'sustainability_goals', 'carbon_emissions'],
+        sections: Object.keys(reportContent),
+        summary_stats: {
+          total_metrics: environmentalMetrics?.length || 0,
+          total_goals: goals?.length || 0,
+          total_emissions: emissions?.length || 0
+        }
+      };
+
+      // Insert report with proper typing
       const { data: report, error: reportError } = await supabase
         .from('esg_reports')
         .insert({
           business_id: businessId,
           report_data: reportContent,
           date_range: dateRange,
-          status: 'completed',
-          generated_by: (await supabase.auth.getUser()).data.user?.id
+          status: 'completed' as const,
+          generated_by: (await supabase.auth.getUser()).data.user?.id || null,
+          insights: {
+            key_findings: reportContent.executive_summary.highlights,
+            recommendations: reportContent.environmental_impact.recommendations
+          },
+          recommendations: reportContent.future_goals.priority_areas
         })
         .select()
         .single();
 
       if (reportError) {
+        console.error('Error inserting report:', reportError);
         throw reportError;
       }
 
