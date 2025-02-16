@@ -429,7 +429,7 @@ export type Database = {
           date_range?: Json | null
           file_size?: number | null
           generated_at?: string
-          generated_by: string
+          generated_by?: string
           id?: string
           metadata?: Json | null
           page_count?: number | null

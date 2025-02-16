@@ -16,11 +16,7 @@ serve(async (req) => {
 
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { businessId, dateRange, userId } = await req.json();
-
-    if (!userId) {
-      throw new Error('User ID is required to generate a report');
-    }
+    const { businessId, dateRange } = await req.json();
 
     // Verify OpenAI API key is present
     const openAIKey = Deno.env.get('OPENAI_API_KEY');
@@ -224,15 +220,12 @@ Structure the response in this exact JSON format:
         }
       };
 
-      console.log('Inserting report with userId:', userId);
-
       // Insert report with proper typing into generated_reports table
       const { data: report, error: reportError } = await supabase
         .from('generated_reports')
         .insert({
           template_id: null, // since this is an ESG report without a template
           business_id: businessId,
-          generated_by: userId,
           status: 'completed' as const,
           report_data: reportContent,
           metadata,
