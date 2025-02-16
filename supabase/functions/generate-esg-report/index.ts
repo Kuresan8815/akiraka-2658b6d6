@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
 
@@ -18,6 +17,37 @@ serve(async (req) => {
   try {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { businessId, dateRange } = await req.json();
+
+    // Verify OpenAI API key is present
+    const openAIKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openAIKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    // Test OpenAI API connection
+    try {
+      const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4',
+          messages: [{ role: 'system', content: 'Test connection' }],
+          max_tokens: 5
+        }),
+      });
+
+      if (!testResponse.ok) {
+        const errorData = await testResponse.json();
+        console.error('OpenAI API connection test failed:', errorData);
+        throw new Error(`OpenAI API connection failed: ${errorData.error?.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('OpenAI API connection test error:', error);
+      throw new Error(`Failed to connect to OpenAI API: ${error.message}`);
+    }
 
     // Fetch business details
     const { data: business } = await supabase
@@ -57,9 +87,6 @@ serve(async (req) => {
       .gte('recorded_date', dateRange.start)
       .lte('recorded_date', dateRange.end);
 
-    // Generate insights using OpenAI
-    const openAIKey = Deno.env.get('OPENAI_API_KEY')!;
-    
     const systemPrompt = `You are an ESG reporting expert. Generate a concise yet detailed ESG report based on the provided data.
 Focus on key metrics and actionable insights. Use bullet points for clarity.
 
@@ -128,6 +155,7 @@ Structure the response in this exact JSON format:
 }`;
 
     try {
+      console.log('Making OpenAI API request...');
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -153,17 +181,32 @@ Structure the response in this exact JSON format:
             }
           ],
           temperature: 0.7,
-          max_tokens: 1500, // Keeping well under the 3000 token limit
+          max_tokens: 1500,
           response_format: { type: "json_object" }
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.statusText}`);
+        const errorData = await response.json();
+        console.error('OpenAI API request failed:', errorData);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
       }
 
+      console.log('OpenAI API request successful');
       const aiResponse = await response.json();
-      const reportContent = JSON.parse(aiResponse.choices[0].message.content);
+      
+      if (!aiResponse.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response from OpenAI: No content in response');
+      }
+
+      // Parse and validate the response
+      let reportContent;
+      try {
+        reportContent = JSON.parse(aiResponse.choices[0].message.content);
+      } catch (parseError) {
+        console.error('Failed to parse OpenAI response:', aiResponse.choices[0].message.content);
+        throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
+      }
 
       // Save report to database
       const { data: report, error: reportError } = await supabase
