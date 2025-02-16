@@ -220,20 +220,17 @@ Structure the response in this exact JSON format:
         }
       };
 
-      // Insert report with proper typing
+      // Insert report with proper typing into generated_reports table
       const { data: report, error: reportError } = await supabase
-        .from('esg_reports')
+        .from('generated_reports')
         .insert({
+          template_id: null, // since this is an ESG report without a template
           business_id: businessId,
-          report_data: reportContent,
-          date_range: dateRange,
-          status: 'completed' as const,
           generated_by: (await supabase.auth.getUser()).data.user?.id || null,
-          insights: {
-            key_findings: reportContent.executive_summary.highlights,
-            recommendations: reportContent.environmental_impact.recommendations
-          },
-          recommendations: reportContent.future_goals.priority_areas
+          status: 'completed' as const,
+          report_data: reportContent,
+          metadata,
+          date_range: dateRange
         })
         .select()
         .single();
