@@ -87,6 +87,44 @@ serve(async (req) => {
       ]
     };
 
+    // First, create a storage bucket if it doesn't exist
+    const { data: bucketExists } = await supabase
+      .storage
+      .listBuckets();
+    
+    if (!bucketExists?.find(b => b.name === 'reports')) {
+      await supabase
+        .storage
+        .createBucket('reports', {
+          public: true,
+          fileSizeLimit: 52428800 // 50MB
+        });
+    }
+
+    // Generate a mock PDF file (this would be replaced with actual PDF generation)
+    const mockPdfContent = new Uint8Array([80, 68, 70]); // Simple PDF header bytes
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `report-${timestamp}.pdf`;
+
+    // Upload the mock PDF to storage
+    const { data: fileData, error: uploadError } = await supabase
+      .storage
+      .from('reports')
+      .upload(fileName, mockPdfContent, {
+        contentType: 'application/pdf',
+        upsert: false
+      });
+
+    if (uploadError) {
+      throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+    }
+
+    // Get a public URL for the uploaded file
+    const { data: { publicUrl: pdfUrl } } = await supabase
+      .storage
+      .from('reports')
+      .getPublicUrl(fileName);
+
     // Create a completed report entry
     const { data: report, error: reportError } = await supabase
       .from('generated_reports')
@@ -95,6 +133,9 @@ serve(async (req) => {
         business_id: request.business_id,
         status: 'completed',
         report_data: mockReportData,
+        pdf_url: pdfUrl,
+        file_size: mockPdfContent.length,
+        page_count: 5, // Mock page count
         metadata: {
           ai_generated: true,
           prompt: prompt,
@@ -125,7 +166,8 @@ serve(async (req) => {
         success: true,
         templateId: template.id,
         reportId: report.id,
-        report: mockReportData
+        report: mockReportData,
+        pdfUrl
       }),
       { 
         headers: { 
