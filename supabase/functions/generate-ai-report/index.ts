@@ -1,6 +1,6 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
+import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -101,16 +101,54 @@ serve(async (req) => {
         });
     }
 
-    // Generate a mock PDF file (this would be replaced with actual PDF generation)
-    const mockPdfContent = new Uint8Array([80, 68, 70]); // Simple PDF header bytes
+    // Generate a basic PDF using jsPDF
+    const doc = new jsPDF();
+    
+    // Add content to PDF
+    doc.setFontSize(20);
+    doc.text('AI Generated Sustainability Report', 20, 20);
+    
+    doc.setFontSize(12);
+    doc.text('Generated on: ' + new Date().toLocaleDateString(), 20, 30);
+    doc.text('Based on prompt: ' + prompt.substring(0, 80), 20, 40);
+    
+    // Add sections
+    doc.setFontSize(16);
+    doc.text('Environmental Metrics', 20, 60);
+    doc.setFontSize(12);
+    doc.text('Carbon Footprint: 150 tons CO2e', 30, 70);
+    doc.text('Water Usage: 50,000 gallons', 30, 80);
+    
+    doc.setFontSize(16);
+    doc.text('Social Metrics', 20, 100);
+    doc.setFontSize(12);
+    doc.text('Employee Satisfaction: 85%', 30, 110);
+    doc.text('Community Impact: High', 30, 120);
+    
+    doc.setFontSize(16);
+    doc.text('Governance Metrics', 20, 140);
+    doc.setFontSize(12);
+    doc.text('Policy Compliance: 98%', 30, 150);
+    doc.text('Risk Management Score: 92/100', 30, 160);
+    
+    // Add recommendations
+    doc.setFontSize(16);
+    doc.text('Recommendations', 20, 180);
+    doc.setFontSize(12);
+    doc.text('1. Implement renewable energy solutions', 30, 190);
+    doc.text('2. Enhance water conservation measures', 30, 200);
+    doc.text('3. Expand community engagement programs', 30, 210);
+
+    // Convert PDF to bytes
+    const pdfBytes = doc.output('arraybuffer');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const fileName = `report-${timestamp}.pdf`;
 
-    // Upload the mock PDF to storage
+    // Upload the PDF to storage
     const { data: fileData, error: uploadError } = await supabase
       .storage
       .from('reports')
-      .upload(fileName, mockPdfContent, {
+      .upload(fileName, pdfBytes, {
         contentType: 'application/pdf',
         upsert: false
       });
@@ -134,8 +172,8 @@ serve(async (req) => {
         status: 'completed',
         report_data: mockReportData,
         pdf_url: pdfUrl,
-        file_size: mockPdfContent.length,
-        page_count: 5, // Mock page count
+        file_size: pdfBytes.byteLength,
+        page_count: 1,
         metadata: {
           ai_generated: true,
           prompt: prompt,
