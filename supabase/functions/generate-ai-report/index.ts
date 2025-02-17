@@ -63,17 +63,44 @@ serve(async (req) => {
       throw new Error(`Failed to create template: ${templateError.message}`);
     }
 
-    // Create an initial report entry
+    // Generate mock report data (this would be replaced with actual AI-generated content)
+    const mockReportData = {
+      summary: "This is an AI-generated sustainability report.",
+      metrics: {
+        environmental: [
+          { name: "Carbon Footprint", value: "150 tons CO2e" },
+          { name: "Water Usage", value: "50,000 gallons" }
+        ],
+        social: [
+          { name: "Employee Satisfaction", value: "85%" },
+          { name: "Community Impact", value: "High" }
+        ],
+        governance: [
+          { name: "Policy Compliance", value: "98%" },
+          { name: "Risk Management Score", value: "92/100" }
+        ]
+      },
+      recommendations: [
+        "Implement renewable energy solutions",
+        "Enhance water conservation measures",
+        "Expand community engagement programs"
+      ]
+    };
+
+    // Create a completed report entry
     const { data: report, error: reportError } = await supabase
       .from('generated_reports')
       .insert({
         template_id: template.id,
         business_id: request.business_id,
-        status: 'pending',
+        status: 'completed',
+        report_data: mockReportData,
         metadata: {
           ai_generated: true,
           prompt: prompt,
-          requestId: requestId
+          requestId: requestId,
+          generation_date: new Date().toISOString(),
+          version: '1.0'
         }
       })
       .select()
@@ -84,11 +111,11 @@ serve(async (req) => {
       throw new Error(`Error creating report: ${reportError.message}`);
     }
 
-    // Update the AI request with the template ID
+    // Update the AI request with the template ID and completed status
     await supabase
       .from('ai_report_requests')
       .update({
-        status: 'processing',
+        status: 'completed',
         template_id: template.id
       })
       .eq('id', requestId);
@@ -97,7 +124,8 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         templateId: template.id,
-        reportId: report.id
+        reportId: report.id,
+        report: mockReportData
       }),
       { 
         headers: { 
