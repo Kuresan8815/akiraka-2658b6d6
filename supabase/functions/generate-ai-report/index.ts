@@ -2,11 +2,64 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
+import { ChartJSNodeCanvas } from 'https://esm.sh/chartjs-node-canvas@4.1.6';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// ESG Color Scheme
+const colorScheme = {
+  environmental: {
+    primary: '#4F7942',    // Forest Green
+    secondary: '#98FB98',  // Pale Green
+    accent: '#228B22'      // Forest Green
+  },
+  social: {
+    primary: '#4169E1',    // Royal Blue
+    secondary: '#87CEEB',  // Sky Blue
+    accent: '#1E90FF'      // Dodger Blue
+  },
+  governance: {
+    primary: '#800080',    // Purple
+    secondary: '#DDA0DD',  // Plum
+    accent: '#9370DB'      // Medium Purple
+  }
+};
+
+async function generateChartImage(data: any, category: string) {
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({ width: 500, height: 300 });
+  
+  const configuration = {
+    type: 'bar',
+    data: {
+      labels: data.map((m: any) => m.name),
+      datasets: [{
+        label: `${category.charAt(0).toUpperCase() + category.slice(1)} Metrics`,
+        data: data.map((m: any) => m.value),
+        backgroundColor: colorScheme[category as keyof typeof colorScheme].primary,
+        borderColor: colorScheme[category as keyof typeof colorScheme].accent,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: `${category.charAt(0).toUpperCase() + category.slice(1)} Metrics Overview`
+        }
+      }
+    }
+  };
+
+  return await chartJSNodeCanvas.renderToBuffer(configuration);
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -20,14 +73,12 @@ serve(async (req) => {
       throw new Error('Request ID and prompt are required');
     }
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     console.log('Processing request:', requestId);
 
-    // Get the AI report request details
     const { data: request, error: requestError } = await supabase
       .from('ai_report_requests')
       .select('*')
@@ -38,7 +89,7 @@ serve(async (req) => {
       throw new Error(`Failed to get request details: ${requestError?.message || 'Request not found'}`);
     }
 
-    // Fetch business metrics data
+    // Fetch all relevant data
     const { data: businessWidgets } = await supabase
       .from('business_widgets')
       .select(`
@@ -54,7 +105,6 @@ serve(async (req) => {
       .eq('business_id', request.business_id)
       .eq('is_active', true);
 
-    // Fetch latest metrics for each widget
     const { data: metrics } = await supabase
       .from('widget_metrics')
       .select('*')
@@ -84,66 +134,93 @@ serve(async (req) => {
       return acc;
     }, {});
 
-    // Generate report data with actual metrics
-    const reportData = {
-      summary: `Sustainability report generated based on ${Object.values(metricsByCategory || {}).flat().length} metrics`,
-      metrics: metricsByCategory || {},
-      generated_at: new Date().toISOString(),
-      business_id: request.business_id,
-      recommendations: [
-        "Implement renewable energy solutions based on current usage patterns",
-        "Enhance water conservation measures across operations",
-        "Expand community engagement programs",
-        "Monitor and improve sustainability metrics regularly"
-      ]
-    };
-
-    // Generate PDF with actual metrics data
     const doc = new jsPDF();
     
-    // Add header
-    doc.setFontSize(20);
-    doc.text('AI Generated Sustainability Report', 20, 20);
+    // Title and Header
+    doc.setFillColor(48, 49, 51);
+    doc.rect(0, 0, doc.internal.pageSize.width, 40, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text('ESG Performance Report', 20, 25);
     
-    doc.setFontSize(12);
-    doc.text('Generated on: ' + new Date().toLocaleDateString(), 20, 30);
-    doc.text('Based on prompt: ' + prompt.substring(0, 80), 20, 40);
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
     
-    // Add metrics by category
+    // Add generation info
+    doc.setFontSize(10);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
+    doc.text(`Report Focus: ${prompt.substring(0, 80)}`, 20, 52);
+
     let yPosition = 60;
-    
+
+    // Generate and add charts for each category
     for (const [category, metrics] of Object.entries(metricsByCategory || {})) {
-      doc.setFontSize(16);
-      doc.text(category.charAt(0).toUpperCase() + category.slice(1) + ' Metrics', 20, yPosition);
-      yPosition += 10;
-      
+      if (metrics.length === 0) continue;
+
+      // Category Header
+      doc.setFillColor(colorScheme[category as keyof typeof colorScheme].primary);
+      doc.rect(15, yPosition, doc.internal.pageSize.width - 30, 10, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(14);
+      doc.text(category.toUpperCase(), 20, yPosition + 7);
+      yPosition += 15;
+
+      // Reset text color
+      doc.setTextColor(0, 0, 0);
+
+      // Add chart
+      try {
+        const chartImage = await generateChartImage(metrics, category);
+        doc.addImage(chartImage, 'PNG', 20, yPosition, 170, 100);
+        yPosition += 110;
+      } catch (error) {
+        console.error(`Error generating chart for ${category}:`, error);
+      }
+
+      // Metrics Table
       doc.setFontSize(12);
-      (metrics as any[]).forEach((metric) => {
-        const metricText = `${metric.name}: ${metric.value} ${metric.unit}`;
-        doc.text(metricText, 30, yPosition);
-        yPosition += 10;
+      doc.setTextColor(0, 0, 0);
+      metrics.forEach((metric: any) => {
+        doc.text(`${metric.name}: ${metric.value} ${metric.unit}`, 25, yPosition);
+        yPosition += 7;
       });
-      
+
       yPosition += 10;
     }
+
+    // Add insights and recommendations
+    doc.addPage();
     
-    // Add recommendations
+    // Insights Header
+    doc.setFillColor(48, 49, 51);
+    doc.rect(0, 0, doc.internal.pageSize.width, 20, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
-    doc.text('Recommendations', 20, yPosition);
-    yPosition += 10;
+    doc.text('Insights & Recommendations', 20, 15);
+
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
     
+    const recommendations = [
+      "Optimize resource efficiency based on current metrics",
+      "Enhance sustainability reporting transparency",
+      "Implement data-driven improvement strategies",
+      "Regular monitoring and updates of ESG metrics"
+    ];
+
+    yPosition = 40;
     doc.setFontSize(12);
-    reportData.recommendations.forEach((recommendation) => {
-      doc.text('• ' + recommendation, 30, yPosition);
+    recommendations.forEach((rec, index) => {
+      doc.setTextColor(0, 0, 0);
+      doc.text(`${index + 1}. ${rec}`, 20, yPosition);
       yPosition += 10;
     });
 
-    // Convert PDF to bytes
+    // Convert and upload PDF
     const pdfBytes = doc.output('arraybuffer');
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const fileName = `report-${timestamp}.pdf`;
+    const fileName = `esg-report-${timestamp}.pdf`;
 
-    // Upload the PDF to storage
     const { data: fileData, error: uploadError } = await supabase
       .storage
       .from('reports')
@@ -156,29 +233,30 @@ serve(async (req) => {
       throw new Error(`Failed to upload PDF: ${uploadError.message}`);
     }
 
-    // Get a public URL for the uploaded file
     const { data: { publicUrl: pdfUrl } } = await supabase
       .storage
       .from('reports')
       .getPublicUrl(fileName);
 
-    // Create a completed report entry with actual data
+    // Create report entry
     const { data: report, error: reportError } = await supabase
       .from('generated_reports')
       .insert({
         template_id: null,
         business_id: request.business_id,
         status: 'completed',
-        report_data: reportData,
+        report_data: {
+          metrics: metricsByCategory,
+          generated_at: new Date().toISOString(),
+          recommendations
+        },
         pdf_url: pdfUrl,
         file_size: pdfBytes.byteLength,
-        page_count: 1,
+        page_count: doc.internal.getNumberOfPages(),
         metadata: {
           ai_generated: true,
-          prompt: prompt,
-          requestId: requestId,
-          generation_date: new Date().toISOString(),
-          version: '1.0',
+          prompt,
+          requestId,
           metrics_count: Object.values(metricsByCategory || {}).flat().length
         }
       })
@@ -186,23 +264,19 @@ serve(async (req) => {
       .single();
 
     if (reportError) {
-      console.error('Error creating report:', reportError);
       throw new Error(`Error creating report: ${reportError.message}`);
     }
 
-    // Update the AI request status
+    // Update request status
     await supabase
       .from('ai_report_requests')
-      .update({
-        status: 'completed'
-      })
+      .update({ status: 'completed' })
       .eq('id', requestId);
 
     return new Response(
       JSON.stringify({
         success: true,
         reportId: report.id,
-        report: reportData,
         pdfUrl
       }),
       { 
