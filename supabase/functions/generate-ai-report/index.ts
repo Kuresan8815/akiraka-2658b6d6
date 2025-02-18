@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
 import { jsPDF } from "https://esm.sh/jspdf@2.5.1";
@@ -35,32 +36,6 @@ serve(async (req) => {
 
     if (requestError || !request) {
       throw new Error(`Failed to get request details: ${requestError?.message || 'Request not found'}`);
-    }
-
-    // Create a report template
-    const { data: template, error: templateError } = await supabase
-      .from('report_templates')
-      .insert({
-        business_id: request.business_id,
-        name: `AI Generated Report - ${new Date().toLocaleDateString()}`,
-        description: `Auto-generated report based on prompt: ${prompt.substring(0, 100)}...`,
-        report_type: 'combined',
-        layout_type: 'standard',
-        visualization_config: {
-          showBarCharts: true,
-          showPieCharts: true,
-          showTables: true,
-          showTimeline: true
-        },
-        ai_generated: true,
-        ai_prompt: prompt,
-        theme_colors: ['#4F46E5', '#10B981', '#6366F1', '#8B5CF6']
-      })
-      .select()
-      .single();
-
-    if (templateError) {
-      throw new Error(`Failed to create template: ${templateError.message}`);
     }
 
     // Generate mock report data (this would be replaced with actual AI-generated content)
@@ -167,7 +142,7 @@ serve(async (req) => {
     const { data: report, error: reportError } = await supabase
       .from('generated_reports')
       .insert({
-        template_id: template.id,
+        template_id: null, // We don't create or use a template for AI-generated reports
         business_id: request.business_id,
         status: 'completed',
         report_data: mockReportData,
@@ -190,19 +165,17 @@ serve(async (req) => {
       throw new Error(`Error creating report: ${reportError.message}`);
     }
 
-    // Update the AI request with the template ID and completed status
+    // Update the AI request status
     await supabase
       .from('ai_report_requests')
       .update({
-        status: 'completed',
-        template_id: template.id
+        status: 'completed'
       })
       .eq('id', requestId);
 
     return new Response(
       JSON.stringify({
         success: true,
-        templateId: template.id,
         reportId: report.id,
         report: mockReportData,
         pdfUrl
