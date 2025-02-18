@@ -38,48 +38,70 @@ serve(async (req) => {
       throw new Error(`Failed to get request details: ${requestError?.message || 'Request not found'}`);
     }
 
-    // Generate mock report data (this would be replaced with actual AI-generated content)
-    const mockReportData = {
-      summary: "This is an AI-generated sustainability report.",
-      metrics: {
-        environmental: [
-          { name: "Carbon Footprint", value: "150 tons CO2e" },
-          { name: "Water Usage", value: "50,000 gallons" }
-        ],
-        social: [
-          { name: "Employee Satisfaction", value: "85%" },
-          { name: "Community Impact", value: "High" }
-        ],
-        governance: [
-          { name: "Policy Compliance", value: "98%" },
-          { name: "Risk Management Score", value: "92/100" }
-        ]
-      },
+    // Fetch business metrics data
+    const { data: businessWidgets } = await supabase
+      .from('business_widgets')
+      .select(`
+        widget_id,
+        widgets (
+          id,
+          name,
+          description,
+          category,
+          unit
+        )
+      `)
+      .eq('business_id', request.business_id)
+      .eq('is_active', true);
+
+    // Fetch latest metrics for each widget
+    const { data: metrics } = await supabase
+      .from('widget_metrics')
+      .select('*')
+      .eq('business_id', request.business_id)
+      .order('recorded_at', { ascending: false });
+
+    // Organize metrics by category
+    const metricsByCategory = businessWidgets?.reduce((acc: any, bw) => {
+      const widget = bw.widgets;
+      if (!widget) return acc;
+
+      const latestMetric = metrics?.find(m => m.widget_id === widget.id);
+      if (!latestMetric) return acc;
+
+      if (!acc[widget.category]) {
+        acc[widget.category] = [];
+      }
+
+      acc[widget.category].push({
+        name: widget.name,
+        value: latestMetric.value,
+        unit: widget.unit || '',
+        description: widget.description,
+        recorded_at: latestMetric.recorded_at
+      });
+
+      return acc;
+    }, {});
+
+    // Generate report data with actual metrics
+    const reportData = {
+      summary: `Sustainability report generated based on ${Object.values(metricsByCategory || {}).flat().length} metrics`,
+      metrics: metricsByCategory || {},
+      generated_at: new Date().toISOString(),
+      business_id: request.business_id,
       recommendations: [
-        "Implement renewable energy solutions",
-        "Enhance water conservation measures",
-        "Expand community engagement programs"
+        "Implement renewable energy solutions based on current usage patterns",
+        "Enhance water conservation measures across operations",
+        "Expand community engagement programs",
+        "Monitor and improve sustainability metrics regularly"
       ]
     };
 
-    // First, create a storage bucket if it doesn't exist
-    const { data: bucketExists } = await supabase
-      .storage
-      .listBuckets();
-    
-    if (!bucketExists?.find(b => b.name === 'reports')) {
-      await supabase
-        .storage
-        .createBucket('reports', {
-          public: true,
-          fileSizeLimit: 52428800 // 50MB
-        });
-    }
-
-    // Generate a basic PDF using jsPDF
+    // Generate PDF with actual metrics data
     const doc = new jsPDF();
     
-    // Add content to PDF
+    // Add header
     doc.setFontSize(20);
     doc.text('AI Generated Sustainability Report', 20, 20);
     
@@ -87,32 +109,34 @@ serve(async (req) => {
     doc.text('Generated on: ' + new Date().toLocaleDateString(), 20, 30);
     doc.text('Based on prompt: ' + prompt.substring(0, 80), 20, 40);
     
-    // Add sections
-    doc.setFontSize(16);
-    doc.text('Environmental Metrics', 20, 60);
-    doc.setFontSize(12);
-    doc.text('Carbon Footprint: 150 tons CO2e', 30, 70);
-    doc.text('Water Usage: 50,000 gallons', 30, 80);
+    // Add metrics by category
+    let yPosition = 60;
     
-    doc.setFontSize(16);
-    doc.text('Social Metrics', 20, 100);
-    doc.setFontSize(12);
-    doc.text('Employee Satisfaction: 85%', 30, 110);
-    doc.text('Community Impact: High', 30, 120);
-    
-    doc.setFontSize(16);
-    doc.text('Governance Metrics', 20, 140);
-    doc.setFontSize(12);
-    doc.text('Policy Compliance: 98%', 30, 150);
-    doc.text('Risk Management Score: 92/100', 30, 160);
+    for (const [category, metrics] of Object.entries(metricsByCategory || {})) {
+      doc.setFontSize(16);
+      doc.text(category.charAt(0).toUpperCase() + category.slice(1) + ' Metrics', 20, yPosition);
+      yPosition += 10;
+      
+      doc.setFontSize(12);
+      (metrics as any[]).forEach((metric) => {
+        const metricText = `${metric.name}: ${metric.value} ${metric.unit}`;
+        doc.text(metricText, 30, yPosition);
+        yPosition += 10;
+      });
+      
+      yPosition += 10;
+    }
     
     // Add recommendations
     doc.setFontSize(16);
-    doc.text('Recommendations', 20, 180);
+    doc.text('Recommendations', 20, yPosition);
+    yPosition += 10;
+    
     doc.setFontSize(12);
-    doc.text('1. Implement renewable energy solutions', 30, 190);
-    doc.text('2. Enhance water conservation measures', 30, 200);
-    doc.text('3. Expand community engagement programs', 30, 210);
+    reportData.recommendations.forEach((recommendation) => {
+      doc.text('• ' + recommendation, 30, yPosition);
+      yPosition += 10;
+    });
 
     // Convert PDF to bytes
     const pdfBytes = doc.output('arraybuffer');
@@ -138,14 +162,14 @@ serve(async (req) => {
       .from('reports')
       .getPublicUrl(fileName);
 
-    // Create a completed report entry
+    // Create a completed report entry with actual data
     const { data: report, error: reportError } = await supabase
       .from('generated_reports')
       .insert({
-        template_id: null, // We don't create or use a template for AI-generated reports
+        template_id: null,
         business_id: request.business_id,
         status: 'completed',
-        report_data: mockReportData,
+        report_data: reportData,
         pdf_url: pdfUrl,
         file_size: pdfBytes.byteLength,
         page_count: 1,
@@ -154,7 +178,8 @@ serve(async (req) => {
           prompt: prompt,
           requestId: requestId,
           generation_date: new Date().toISOString(),
-          version: '1.0'
+          version: '1.0',
+          metrics_count: Object.values(metricsByCategory || {}).flat().length
         }
       })
       .select()
@@ -177,7 +202,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         reportId: report.id,
-        report: mockReportData,
+        report: reportData,
         pdfUrl
       }),
       { 
