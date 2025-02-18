@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -47,7 +48,6 @@ export const CreateReportDialog = ({
 
       if (error) throw error;
 
-      // Transform the data to match ReportTemplate type
       return (data as any[]).map(template => ({
         ...template,
         visualization_config: template.visualization_config ? {
@@ -68,7 +68,7 @@ export const CreateReportDialog = ({
 
       // If using a template
       if (selectedTemplate) {
-        const { data, error } = await supabase
+        const { data: generatedReport, error: reportError } = await supabase
           .from("generated_reports")
           .insert([
             {
@@ -86,15 +86,15 @@ export const CreateReportDialog = ({
           .select()
           .single();
 
-        if (error) throw error;
+        if (reportError) throw reportError;
 
         // Trigger the report generation
         const { error: fnError } = await supabase.functions.invoke('generate-report', {
-          body: { report_id: data.id }
+          body: { report_id: generatedReport.id }
         });
 
         if (fnError) throw fnError;
-        return data;
+        return generatedReport;
       }
 
       // If creating a new template and report
@@ -116,6 +116,7 @@ export const CreateReportDialog = ({
 
       if (templateError) throw templateError;
 
+      // Create report with the new template
       const { data: report, error: reportError } = await supabase
         .from("generated_reports")
         .insert([
@@ -164,6 +165,7 @@ export const CreateReportDialog = ({
       });
     },
     onError: (error) => {
+      console.error("Report creation error:", error);
       toast({
         title: "Error",
         description: "Failed to create report: " + error.message,
