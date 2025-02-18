@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -11,6 +12,8 @@ import { CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 const categories = [
   'Apparel',
@@ -22,19 +25,31 @@ const categories = [
   'Other'
 ];
 
-interface FormValues {
-  name: string;
-  category: string;
-  material_composition: string;
-  recyclability_percentage: number;
-  carbon_footprint: number;
-  manufacture_date: Date;
-  image: FileList;
-}
+const formSchema = z.object({
+  name: z.string().min(1, "Product name is required"),
+  category: z.string().min(1, "Category is required"),
+  material_composition: z.string().min(1, "Material composition is required"),
+  recyclability_percentage: z.number().min(0).max(100),
+  carbon_footprint: z.number().min(0),
+  manufacture_date: z.date(),
+  image: z.any()
+});
+
+type FormValues = z.infer<typeof formSchema>;
 
 export function AddProductForm({ onSuccess }: { onSuccess?: () => void }) {
   const { toast } = useToast();
-  const form = useForm<FormValues>();
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      category: '',
+      material_composition: '',
+      recyclability_percentage: 0,
+      carbon_footprint: 0,
+      manufacture_date: new Date(),
+    }
+  });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   const onSubmit = async (data: FormValues) => {
