@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { format } from 'date-fns';
+import { format, isValid, parse } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,7 +31,10 @@ const formSchema = z.object({
   material_composition: z.string().min(1, "Material composition is required"),
   recyclability_percentage: z.number().min(0).max(100),
   carbon_footprint: z.number().min(0),
-  manufacture_date: z.date(),
+  manufacture_date: z.date({
+    required_error: "Date of manufacture is required",
+    invalid_type_error: "That's not a valid date!",
+  }),
   image: z.any()
 });
 
@@ -39,6 +42,7 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function AddProductForm({ onSuccess }: { onSuccess?: () => void }) {
   const { toast } = useToast();
+  const [dateInput, setDateInput] = React.useState('');
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -52,9 +56,31 @@ export function AddProductForm({ onSuccess }: { onSuccess?: () => void }) {
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
+  const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+    setDateInput(e.target.value);
+    
+    // Try to parse the date
+    const parsedDate = parse(e.target.value, 'yyyy-MM-dd', new Date());
+    
+    if (isValid(parsedDate) && parsedDate <= new Date()) {
+      field.onChange(parsedDate);
+    }
+  };
+
   const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
+      console.log('Submitting form data:', data); // Debug log
+
+      // Validate manufacture date
+      if (data.manufacture_date > new Date()) {
+        toast({
+          title: 'Invalid Date',
+          description: 'Manufacture date cannot be in the future.',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       let imageUrl = null;
       if (data.image?.[0]) {
@@ -75,7 +101,7 @@ export function AddProductForm({ onSuccess }: { onSuccess?: () => void }) {
         imageUrl = publicUrl;
       }
 
-      const { error } = await supabase.from('products').insert({
+      const productData = {
         name: data.name,
         category: data.category,
         material_composition: data.material_composition,
@@ -88,9 +114,16 @@ export function AddProductForm({ onSuccess }: { onSuccess?: () => void }) {
         origin: 'Unknown', // Default value
         qr_code_id: crypto.randomUUID(), // Generate a unique QR code ID
         sustainability_score: 0, // Default value
-      });
+      };
 
-      if (error) throw error;
+      console.log('Sending to Supabase:', productData); // Debug log
+
+      const { error } = await supabase.from('products').insert(productData);
+
+      if (error) {
+        console.error('Supabase error:', error); // Debug log
+        throw error;
+      }
 
       toast({
         title: 'Success',
@@ -213,37 +246,44 @@ export function AddProductForm({ onSuccess }: { onSuccess?: () => void }) {
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Date of Manufacture</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
+              <div className="flex gap-2">
+                <Input
+                  type="date"
+                  value={dateInput || (field.value ? format(field.value, 'yyyy-MM-dd') : '')}
+                  onChange={(e) => handleDateInput(e, field)}
+                  max={format(new Date(), 'yyyy-MM-dd')}
+                  className="w-full"
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full pl-3 text-left font-normal",
+                        "w-[280px]",
                         !field.value && "text-muted-foreground"
                       )}
+                      type="button"
                     >
-                      {field.value ? (
-                        format(field.value, "PPP")
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                     </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={(date) => {
+                        field.onChange(date);
+                        if (date) {
+                          setDateInput(format(date, 'yyyy-MM-dd'));
+                        }
+                      }}
+                      disabled={(date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               <FormMessage />
             </FormItem>
           )}
