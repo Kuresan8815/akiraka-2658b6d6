@@ -22,7 +22,6 @@ interface UserInteraction {
   total_purchases: number;
   last_interaction: string;
   user_id: string;
-  user_email: string;
   user_name: string | null;
 }
 
@@ -42,7 +41,7 @@ export const UsersList = () => {
 
       if (!businessProfile) throw new Error('No business profile found');
 
-      // Get all user interactions for this business
+      // Get all user interactions with profiles for this business
       const { data: statsData, error } = await supabase
         .from('user_merchant_stats')
         .select(`
@@ -50,41 +49,21 @@ export const UsersList = () => {
           total_purchases,
           last_interaction,
           user_id,
-          user:user_id (
-            profile:profiles (
-              name
-            )
+          profiles!inner (
+            name
           )
         `)
         .eq('business_id', businessProfile.business_id);
 
       if (error) throw error;
 
-      // Get the session info for each user - we'll need to do this one by one
-      const enrichedData = await Promise.all(
-        statsData.map(async (stat) => {
-          // Get the user's profile data from our public profiles table
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', stat.user_id)
-            .single();
-
-          // Get user email from auth session
-          const { data: { user: statUser } } = await supabase.auth.admin.getUserById(stat.user_id);
-
-          return {
-            total_scans: stat.total_scans,
-            total_purchases: stat.total_purchases,
-            last_interaction: stat.last_interaction,
-            user_id: stat.user_id,
-            user_name: profileData?.name || 'N/A',
-            user_email: statUser?.email || 'N/A'
-          };
-        })
-      );
-
-      return enrichedData;
+      return statsData.map(stat => ({
+        total_scans: stat.total_scans,
+        total_purchases: stat.total_purchases,
+        last_interaction: stat.last_interaction,
+        user_id: stat.user_id,
+        user_name: stat.profiles?.name || 'N/A'
+      }));
     }
   });
 
@@ -112,7 +91,6 @@ export const UsersList = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Total Scans</TableHead>
                 <TableHead>Total Purchases</TableHead>
                 <TableHead>Last Interaction</TableHead>
@@ -121,8 +99,7 @@ export const UsersList = () => {
             <TableBody>
               {userInteractions?.map((interaction) => (
                 <TableRow key={interaction.user_id}>
-                  <TableCell>{interaction.user_name || 'N/A'}</TableCell>
-                  <TableCell>{interaction.user_email}</TableCell>
+                  <TableCell>{interaction.user_name}</TableCell>
                   <TableCell>{interaction.total_scans}</TableCell>
                   <TableCell>{interaction.total_purchases}</TableCell>
                   <TableCell>
