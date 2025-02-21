@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,7 +24,7 @@ export const AdminProducts = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: products, isLoading, refetch } = useQuery({
+  const { data: products, isLoading } = useQuery({
     queryKey: ['admin-products'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -81,24 +80,32 @@ export const AdminProducts = () => {
     try {
       if (!selectedProduct) return;
 
-      // Fetch the latest data for the selected product
+      await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('id', selectedProduct.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
-
-      // Update the selected product with the latest data
-      setSelectedProduct(data as Product);
       
-      // Close edit dialog and show view dialog
+      if (!data) {
+        throw new Error('Product not found after update');
+      }
+
+      const updatedProduct = data as Product;
+      setSelectedProduct(updatedProduct);
+      
+      queryClient.setQueryData(['admin-products'], (oldData: Product[] | undefined) => {
+        if (!oldData) return [updatedProduct];
+        return oldData.map(product => 
+          product.id === updatedProduct.id ? updatedProduct : product
+        );
+      });
+
       setIsEditDialogOpen(false);
       setIsViewDialogOpen(true);
-      
-      // Invalidate and refetch all products
-      await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
       
       toast({
         title: "Success",
@@ -185,7 +192,6 @@ export const AdminProducts = () => {
         onProductClick={handleProductClick}
       />
 
-      {/* Modals */}
       {selectedProduct && (
         <>
           <ProductDetailsModal
@@ -206,7 +212,15 @@ export const AdminProducts = () => {
             }}
           />
 
-          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <Dialog 
+            open={isEditDialogOpen} 
+            onOpenChange={(open) => {
+              setIsEditDialogOpen(open);
+              if (!open) {
+                queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+              }
+            }}
+          >
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Edit Product</DialogTitle>
