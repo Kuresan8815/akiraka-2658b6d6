@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,6 +5,21 @@ import { ProfileHeader } from '@/components/profile/ProfileHeader';
 import { ProfileForm } from '@/components/profile/ProfileForm';
 import { useToast } from '@/components/ui/use-toast';
 import { Profile as ProfileType, ProfilePreferences } from '@/types/profile';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);

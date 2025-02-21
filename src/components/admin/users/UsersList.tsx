@@ -42,7 +42,7 @@ export const UsersList = () => {
 
       if (!businessProfile) throw new Error('No business profile found');
 
-      // Get all user interactions for this business
+      // Get all user interactions for this business with user details
       const { data, error } = await supabase
         .from('user_merchant_stats')
         .select(`
@@ -50,9 +50,9 @@ export const UsersList = () => {
           total_purchases,
           last_interaction,
           user_id,
-          users:user_id (
+          users (
             email,
-            profiles:profiles (
+            profiles (
               name
             )
           )
