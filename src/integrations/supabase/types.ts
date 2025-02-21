@@ -627,6 +627,7 @@ export type Database = {
           qr_code_id: string
           recyclability_percentage: number | null
           sustainability_score: number
+          updated_at: string | null
           water_usage: number
         }
         Insert: {
@@ -645,6 +646,7 @@ export type Database = {
           qr_code_id: string
           recyclability_percentage?: number | null
           sustainability_score?: number
+          updated_at?: string | null
           water_usage: number
         }
         Update: {
@@ -663,6 +665,7 @@ export type Database = {
           qr_code_id?: string
           recyclability_percentage?: number | null
           sustainability_score?: number
+          updated_at?: string | null
           water_usage?: number
         }
         Relationships: []
