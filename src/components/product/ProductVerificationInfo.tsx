@@ -15,46 +15,30 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { EditProductForm } from "@/components/admin/products/EditProductForm";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ProductVerificationInfoProps {
   product: Product;
   verificationUrl: string;
   isAdmin?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export const ProductVerificationInfo = ({ 
   product, 
   verificationUrl,
-  isAdmin = false 
+  isAdmin = false,
+  onEdit,
+  onDelete
 }: ProductVerificationInfoProps) => {
   const { toast } = useToast();
   const [isRecordsOpen, setIsRecordsOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-
-  const { data: isAuthenticated } = useQuery({
-    queryKey: ['auth-status'],
-    queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      return !!session;
-    }
-  });
 
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(verificationUrl);
     toast({
       title: "Copied!",
       description: "Verification URL copied to clipboard",
-    });
-  };
-
-  const handleEditSuccess = () => {
-    setIsEditOpen(false);
-    toast({
-      title: "Success",
-      description: "Product updated successfully",
     });
   };
 
@@ -113,33 +97,30 @@ export const ProductVerificationInfo = ({
             </SheetContent>
           </Sheet>
 
-          {/* Edit Product Sheet - Only visible to admins */}
+          {/* Edit and Delete buttons - Only visible to admins */}
           {isAdmin && (
-            <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
-              <SheetTrigger asChild>
+            <>
+              {onEdit && (
                 <Button
                   variant="default"
                   size="sm"
                   className="flex-1"
+                  onClick={onEdit}
                 >
                   Edit Product
                 </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[90%] sm:w-[600px]">
-                <SheetHeader>
-                  <SheetTitle>Edit Product</SheetTitle>
-                  <SheetDescription>
-                    Make changes to product information
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="mt-6">
-                  <EditProductForm 
-                    product={product}
-                    onSuccess={handleEditSuccess}
-                  />
-                </div>
-              </SheetContent>
-            </Sheet>
+              )}
+              {onDelete && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                  onClick={onDelete}
+                >
+                  Delete
+                </Button>
+              )}
+            </>
           )}
         </div>
 
