@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ export const AdminProducts = () => {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['admin-products'],
@@ -64,12 +65,50 @@ export const AdminProducts = () => {
       });
 
       setIsDeleteDialogOpen(false);
-      refetch();
+      setSelectedProduct(null);
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
     } catch (error) {
       console.error("Error deleting product:", error);
       toast({
         title: "Error",
         description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleUpdateSuccess = async () => {
+    try {
+      if (!selectedProduct) return;
+
+      // Fetch the latest data for the selected product
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', selectedProduct.id)
+        .single();
+
+      if (error) throw error;
+
+      // Update the selected product with the latest data
+      setSelectedProduct(data as Product);
+      
+      // Close edit dialog and show view dialog
+      setIsEditDialogOpen(false);
+      setIsViewDialogOpen(true);
+      
+      // Invalidate and refetch all products
+      await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      
+      toast({
+        title: "Success",
+        description: "Product updated successfully",
+      });
+    } catch (error) {
+      console.error("Error refreshing product data:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh product data",
         variant: "destructive",
       });
     }
@@ -110,7 +149,7 @@ export const AdminProducts = () => {
             <AddProductForm 
               onSuccess={() => {
                 setIsAddDialogOpen(false);
-                refetch();
+                queryClient.invalidateQueries({ queryKey: ['admin-products'] });
               }} 
             />
           </DialogContent>
@@ -174,22 +213,7 @@ export const AdminProducts = () => {
               </DialogHeader>
               <EditProductForm
                 product={selectedProduct}
-                onSuccess={() => {
-                  setIsEditDialogOpen(false);
-                  refetch();
-                  // Fetch the updated product
-                  supabase
-                    .from('products')
-                    .select('*')
-                    .eq('id', selectedProduct.id)
-                    .single()
-                    .then(({ data, error }) => {
-                      if (!error && data) {
-                        setSelectedProduct(data as Product);
-                        setIsViewDialogOpen(true);
-                      }
-                    });
-                }}
+                onSuccess={handleUpdateSuccess}
               />
             </DialogContent>
           </Dialog>
