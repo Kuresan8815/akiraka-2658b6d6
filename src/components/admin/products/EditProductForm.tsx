@@ -35,16 +35,24 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       setIsLoading(true);
       console.log("Updating product with data:", formData);
 
+      // Prepare the changes object by converting to plain objects
+      const changes = {
+        before: {
+          ...product,
+          created_at: product.created_at.toString(),
+          updated_at: product.updated_at?.toString() || null,
+          manufacture_date: product.manufacture_date?.toString() || null,
+        },
+        after: formData
+      };
+
       // Create audit log entry first
       const { error: auditError } = await supabase
         .from("product_audit_logs")
         .insert({
           product_id: product.id,
           action: "update",
-          changes: {
-            before: product,
-            after: formData
-          }
+          changes: changes
         });
 
       if (auditError) {
