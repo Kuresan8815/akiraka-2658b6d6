@@ -35,30 +35,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       setIsLoading(true);
       console.log("Updating product with data:", formData);
 
-      // Prepare the changes object by converting to plain objects
-      const changes = {
-        before: {
-          ...product,
-          created_at: product.created_at.toString(),
-        },
-        after: formData
-      };
-
-      // Create audit log entry first
-      const { error: auditError } = await supabase
-        .from("product_audit_logs")
-        .insert({
-          product_id: product.id,
-          action: "update",
-          changes: changes
-        });
-
-      if (auditError) {
-        console.error("Audit log error:", auditError);
-        throw auditError;
-      }
-
-      // Update the product
+      // Update the product first
       const { error: updateError } = await supabase
         .from("products")
         .update({
@@ -78,6 +55,28 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       if (updateError) {
         console.error("Update error:", updateError);
         throw updateError;
+      }
+
+      // If update succeeds, try to create audit log entry
+      try {
+        const changes = {
+          before: {
+            ...product,
+            created_at: product.created_at.toString(),
+          },
+          after: formData
+        };
+
+        await supabase
+          .from("product_audit_logs")
+          .insert({
+            product_id: product.id,
+            action: "update",
+            changes: changes
+          });
+      } catch (auditError) {
+        // Log audit error but don't fail the update
+        console.warn("Failed to create audit log:", auditError);
       }
 
       toast({
