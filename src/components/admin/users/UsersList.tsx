@@ -41,29 +41,32 @@ export const UsersList = () => {
 
       if (!businessProfile) throw new Error('No business profile found');
 
-      // Get all user interactions with profiles for this business
-      const { data: statsData, error } = await supabase
+      // Get all user interactions with profiles for this business using separate queries
+      const { data: statsData } = await supabase
         .from('user_merchant_stats')
-        .select(`
-          total_scans,
-          total_purchases,
-          last_interaction,
-          user_id,
-          profiles!inner (
-            name
-          )
-        `)
+        .select('*')
         .eq('business_id', businessProfile.business_id);
 
-      if (error) throw error;
+      if (!statsData) return [];
 
-      return statsData.map(stat => ({
-        total_scans: stat.total_scans,
-        total_purchases: stat.total_purchases,
-        last_interaction: stat.last_interaction,
-        user_id: stat.user_id,
-        user_name: stat.profiles?.name || 'N/A'
-      }));
+      // Get profiles for all users
+      const userIds = statsData.map(stat => stat.user_id);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      // Combine the data
+      return statsData.map(stat => {
+        const profile = profilesData?.find(p => p.id === stat.user_id);
+        return {
+          total_scans: stat.total_scans,
+          total_purchases: stat.total_purchases,
+          last_interaction: stat.last_interaction,
+          user_id: stat.user_id,
+          user_name: profile?.name || 'N/A'
+        };
+      });
     }
   });
 
