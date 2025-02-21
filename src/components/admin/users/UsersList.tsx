@@ -42,34 +42,41 @@ export const UsersList = () => {
 
       if (!businessProfile) throw new Error('No business profile found');
 
-      // Get all user interactions for this business with user details
-      const { data, error } = await supabase
+      // First get all user interactions for this business
+      const { data: statsData, error } = await supabase
         .from('user_merchant_stats')
-        .select(`
-          total_scans,
-          total_purchases,
-          last_interaction,
-          user_id,
-          users (
-            email,
-            profiles (
-              name
-            )
-          )
-        `)
+        .select('total_scans, total_purchases, last_interaction, user_id')
         .eq('business_id', businessProfile.business_id);
 
       if (error) throw error;
 
-      // Transform the data to match our interface
-      return data.map(interaction => ({
-        total_scans: interaction.total_scans,
-        total_purchases: interaction.total_purchases,
-        last_interaction: interaction.last_interaction,
-        user_id: interaction.user_id,
-        user_email: interaction.users?.email || 'N/A',
-        user_name: interaction.users?.profiles?.name || null
-      })) as UserInteraction[];
+      // Then get the user profiles for these users
+      const userIds = statsData.map(stat => stat.user_id);
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', userIds);
+
+      // Get the user emails from auth.users through a separate query
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, email')
+        .in('id', userIds);
+
+      // Combine the data
+      return statsData.map(stat => {
+        const profile = profilesData?.find(p => p.id === stat.user_id);
+        const userInfo = userData?.find(u => u.id === stat.user_id);
+        
+        return {
+          total_scans: stat.total_scans,
+          total_purchases: stat.total_purchases,
+          last_interaction: stat.last_interaction,
+          user_id: stat.user_id,
+          user_email: userInfo?.email || 'N/A',
+          user_name: profile?.name || null
+        };
+      }) as UserInteraction[];
     }
   });
 
