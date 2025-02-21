@@ -42,7 +42,7 @@ export const UsersList = () => {
 
       if (!businessProfile) throw new Error('No business profile found');
 
-      // First get all user interactions for this business
+      // Get all user interactions for this business
       const { data: statsData, error } = await supabase
         .from('user_merchant_stats')
         .select(`
@@ -61,15 +61,17 @@ export const UsersList = () => {
       if (error) throw error;
 
       // Get the session info for each user - we'll need to do this one by one
-      // since we can't access auth.users table directly
       const enrichedData = await Promise.all(
         statsData.map(async (stat) => {
           // Get the user's profile data from our public profiles table
           const { data: profileData } = await supabase
             .from('profiles')
-            .select('name, email')
+            .select('name')
             .eq('id', stat.user_id)
             .single();
+
+          // Get user email from auth session
+          const { data: { user: statUser } } = await supabase.auth.admin.getUserById(stat.user_id);
 
           return {
             total_scans: stat.total_scans,
@@ -77,7 +79,7 @@ export const UsersList = () => {
             last_interaction: stat.last_interaction,
             user_id: stat.user_id,
             user_name: profileData?.name || 'N/A',
-            user_email: profileData?.email || 'N/A'
+            user_email: statUser?.email || 'N/A'
           };
         })
       );
