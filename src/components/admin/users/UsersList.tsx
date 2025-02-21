@@ -21,12 +21,9 @@ interface UserInteraction {
   total_scans: number;
   total_purchases: number;
   last_interaction: string;
-  user: {
-    email: string;
-    profile: {
-      name: string;
-    };
-  };
+  user_id: string;
+  user_email: string;
+  user_name: string | null;
 }
 
 export const UsersList = () => {
@@ -52,9 +49,10 @@ export const UsersList = () => {
           total_scans,
           total_purchases,
           last_interaction,
-          user:user_id (
+          user_id,
+          users:user_id (
             email,
-            profile:profiles (
+            profiles:profiles (
               name
             )
           )
@@ -62,7 +60,16 @@ export const UsersList = () => {
         .eq('business_id', businessProfile.business_id);
 
       if (error) throw error;
-      return data as UserInteraction[];
+
+      // Transform the data to match our interface
+      return data.map(interaction => ({
+        total_scans: interaction.total_scans,
+        total_purchases: interaction.total_purchases,
+        last_interaction: interaction.last_interaction,
+        user_id: interaction.user_id,
+        user_email: interaction.users?.email || 'N/A',
+        user_name: interaction.users?.profiles?.name || null
+      })) as UserInteraction[];
     }
   });
 
@@ -98,9 +105,9 @@ export const UsersList = () => {
             </TableHeader>
             <TableBody>
               {userInteractions?.map((interaction) => (
-                <TableRow key={interaction.user.email}>
-                  <TableCell>{interaction.user.profile?.name || 'N/A'}</TableCell>
-                  <TableCell>{interaction.user.email}</TableCell>
+                <TableRow key={interaction.user_id}>
+                  <TableCell>{interaction.user_name || 'N/A'}</TableCell>
+                  <TableCell>{interaction.user_email}</TableCell>
                   <TableCell>{interaction.total_scans}</TableCell>
                   <TableCell>{interaction.total_purchases}</TableCell>
                   <TableCell>

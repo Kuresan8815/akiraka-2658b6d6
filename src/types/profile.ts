@@ -1,4 +1,3 @@
-import { Json } from "@/integrations/supabase/types";
 
 export interface ProfilePreferences {
   notifications: boolean;
@@ -23,4 +22,12 @@ export interface ProfileFormData {
   notifications: boolean;
   darkTheme: boolean;
   has_completed_onboarding: boolean;
+}
+
+export interface MerchantInteraction {
+  business_id: string;
+  business_name: string;
+  total_scans: number;
+  total_purchases: number;
+  last_interaction: string;
 }
