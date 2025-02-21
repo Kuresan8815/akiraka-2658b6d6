@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ProductBasicInfo } from "./product/ProductBasicInfo";
 import { ProductSustainabilityMetrics } from "./product/ProductSustainabilityMetrics";
@@ -8,9 +9,15 @@ interface ProductDetailsModalProps {
   product: Product;
   isOpen: boolean;
   onClose: () => void;
+  isAdmin?: boolean;
 }
 
-export const ProductDetailsModal = ({ product, isOpen, onClose }: ProductDetailsModalProps) => {
+export const ProductDetailsModal = ({ 
+  product, 
+  isOpen, 
+  onClose,
+  isAdmin = false 
+}: ProductDetailsModalProps) => {
   if (!product) return null;
 
   const certificationColor = {
@@ -33,7 +40,11 @@ export const ProductDetailsModal = ({ product, isOpen, onClose }: ProductDetails
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ProductBasicInfo product={product} certificationColor={certificationColor} />
           <ProductSustainabilityMetrics product={product} />
-          <ProductVerificationInfo product={product} verificationUrl={verificationUrl} />
+          <ProductVerificationInfo 
+            product={product} 
+            verificationUrl={verificationUrl}
+            isAdmin={isAdmin}
+          />
         </div>
       </DialogContent>
     </Dialog>
