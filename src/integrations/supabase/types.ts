@@ -1138,6 +1138,64 @@ export type Database = {
         }
         Relationships: []
       }
+      user_merchant_interactions: {
+        Row: {
+          business_id: string
+          created_at: string
+          id: string
+          interaction_type: string
+          metadata: Json | null
+          product_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          id?: string
+          interaction_type: string
+          metadata?: Json | null
+          product_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          metadata?: Json | null
+          product_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_merchant_interactions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "user_merchant_interactions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_merchant_interactions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       widget_metrics: {
         Row: {
           blockchain_hash: string | null
@@ -1284,6 +1342,31 @@ export type Database = {
           user_id: string | null
         }
         Relationships: []
+      }
+      user_merchant_stats: {
+        Row: {
+          business_id: string | null
+          last_interaction: string | null
+          total_purchases: number | null
+          total_scans: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_merchant_interactions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "user_merchant_interactions_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_sustainability_metrics: {
         Row: {
