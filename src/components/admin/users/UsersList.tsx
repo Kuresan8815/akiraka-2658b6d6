@@ -45,38 +45,44 @@ export const UsersList = () => {
       // First get all user interactions for this business
       const { data: statsData, error } = await supabase
         .from('user_merchant_stats')
-        .select('total_scans, total_purchases, last_interaction, user_id')
+        .select(`
+          total_scans,
+          total_purchases,
+          last_interaction,
+          user_id,
+          user:user_id (
+            profile:profiles (
+              name
+            )
+          )
+        `)
         .eq('business_id', businessProfile.business_id);
 
       if (error) throw error;
 
-      // Then get the user profiles for these users
-      const userIds = statsData.map(stat => stat.user_id);
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .in('id', userIds);
+      // Get the session info for each user - we'll need to do this one by one
+      // since we can't access auth.users table directly
+      const enrichedData = await Promise.all(
+        statsData.map(async (stat) => {
+          // Get the user's profile data from our public profiles table
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name, email')
+            .eq('id', stat.user_id)
+            .single();
 
-      // Get the user emails from auth.users through a separate query
-      const { data: userData } = await supabase
-        .from('users')
-        .select('id, email')
-        .in('id', userIds);
+          return {
+            total_scans: stat.total_scans,
+            total_purchases: stat.total_purchases,
+            last_interaction: stat.last_interaction,
+            user_id: stat.user_id,
+            user_name: profileData?.name || 'N/A',
+            user_email: profileData?.email || 'N/A'
+          };
+        })
+      );
 
-      // Combine the data
-      return statsData.map(stat => {
-        const profile = profilesData?.find(p => p.id === stat.user_id);
-        const userInfo = userData?.find(u => u.id === stat.user_id);
-        
-        return {
-          total_scans: stat.total_scans,
-          total_purchases: stat.total_purchases,
-          last_interaction: stat.last_interaction,
-          user_id: stat.user_id,
-          user_email: userInfo?.email || 'N/A',
-          user_name: profile?.name || null
-        };
-      }) as UserInteraction[];
+      return enrichedData;
     }
   });
 
