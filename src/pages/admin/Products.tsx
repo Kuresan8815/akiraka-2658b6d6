@@ -157,6 +157,14 @@ export const AdminProducts = () => {
               setSelectedProduct(null);
             }}
             isAdmin={true}
+            onEditClick={() => {
+              setIsViewDialogOpen(false);
+              setIsEditDialogOpen(true);
+            }}
+            onDeleteClick={() => {
+              setIsViewDialogOpen(false);
+              setIsDeleteDialogOpen(true);
+            }}
           />
 
           <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -168,8 +176,19 @@ export const AdminProducts = () => {
                 product={selectedProduct}
                 onSuccess={() => {
                   setIsEditDialogOpen(false);
-                  setSelectedProduct(null);
                   refetch();
+                  // Fetch the updated product
+                  supabase
+                    .from('products')
+                    .select('*')
+                    .eq('id', selectedProduct.id)
+                    .single()
+                    .then(({ data, error }) => {
+                      if (!error && data) {
+                        setSelectedProduct(data as Product);
+                        setIsViewDialogOpen(true);
+                      }
+                    });
                 }}
               />
             </DialogContent>
