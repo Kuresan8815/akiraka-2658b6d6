@@ -30,60 +30,49 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
     },
   });
 
-  const createBlockchainTransaction = async (changes: any) => {
-    try {
-      // Simulate blockchain transaction - in a real app, this would interact with a blockchain
-      const txHash = `tx_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-      return txHash;
-    } catch (error) {
-      console.error("Error creating blockchain transaction:", error);
-      throw error;
-    }
-  };
-
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (formData: any) => {
     try {
       setIsLoading(true);
+      console.log("Updating product with data:", formData);
 
-      // Get the old product data for comparison
-      const oldData = { ...product };
-      
-      // Create blockchain transaction
-      const blockchainTxId = await createBlockchainTransaction({
-        type: "update",
-        productId: product.id,
-        changes: {
-          before: oldData,
-          after: data
-        }
-      });
-      
-      // Update the product with blockchain reference
-      const { error: updateError } = await supabase
-        .from("products")
-        .update({
-          ...data,
-          blockchain_tx_id: blockchainTxId,
-          blockchain_hash: blockchainTxId // In a real app, this would be a proper hash
-        })
-        .eq("id", product.id);
-
-      if (updateError) throw updateError;
-
-      // Create audit log entry
+      // Create audit log entry first
       const { error: auditError } = await supabase
         .from("product_audit_logs")
         .insert({
           product_id: product.id,
           action: "update",
           changes: {
-            before: oldData,
-            after: data,
-          },
-          blockchain_tx_id: blockchainTxId
+            before: product,
+            after: formData
+          }
         });
 
-      if (auditError) throw auditError;
+      if (auditError) {
+        console.error("Audit log error:", auditError);
+        throw auditError;
+      }
+
+      // Update the product
+      const { error: updateError } = await supabase
+        .from("products")
+        .update({
+          name: formData.name,
+          category: formData.category,
+          material_composition: formData.material_composition,
+          certification_level: formData.certification_level,
+          carbon_footprint: formData.carbon_footprint,
+          water_usage: formData.water_usage,
+          origin: formData.origin,
+          sustainability_score: formData.sustainability_score,
+          recyclability_percentage: formData.recyclability_percentage,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", product.id);
+
+      if (updateError) {
+        console.error("Update error:", updateError);
+        throw updateError;
+      }
 
       toast({
         title: "Success",
@@ -95,7 +84,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       console.error("Error updating product:", error);
       toast({
         title: "Error",
-        description: "Failed to update product",
+        description: "Failed to update product. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -109,6 +98,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
           <Input id="name" {...register("name", { required: true })} />
+          {errors.name && <span className="text-red-500 text-sm">This field is required</span>}
         </div>
 
         <div className="space-y-2">
@@ -124,6 +114,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         <div className="space-y-2">
           <Label htmlFor="certification_level">Certification Level</Label>
           <Input id="certification_level" {...register("certification_level", { required: true })} />
+          {errors.certification_level && <span className="text-red-500 text-sm">This field is required</span>}
         </div>
 
         <div className="space-y-2">
@@ -134,6 +125,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
             step="0.01"
             {...register("carbon_footprint", { required: true, min: 0 })}
           />
+          {errors.carbon_footprint && <span className="text-red-500 text-sm">This field is required and must be positive</span>}
         </div>
 
         <div className="space-y-2">
@@ -143,11 +135,13 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
             type="number"
             {...register("water_usage", { required: true, min: 0 })}
           />
+          {errors.water_usage && <span className="text-red-500 text-sm">This field is required and must be positive</span>}
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="origin">Origin</Label>
           <Input id="origin" {...register("origin", { required: true })} />
+          {errors.origin && <span className="text-red-500 text-sm">This field is required</span>}
         </div>
 
         <div className="space-y-2">
@@ -157,6 +151,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
             type="number"
             {...register("sustainability_score", { required: true, min: 0, max: 100 })}
           />
+          {errors.sustainability_score && <span className="text-red-500 text-sm">Score must be between 0 and 100</span>}
         </div>
 
         <div className="space-y-2">
@@ -166,6 +161,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
             type="number"
             {...register("recyclability_percentage", { min: 0, max: 100 })}
           />
+          {errors.recyclability_percentage && <span className="text-red-500 text-sm">Percentage must be between 0 and 100</span>}
         </div>
       </div>
 
