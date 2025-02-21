@@ -10,13 +10,17 @@ interface ProductDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   isAdmin?: boolean;
+  onEditClick?: () => void;
+  onDeleteClick?: () => void;
 }
 
 export const ProductDetailsModal = ({ 
   product, 
   isOpen, 
   onClose,
-  isAdmin = false 
+  isAdmin = false,
+  onEditClick,
+  onDeleteClick
 }: ProductDetailsModalProps) => {
   if (!product) return null;
 
@@ -44,6 +48,8 @@ export const ProductDetailsModal = ({
             product={product} 
             verificationUrl={verificationUrl}
             isAdmin={isAdmin}
+            onEdit={onEditClick}
+            onDelete={onDeleteClick}
           />
         </div>
       </DialogContent>
