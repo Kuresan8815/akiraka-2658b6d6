@@ -26,26 +26,54 @@ interface UserInteraction {
 }
 
 export const UsersList = () => {
+  // First query to check if user is super admin
+  const { data: adminLevel } = useQuery({
+    queryKey: ['admin-level'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data } = await supabase
+        .from('admin_users')
+        .select('account_level')
+        .eq('id', user.id)
+        .single();
+
+      return data?.account_level;
+    }
+  });
+
+  // Main query for user interactions
   const { data: userInteractions, isLoading } = useQuery({
-    queryKey: ['user-interactions'],
+    queryKey: ['user-interactions', adminLevel],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Get the business ID for the current admin
-      const { data: businessProfile } = await supabase
-        .from('business_profiles')
-        .select('business_id')
-        .eq('user_id', user.id)
-        .single();
+      let statsData;
 
-      if (!businessProfile) throw new Error('No business profile found');
+      if (adminLevel === 'super_admin') {
+        // Super admin sees all user interactions
+        const { data } = await supabase
+          .from('user_merchant_stats')
+          .select('*');
+        statsData = data;
+      } else {
+        // Business admin only sees their business interactions
+        const { data: businessProfile } = await supabase
+          .from('business_profiles')
+          .select('business_id')
+          .eq('user_id', user.id)
+          .single();
 
-      // Get all user interactions with profiles for this business using separate queries
-      const { data: statsData } = await supabase
-        .from('user_merchant_stats')
-        .select('*')
-        .eq('business_id', businessProfile.business_id);
+        if (!businessProfile) throw new Error('No business profile found');
+
+        const { data } = await supabase
+          .from('user_merchant_stats')
+          .select('*')
+          .eq('business_id', businessProfile.business_id);
+        statsData = data;
+      }
 
       if (!statsData) return [];
 
@@ -67,7 +95,8 @@ export const UsersList = () => {
           user_name: profile?.name || 'N/A'
         };
       });
-    }
+    },
+    enabled: !!adminLevel // Only run query when we know the admin level
   });
 
   if (isLoading) {
@@ -86,7 +115,9 @@ export const UsersList = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Interactions</CardTitle>
+        <CardTitle>
+          {adminLevel === 'super_admin' ? 'All Users' : 'Business Users'}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[600px] w-full">
