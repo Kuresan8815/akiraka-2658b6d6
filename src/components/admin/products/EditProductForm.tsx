@@ -40,8 +40,6 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         before: {
           ...product,
           created_at: product.created_at.toString(),
-          updated_at: product.updated_at?.toString() || null,
-          manufacture_date: product.manufacture_date?.toString() || null,
         },
         after: formData
       };
