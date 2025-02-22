@@ -8,6 +8,8 @@ import { ProductVerificationInfo } from "./product/ProductVerificationInfo";
 import { Product } from "@/types/product";
 import { Share2, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProductDetailsModalProps {
   product: Product;
@@ -27,6 +29,22 @@ export const ProductDetailsModal = ({
   onDeleteClick
 }: ProductDetailsModalProps) => {
   const { toast } = useToast();
+  
+  // Add check for admin status
+  const { data: adminUser } = useQuery({
+    queryKey: ["adminCheck"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("*")
+        .single();
+      
+      if (error) return null;
+      return data;
+    }
+  });
+
+  const isAdminUser = !!adminUser;
   
   if (!product) return null;
 
@@ -99,7 +117,7 @@ export const ProductDetailsModal = ({
             <ProductVerificationInfo 
               product={product} 
               verificationUrl={verificationUrl}
-              isAdmin={isAdmin}
+              isAdmin={isAdmin || isAdminUser}
               onEdit={onEditClick}
               onDelete={onDeleteClick}
             />
