@@ -96,13 +96,15 @@ export const ProductDetailsModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ProductBasicInfo product={product} certificationColor={certificationColor} />
             <ProductSustainabilityMetrics product={product} />
-            <ProductVerificationInfo 
-              product={product} 
-              verificationUrl={verificationUrl}
-              isAdmin={isAdmin}
-              onEdit={onEditClick}
-              onDelete={onDeleteClick}
-            />
+            <div className="md:col-span-2">
+              <ProductVerificationInfo 
+                product={product} 
+                verificationUrl={verificationUrl}
+                isAdmin={isAdmin}
+                onEdit={onEditClick}
+                onDelete={onDeleteClick}
+              />
+            </div>
           </div>
         </ScrollArea>
       </DialogContent>
