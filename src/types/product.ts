@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -7,6 +8,7 @@ export interface Product {
   origin: string;
   qr_code_id: string;
   sustainability_score: number;
+  business_id?: string;
   category?: string;
   material_composition?: string;
   recyclability_percentage?: number;
