@@ -9,6 +9,21 @@ interface ProductAuditLogProps {
   productId: string;
 }
 
+interface AuditLogChanges {
+  before: Record<string, any>;
+  after: Record<string, any>;
+}
+
+interface AuditLog {
+  id: string;
+  product_id: string;
+  changes: AuditLogChanges;
+  created_at: string;
+  created_by: string | null;
+  action: string;
+  blockchain_tx_id: string | null;
+}
+
 export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
   const { data: auditLogs, isLoading } = useQuery({
     queryKey: ["product-audit", productId],
@@ -20,7 +35,7 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as AuditLog[];
     },
   });
 
