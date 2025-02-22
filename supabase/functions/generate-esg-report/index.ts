@@ -1,284 +1,178 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.8';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { businessId, dateRange } = await req.json();
+    const { report_id, business_id, configuration } = await req.json();
+    
+    // Initialize Supabase client
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
-    // Verify OpenAI API key is present
-    const openAIKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIKey) {
-      throw new Error('OpenAI API key not configured');
-    }
+    console.log('Starting ESG report generation:', { report_id, business_id });
 
-    // Test OpenAI API connection
-    try {
-      const testResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [{ role: 'system', content: 'Test connection' }],
-          max_tokens: 5
-        }),
-      });
+    // Update report status to processing
+    await supabase
+      .from('generated_reports')
+      .update({ status: 'processing' })
+      .eq('id', report_id);
 
-      if (!testResponse.ok) {
-        const errorData = await testResponse.json();
-        console.error('OpenAI API connection test failed:', errorData);
-        throw new Error(`OpenAI API connection failed: ${errorData.error?.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('OpenAI API connection test error:', error);
-      throw new Error(`Failed to connect to OpenAI API: ${error.message}`);
-    }
-
-    // Fetch business details
+    // Fetch business info
     const { data: business } = await supabase
       .from('businesses')
       .select('*')
-      .eq('id', businessId)
+      .eq('id', business_id)
       .single();
 
-    if (!business) {
-      throw new Error('Business not found');
-    }
-
-    // Fetch environmental metrics
-    const { data: environmentalMetrics } = await supabase
+    // Fetch ESG metrics
+    const { data: metrics } = await supabase
       .from('widget_metrics')
       .select(`
-        value,
-        recorded_at,
-        widget:widget_id(name, category, metric_type, unit)
+        *,
+        widget:widgets(*)
       `)
-      .eq('business_id', businessId)
-      .eq('widget.category', 'environmental')
-      .gte('recorded_at', dateRange.start)
-      .lte('recorded_at', dateRange.end);
+      .eq('business_id', business_id);
 
-    // Fetch sustainability goals
-    const { data: goals } = await supabase
-      .from('sustainability_goals')
-      .select('*')
-      .eq('business_id', businessId);
+    // Categorize metrics by ESG
+    const categorizedMetrics = {
+      environmental: metrics?.filter(m => m.widget?.category === 'environmental') ?? [],
+      social: metrics?.filter(m => m.widget?.category === 'social') ?? [],
+      governance: metrics?.filter(m => m.widget?.category === 'governance') ?? [],
+    };
 
-    // Fetch carbon emissions data
-    const { data: emissions } = await supabase
-      .from('carbon_emissions')
-      .select('*')
-      .eq('business_id', businessId)
-      .gte('recorded_date', dateRange.start)
-      .lte('recorded_date', dateRange.end);
+    // Generate executive summary
+    const executiveSummary = generateExecutiveSummary(business, categorizedMetrics);
 
-    const systemPrompt = `You are an ESG reporting expert. Generate a concise yet detailed ESG report based on the provided data.
-Focus on key metrics and actionable insights. Use bullet points for clarity.
+    // Generate charts data
+    const chartsData = generateChartsData(categorizedMetrics);
 
-Structure the response in this exact JSON format:
-{
-  "executive_summary": {
-    "overview": "string",
-    "key_metrics": [
-      {
-        "category": "environmental|social|governance",
-        "metric": "string",
-        "value": "string",
-        "trend": "increasing|stable|decreasing"
-      }
-    ],
-    "highlights": ["string"]
-  },
-  "environmental_impact": {
-    "carbon_emissions": {
-      "total": number,
-      "reduction_target": number,
-      "key_initiatives": ["string"]
-    },
-    "resource_usage": {
-      "water": { "value": number, "unit": "string", "trend": "string" },
-      "energy": { "value": number, "unit": "string", "trend": "string" },
-      "waste": { "value": number, "unit": "string", "trend": "string" }
-    },
-    "recommendations": ["string"]
-  },
-  "social_contributions": {
-    "workforce_metrics": {
-      "diversity_score": number,
-      "training_hours": number,
-      "employee_satisfaction": number
-    },
-    "community_impact": {
-      "initiatives": ["string"],
-      "beneficiaries": number
-    },
-    "recommendations": ["string"]
-  },
-  "governance_performance": {
-    "compliance_rate": number,
-    "risk_assessment": {
-      "level": "low|medium|high",
-      "key_risks": ["string"]
-    },
-    "policies_implemented": ["string"],
-    "recommendations": ["string"]
-  },
-  "future_goals": {
-    "short_term": ["string"],
-    "medium_term": ["string"],
-    "long_term": ["string"],
-    "priority_areas": ["string"]
-  },
-  "visualizations": [
-    {
-      "type": "bar|line|pie|radar",
-      "title": "string",
-      "data_points": ["string"],
-      "metrics": ["string"]
-    }
-  ]
-}`;
+    // Prepare the final report data
+    const reportData = {
+      business_info: {
+        name: business.name,
+        industry: business.industry_type,
+        description: business.description,
+      },
+      executive_summary: executiveSummary,
+      metrics_summary: {
+        environmental: summarizeMetrics(categorizedMetrics.environmental),
+        social: summarizeMetrics(categorizedMetrics.social),
+        governance: summarizeMetrics(categorizedMetrics.governance),
+      },
+      charts: chartsData,
+      generated_at: new Date().toISOString(),
+    };
 
-    try {
-      console.log('Making OpenAI API request...');
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${openAIKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content: systemPrompt
-            },
-            {
-              role: 'user',
-              content: JSON.stringify({
-                business,
-                environmentalMetrics,
-                goals,
-                emissions,
-                dateRange
-              })
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1500,
-          response_format: { type: "json_object" }
-        }),
-      });
+    // Update report with generated data
+    const { error: updateError } = await supabase
+      .from('generated_reports')
+      .update({
+        status: 'completed',
+        report_data: reportData,
+      })
+      .eq('id', report_id);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('OpenAI API request failed:', errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
-      }
+    if (updateError) throw updateError;
 
-      console.log('OpenAI API request successful');
-      const aiResponse = await response.json();
-      
-      if (!aiResponse.choices?.[0]?.message?.content) {
-        throw new Error('Invalid response from OpenAI: No content in response');
-      }
-
-      let reportContent;
-      try {
-        reportContent = JSON.parse(aiResponse.choices[0].message.content);
-      } catch (parseError) {
-        console.error('Failed to parse OpenAI response:', aiResponse.choices[0].message.content);
-        throw new Error(`Failed to parse OpenAI response: ${parseError.message}`);
-      }
-
-      // Create the report metadata
-      const metadata = {
-        generation_date: new Date().toISOString(),
-        version: '1.0',
-        data_sources: ['environmental_metrics', 'sustainability_goals', 'carbon_emissions'],
-        sections: Object.keys(reportContent),
-        summary_stats: {
-          total_metrics: environmentalMetrics?.length || 0,
-          total_goals: goals?.length || 0,
-          total_emissions: emissions?.length || 0
-        }
-      };
-
-      // Insert report with proper typing into generated_reports table
-      const { data: report, error: reportError } = await supabase
-        .from('generated_reports')
-        .insert({
-          template_id: null, // since this is an ESG report without a template
-          business_id: businessId,
-          status: 'completed' as const,
-          report_data: reportContent,
-          metadata,
-          date_range: dateRange
-        })
-        .select()
-        .single();
-
-      if (reportError) {
-        console.error('Error inserting report:', reportError);
-        throw reportError;
-      }
-
-      // Generate visualizations config
-      const visualizations = reportContent.visualizations.map((viz: any) => ({
-        type: viz.type,
-        title: viz.title,
-        data: {
-          labels: viz.data_points,
-          datasets: [{
-            label: viz.title,
-            data: viz.metrics
-          }]
-        }
-      }));
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          report: {
-            ...report,
-            visualizations
-          }
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } catch (error) {
-      console.error('Error generating report:', error);
-      throw new Error(`Failed to generate report: ${error.message}`);
-    }
-
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
-    console.error('Error in generate-esg-report function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        timestamp: new Date().toISOString()
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    console.error('Error generating ESG report:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   }
 });
+
+function generateExecutiveSummary(business: any, metrics: any) {
+  // Generate a comprehensive summary based on the metrics
+  const totalMetrics = Object.values(metrics).reduce((acc: any, cat: any) => acc + cat.length, 0);
+  
+  return {
+    overview: `This report provides a comprehensive analysis of ${business.name}'s ESG performance, covering ${totalMetrics} key metrics across environmental, social, and governance categories.`,
+    highlights: {
+      environmental: summarizeCategory(metrics.environmental),
+      social: summarizeCategory(metrics.social),
+      governance: summarizeCategory(metrics.governance),
+    },
+  };
+}
+
+function summarizeCategory(metrics: any[]) {
+  if (!metrics.length) return "No metrics available";
+  
+  const latestValues = metrics.map(m => ({
+    name: m.widget.name,
+    value: m.value,
+    unit: m.widget.unit,
+  }));
+
+  return {
+    metric_count: metrics.length,
+    latest_values: latestValues,
+  };
+}
+
+function summarizeMetrics(metrics: any[]) {
+  return metrics.map(m => ({
+    name: m.widget.name,
+    current_value: m.value,
+    unit: m.widget.unit,
+    category: m.widget.category,
+    description: m.widget.description,
+  }));
+}
+
+function generateChartsData(categorizedMetrics: any) {
+  return {
+    distribution: {
+      type: "pie",
+      data: {
+        labels: ["Environmental", "Social", "Governance"],
+        values: [
+          categorizedMetrics.environmental.length,
+          categorizedMetrics.social.length,
+          categorizedMetrics.governance.length,
+        ],
+      },
+    },
+    trends: {
+      type: "line",
+      data: generateTrendsData(categorizedMetrics),
+    },
+    performance: {
+      type: "bar",
+      data: generatePerformanceData(categorizedMetrics),
+    },
+  };
+}
+
+function generateTrendsData(metrics: any) {
+  // Implementation for generating time-series data
+  return {
+    labels: [], // Time periods
+    datasets: [] // Metric values over time
+  };
+}
+
+function generatePerformanceData(metrics: any) {
+  // Implementation for generating performance comparison data
+  return {
+    labels: [], // Metric names
+    values: [] // Current values
+  };
+}

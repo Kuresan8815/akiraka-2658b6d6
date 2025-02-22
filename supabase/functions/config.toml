@@ -1,3 +1,5 @@
 
-[functions.generate-esg-report]
+project_id = "nmlpmvsxqkmfrddvdfaw"
+
+[generate-esg-report]
 verify_jwt = true

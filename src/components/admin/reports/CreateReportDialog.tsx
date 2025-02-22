@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient, useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReportTemplate } from "@/types/reports";
 
@@ -23,12 +22,11 @@ export const CreateReportDialog = ({
   onOpenChange,
   businessId,
 }: CreateReportDialogProps) => {
-  const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
-  const [reportType, setReportType] = useState<'metrics' | 'sustainability' | 'combined'>('combined');
   const [visualization, setVisualization] = useState({
     showBarCharts: true,
+    showLineCharts: true,
     showPieCharts: true,
     showTables: true,
     showTimeline: true,
@@ -36,79 +34,39 @@ export const CreateReportDialog = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: templates } = useQuery({
-    queryKey: ["report-templates", businessId],
-    enabled: !!businessId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("report_templates")
-        .select("*")
-        .eq("business_id", businessId)
-        .eq("is_active", true);
-
-      if (error) throw error;
-
-      return (data as any[]).map(template => ({
-        ...template,
-        visualization_config: template.visualization_config ? {
-          showBarCharts: template.visualization_config.showBarCharts ?? true,
-          showPieCharts: template.visualization_config.showPieCharts ?? true,
-          showTables: template.visualization_config.showTables ?? true,
-          showTimeline: template.visualization_config.showTimeline ?? true,
-        } : null,
-        included_metrics: template.included_metrics || [],
-        theme_colors: template.theme_colors || [],
-      })) as ReportTemplate[];
-    },
-  });
-
   const { mutate: createReport, isPending } = useMutation({
     mutationFn: async () => {
       if (!businessId) throw new Error("No business selected");
 
-      // If using a template
-      if (selectedTemplate) {
-        const { data: generatedReport, error: reportError } = await supabase
-          .from("generated_reports")
-          .insert([
-            {
-              business_id: businessId,
-              template_id: selectedTemplate,
-              report_data: {},
-              generated_by: (await supabase.auth.getUser()).data.user?.id,
-              status: "pending",
-              date_range: {
-                start: new Date().toISOString(),
-                end: new Date().toISOString(),
-              },
-            },
-          ])
-          .select()
-          .single();
-
-        if (reportError) throw reportError;
-
-        // Trigger the report generation
-        const { error: fnError } = await supabase.functions.invoke('generate-report', {
-          body: { report_id: generatedReport.id }
-        });
-
-        if (fnError) throw fnError;
-        return generatedReport;
-      }
-
-      // If creating a new template and report
+      // Create a report template with ESG focus
       const { data: template, error: templateError } = await supabase
         .from("report_templates")
         .insert([
           {
             business_id: businessId,
-            name,
+            name: title,
             description,
-            layout_type: "standard",
-            theme_colors: ["#9b87f5", "#7E69AB", "#6E59A5"],
-            report_type: reportType,
+            layout_type: "infographic",
+            theme_colors: ["#10B981", "#3B82F6", "#8B5CF6"],
+            report_type: "esg",
             visualization_config: visualization,
+            charts_config: [
+              {
+                type: "line",
+                metric: "environmental_impact",
+                title: "Environmental Impact Trend"
+              },
+              {
+                type: "bar",
+                metric: "social_metrics",
+                title: "Social Impact Metrics"
+              },
+              {
+                type: "pie",
+                metric: "governance_distribution",
+                title: "Governance Score Distribution"
+              }
+            ]
           },
         ])
         .select()
@@ -116,7 +74,7 @@ export const CreateReportDialog = ({
 
       if (templateError) throw templateError;
 
-      // Create report with the new template
+      // Generate the report
       const { data: report, error: reportError } = await supabase
         .from("generated_reports")
         .insert([
@@ -124,12 +82,15 @@ export const CreateReportDialog = ({
             business_id: businessId,
             template_id: template.id,
             report_data: {},
-            generated_by: (await supabase.auth.getUser()).data.user?.id,
             status: "pending",
             date_range: {
-              start: new Date().toISOString(),
+              start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
               end: new Date().toISOString(),
             },
+            metadata: {
+              reportType: "comprehensive_esg",
+              visualizationPreferences: visualization
+            }
           },
         ])
         .select()
@@ -138,27 +99,35 @@ export const CreateReportDialog = ({
       if (reportError) throw reportError;
 
       // Trigger the report generation
-      const { error: fnError } = await supabase.functions.invoke('generate-report', {
-        body: { report_id: report.id }
+      const { error: fnError } = await supabase.functions.invoke('generate-esg-report', {
+        body: { 
+          report_id: report.id,
+          business_id: businessId,
+          configuration: {
+            title,
+            description,
+            visualization,
+            includeExecutiveSummary: true,
+            categorizeByESG: true
+          }
+        }
       });
 
       if (fnError) throw fnError;
       return report;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["report-templates"] });
       queryClient.invalidateQueries({ queryKey: ["generated-reports"] });
       toast({
         title: "Success",
         description: "Report generation started. You'll be notified when it's ready.",
       });
       onOpenChange(false);
-      setName("");
+      setTitle("");
       setDescription("");
-      setSelectedTemplate("");
-      setReportType('combined');
       setVisualization({
         showBarCharts: true,
+        showLineCharts: true,
         showPieCharts: true,
         showTables: true,
         showTimeline: true,
@@ -178,107 +147,82 @@ export const CreateReportDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Report</DialogTitle>
+          <DialogTitle>Generate ESG Performance Report</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          {templates && templates.length > 0 && (
-            <div className="space-y-2">
-              <Label>Use Existing Template</Label>
-              <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a template" />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id}>
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <div className="space-y-2">
+            <Label htmlFor="title">Report Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Q1 2024 ESG Performance Report"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Report Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Comprehensive analysis of our ESG metrics and sustainability impact..."
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Visualization Options</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="showBarCharts"
+                  checked={visualization.showBarCharts}
+                  onCheckedChange={(checked) =>
+                    setVisualization((prev) => ({ ...prev, showBarCharts: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="showBarCharts">Bar Charts</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="showLineCharts"
+                  checked={visualization.showLineCharts}
+                  onCheckedChange={(checked) =>
+                    setVisualization((prev) => ({ ...prev, showLineCharts: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="showLineCharts">Line Charts</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="showPieCharts"
+                  checked={visualization.showPieCharts}
+                  onCheckedChange={(checked) =>
+                    setVisualization((prev) => ({ ...prev, showPieCharts: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="showPieCharts">Pie Charts</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="showTables"
+                  checked={visualization.showTables}
+                  onCheckedChange={(checked) =>
+                    setVisualization((prev) => ({ ...prev, showTables: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="showTables">Data Tables</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="showTimeline"
+                  checked={visualization.showTimeline}
+                  onCheckedChange={(checked) =>
+                    setVisualization((prev) => ({ ...prev, showTimeline: checked as boolean }))
+                  }
+                />
+                <Label htmlFor="showTimeline">Timeline View</Label>
+              </div>
             </div>
-          )}
-
-          {!selectedTemplate && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="name">New Template Name</Label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Monthly Sustainability Report"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="A comprehensive monthly report of our sustainability metrics..."
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Report Type</Label>
-                <Select value={reportType} onValueChange={(value: 'metrics' | 'sustainability' | 'combined') => setReportType(value)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="metrics">Metrics Only</SelectItem>
-                    <SelectItem value="sustainability">Sustainability Focus</SelectItem>
-                    <SelectItem value="combined">Combined Report</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Visualization Options</Label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showBarCharts"
-                      checked={visualization.showBarCharts}
-                      onCheckedChange={(checked) =>
-                        setVisualization((prev) => ({ ...prev, showBarCharts: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="showBarCharts">Bar Charts</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showPieCharts"
-                      checked={visualization.showPieCharts}
-                      onCheckedChange={(checked) =>
-                        setVisualization((prev) => ({ ...prev, showPieCharts: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="showPieCharts">Pie Charts</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showTables"
-                      checked={visualization.showTables}
-                      onCheckedChange={(checked) =>
-                        setVisualization((prev) => ({ ...prev, showTables: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="showTables">Data Tables</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="showTimeline"
-                      checked={visualization.showTimeline}
-                      onCheckedChange={(checked) =>
-                        setVisualization((prev) => ({ ...prev, showTimeline: checked as boolean }))
-                      }
-                    />
-                    <Label htmlFor="showTimeline">Timeline View</Label>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+          </div>
         </div>
         <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
@@ -286,12 +230,13 @@ export const CreateReportDialog = ({
           </Button>
           <Button
             onClick={() => createReport()}
-            disabled={(!selectedTemplate && !name) || isPending}
+            disabled={!title || isPending}
           >
-            {isPending ? "Creating..." : "Create Report"}
+            {isPending ? "Generating..." : "Generate Report"}
           </Button>
         </div>
       </DialogContent>
     </Dialog>
   );
 };
+
