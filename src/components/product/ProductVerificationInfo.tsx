@@ -4,7 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/types/product";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, ExternalLink, Edit, Trash } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { ProductAuditLog } from "@/components/admin/products/ProductAuditLog";
 import {
@@ -61,7 +61,7 @@ export const ProductVerificationInfo = ({
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -72,7 +72,6 @@ export const ProductVerificationInfo = ({
             Copy URL
           </Button>
 
-          {/* View Records Sheet */}
           <Sheet open={isRecordsOpen} onOpenChange={setIsRecordsOpen}>
             <SheetTrigger asChild>
               <Button
@@ -97,29 +96,26 @@ export const ProductVerificationInfo = ({
             </SheetContent>
           </Sheet>
 
-          {/* Edit and Delete buttons - Only visible to admins */}
           {isAdmin && (
             <>
-              {onEdit && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="flex-1"
-                  onClick={onEdit}
-                >
-                  Edit Product
-                </Button>
-              )}
-              {onDelete && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="flex-1"
-                  onClick={onDelete}
-                >
-                  Delete
-                </Button>
-              )}
+              <Button
+                variant="default"
+                size="sm"
+                className="flex-1"
+                onClick={onEdit}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Edit Product
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1"
+                onClick={onDelete}
+              >
+                <Trash className="h-4 w-4 mr-2" />
+                Delete
+              </Button>
             </>
           )}
         </div>
