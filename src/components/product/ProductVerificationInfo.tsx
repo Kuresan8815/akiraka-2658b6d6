@@ -80,14 +80,14 @@ export const ProductVerificationInfo = ({
                 className="flex-1"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                View Record
+                Update History
               </Button>
             </SheetTrigger>
-            <SheetContent className="w-[90%] sm:w-[600px]">
+            <SheetContent>
               <SheetHeader>
-                <SheetTitle>Product History</SheetTitle>
+                <SheetTitle>Update History</SheetTitle>
                 <SheetDescription>
-                  Complete history of changes made to this product
+                  Changes made to {product.name}
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-6">

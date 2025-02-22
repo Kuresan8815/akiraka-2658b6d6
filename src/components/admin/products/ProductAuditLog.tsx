@@ -29,27 +29,33 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
   }
 
   return (
-    <ScrollArea className="h-[200px] w-full rounded-md border p-4">
-      <div className="space-y-4">
-        <h4 className="text-sm font-medium">Update History</h4>
-        {auditLogs?.map((log) => (
-          <div key={log.id} className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">
+    <ScrollArea className="h-[400px] w-full rounded-md">
+      <div className="space-y-4 pr-4">
+        {auditLogs?.map((log) => {
+          const changes = log.changes;
+          const changedFields = Object.keys(changes.after).filter(
+            (key) => JSON.stringify(changes.after[key]) !== JSON.stringify(changes.before[key])
+          );
+
+          return (
+            <div key={log.id} className="space-y-2">
+              <div className="text-sm text-muted-foreground">
                 {format(new Date(log.created_at), "PPp")}
-              </span>
-              <span className="text-xs text-muted-foreground capitalize">
-                {log.action}
-              </span>
+              </div>
+              <div className="text-sm space-y-1">
+                {changedFields.map((field) => (
+                  <div key={field} className="grid grid-cols-[1fr,auto] gap-2">
+                    <span className="font-medium capitalize">{field.replace(/_/g, " ")}:</span>
+                    <span className="text-muted-foreground">
+                      {String(changes.before[field])} → {String(changes.after[field])}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <Separator className="my-2" />
             </div>
-            <div className="text-xs text-muted-foreground">
-              <pre className="whitespace-pre-wrap">
-                {JSON.stringify(log.changes, null, 2)}
-              </pre>
-            </div>
-            <Separator className="my-2" />
-          </div>
-        ))}
+          );
+        })}
       </div>
     </ScrollArea>
   );
