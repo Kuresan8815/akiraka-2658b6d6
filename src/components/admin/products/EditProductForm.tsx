@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/types/product";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface EditProductFormProps {
   product: Product;
@@ -35,8 +42,11 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       setIsLoading(true);
       console.log("Updating product with data:", formData);
 
+      // Store the previous state for audit log
+      const previousState = { ...product };
+
       // Update the product first
-      const { error: updateError } = await supabase
+      const { error: updateError, data: updatedProduct } = await supabase
         .from("products")
         .update({
           name: formData.name,
@@ -50,33 +60,40 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
           recyclability_percentage: formData.recyclability_percentage,
           updated_at: new Date().toISOString()
         })
-        .eq("id", product.id);
+        .eq("id", product.id)
+        .select()
+        .single();
 
       if (updateError) {
         console.error("Update error:", updateError);
         throw updateError;
       }
 
-      // If update succeeds, try to create audit log entry
-      try {
-        const changes = {
-          before: {
-            ...product,
-            created_at: product.created_at.toString(),
-          },
-          after: formData
-        };
+      // Create audit log entry
+      const changes = {
+        before: {
+          ...previousState,
+          created_at: previousState.created_at?.toString(),
+          updated_at: previousState.updated_at?.toString(),
+        },
+        after: {
+          ...updatedProduct,
+          created_at: updatedProduct.created_at?.toString(),
+          updated_at: updatedProduct.updated_at?.toString(),
+        }
+      };
 
-        await supabase
-          .from("product_audit_logs")
-          .insert({
-            product_id: product.id,
-            action: "update",
-            changes: changes
-          });
-      } catch (auditError) {
-        // Log audit error but don't fail the update
+      const { error: auditError } = await supabase
+        .from("product_audit_logs")
+        .insert({
+          product_id: product.id,
+          action: "update",
+          changes: changes
+        });
+
+      if (auditError) {
         console.warn("Failed to create audit log:", auditError);
+        // Don't throw here as the update was successful
       }
 
       toast({
@@ -118,7 +135,21 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
 
         <div className="space-y-2">
           <Label htmlFor="certification_level">Certification Level</Label>
-          <Input id="certification_level" {...register("certification_level", { required: true })} />
+          <Select 
+            defaultValue={product.certification_level}
+            onValueChange={(value) => {
+              register("certification_level").onChange({ target: { value } });
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select certification level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Bronze">Bronze</SelectItem>
+              <SelectItem value="Silver">Silver</SelectItem>
+              <SelectItem value="Gold">Gold</SelectItem>
+            </SelectContent>
+          </Select>
           {errors.certification_level && <span className="text-red-500 text-sm">This field is required</span>}
         </div>
 
