@@ -4,6 +4,7 @@ import { ProductBasicInfo } from "./product/ProductBasicInfo";
 import { ProductSustainabilityMetrics } from "./product/ProductSustainabilityMetrics";
 import { ProductVerificationInfo } from "./product/ProductVerificationInfo";
 import { Product } from "@/types/product";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ProductDetailsModalProps {
   product: Product;
@@ -34,24 +35,28 @@ export const ProductDetailsModal = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-eco-primary flex justify-between items-center">
-            {product.name}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ProductBasicInfo product={product} certificationColor={certificationColor} />
-          <ProductSustainabilityMetrics product={product} />
-          <ProductVerificationInfo 
-            product={product} 
-            verificationUrl={verificationUrl}
-            isAdmin={isAdmin}
-            onEdit={onEditClick}
-            onDelete={onDeleteClick}
-          />
-        </div>
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0">
+        <ScrollArea className="h-full max-h-[90vh]">
+          <div className="p-6">
+            <DialogHeader>
+              <DialogTitle className="text-xl text-eco-primary flex justify-between items-center">
+                {product.name}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              <ProductBasicInfo product={product} certificationColor={certificationColor} />
+              <ProductSustainabilityMetrics product={product} />
+              <ProductVerificationInfo 
+                product={product} 
+                verificationUrl={verificationUrl}
+                isAdmin={isAdmin}
+                onEdit={onEditClick}
+                onDelete={onDeleteClick}
+              />
+            </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
