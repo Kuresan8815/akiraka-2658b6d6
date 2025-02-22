@@ -614,6 +614,7 @@ export type Database = {
         Row: {
           blockchain_hash: string | null
           blockchain_tx_id: string | null
+          business_id: string | null
           carbon_footprint: number
           category: string | null
           certification_level: string
@@ -633,6 +634,7 @@ export type Database = {
         Insert: {
           blockchain_hash?: string | null
           blockchain_tx_id?: string | null
+          business_id?: string | null
           carbon_footprint: number
           category?: string | null
           certification_level: string
@@ -652,6 +654,7 @@ export type Database = {
         Update: {
           blockchain_hash?: string | null
           blockchain_tx_id?: string | null
+          business_id?: string | null
           carbon_footprint?: number
           category?: string | null
           certification_level?: string
@@ -668,7 +671,22 @@ export type Database = {
           updated_at?: string | null
           water_usage?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "business_product_analytics"
+            referencedColumns: ["business_id"]
+          },
+          {
+            foreignKeyName: "products_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

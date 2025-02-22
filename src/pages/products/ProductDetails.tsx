@@ -43,11 +43,14 @@ export const ProductDetails = () => {
     queryKey: ['business-access', product?.business_id],
     enabled: !!product?.business_id,
     queryFn: async () => {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user?.id) return null;
+
       const { data, error } = await supabase
         .from('business_profiles')
         .select('*')
         .eq('business_id', product?.business_id)
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .eq('user_id', user.user.id)
         .single();
       
       if (error) return null;
@@ -56,9 +59,9 @@ export const ProductDetails = () => {
   });
 
   const handleEdit = async () => {
-    if (!businessAccess) return;
+    if (!businessAccess || !product?.id) return;
     // Navigate to edit product page or show edit modal
-    console.log('Edit product:', product?.id);
+    console.log('Edit product:', product.id);
   };
 
   const handleDelete = async () => {
