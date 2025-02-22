@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -16,9 +15,4 @@ export interface Product {
   blockchain_hash?: string;
   blockchain_tx_id?: string;
   created_at: string;
-  business_id: string;
-  businesses?: {
-    id: string;
-    name: string;
-  };
 }

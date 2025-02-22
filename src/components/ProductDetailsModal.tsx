@@ -8,8 +8,6 @@ import { ProductVerificationInfo } from "./product/ProductVerificationInfo";
 import { Product } from "@/types/product";
 import { Share2, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ProductDetailsModalProps {
   product: Product;
@@ -30,29 +28,6 @@ export const ProductDetailsModal = ({
 }: ProductDetailsModalProps) => {
   const { toast } = useToast();
   
-  // Check if user has admin access to this product's business
-  const { data: businessAccess } = useQuery({
-    queryKey: ['business-access', product?.business_id],
-    enabled: !!product?.business_id,
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('business_profiles')
-        .select('*')
-        .eq('business_id', product.business_id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (error) {
-        console.error('Error checking business access:', error);
-        return null;
-      }
-      return data;
-    },
-  });
-
   if (!product) return null;
 
   const certificationColor = {
@@ -90,8 +65,6 @@ export const ProductDetailsModal = ({
     }
   };
 
-  const hasAdminAccess = isAdmin || !!businessAccess;
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
@@ -120,18 +93,16 @@ export const ProductDetailsModal = ({
         </DialogHeader>
         
         <ScrollArea className="flex-1 pr-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ProductBasicInfo product={product} certificationColor={certificationColor} />
             <ProductSustainabilityMetrics product={product} />
-            <div className="md:col-span-2">
-              <ProductVerificationInfo 
-                product={product} 
-                verificationUrl={verificationUrl}
-                isAdmin={hasAdminAccess}
-                onEdit={onEditClick}
-                onDelete={onDeleteClick}
-              />
-            </div>
+            <ProductVerificationInfo 
+              product={product} 
+              verificationUrl={verificationUrl}
+              isAdmin={isAdmin}
+              onEdit={onEditClick}
+              onDelete={onDeleteClick}
+            />
           </div>
         </ScrollArea>
       </DialogContent>

@@ -15,8 +15,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ProductVerificationInfoProps {
   product: Product;
@@ -36,26 +34,6 @@ export const ProductVerificationInfo = ({
   const { toast } = useToast();
   const [isRecordsOpen, setIsRecordsOpen] = useState(false);
 
-  // Check if user has admin access to this product's business
-  const { data: businessAccess } = useQuery({
-    queryKey: ['business-access', product.business_id],
-    enabled: !!product.business_id,
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user?.id) return null;
-
-      const { data, error } = await supabase
-        .from('business_profiles')
-        .select('*')
-        .eq('business_id', product.business_id)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error) return null;
-      return data;
-    },
-  });
-
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(verificationUrl);
     toast({
@@ -63,8 +41,6 @@ export const ProductVerificationInfo = ({
       description: "Verification URL copied to clipboard",
     });
   };
-
-  const showAdminControls = isAdmin || businessAccess;
 
   return (
     <Card className="col-span-2">
@@ -85,7 +61,7 @@ export const ProductVerificationInfo = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -122,7 +98,7 @@ export const ProductVerificationInfo = ({
           </Sheet>
 
           {/* Edit and Delete buttons - Only visible to admins */}
-          {showAdminControls && (
+          {isAdmin && (
             <>
               {onEdit && (
                 <Button

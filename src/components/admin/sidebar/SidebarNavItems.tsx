@@ -53,12 +53,6 @@ export const SidebarNavItems = ({ adminLevel }: SidebarNavItemsProps) => {
           Business Profile
         </Button>
       </Link>
-      <Link to="/admin/users">
-        <Button variant="ghost" className="w-full justify-start">
-          <Users className="mr-2 h-4 w-4" />
-          Users
-        </Button>
-      </Link>
       <Link to="/admin/products">
         <Button variant="ghost" className="w-full justify-start">
           <Package className="mr-2 h-4 w-4" />
