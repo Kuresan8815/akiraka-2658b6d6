@@ -41,34 +41,34 @@ export const CreateReportDialog = ({
       // Create a report template with ESG focus
       const { data: template, error: templateError } = await supabase
         .from("report_templates")
-        .insert([
-          {
-            business_id: businessId,
-            name: title,
-            description,
-            layout_type: "infographic",
-            theme_colors: ["#10B981", "#3B82F6", "#8B5CF6"],
-            report_type: "esg",
-            visualization_config: visualization,
-            charts_config: [
-              {
-                type: "line",
-                metric: "environmental_impact",
-                title: "Environmental Impact Trend"
-              },
-              {
-                type: "bar",
-                metric: "social_metrics",
-                title: "Social Impact Metrics"
-              },
-              {
-                type: "pie",
-                metric: "governance_distribution",
-                title: "Governance Score Distribution"
-              }
-            ]
-          },
-        ])
+        .insert({
+          business_id: businessId,
+          name: title,
+          description,
+          layout_type: "infographic",
+          theme_colors: ["#10B981", "#3B82F6", "#8B5CF6"],
+          report_type: "combined", // Using 'combined' instead of 'esg'
+          visualization_config: visualization,
+          charts_config: [
+            {
+              type: "line",
+              metric: "environmental_impact",
+              title: "Environmental Impact Trend"
+            },
+            {
+              type: "bar",
+              metric: "social_metrics",
+              title: "Social Impact Metrics"
+            },
+            {
+              type: "pie",
+              metric: "governance_distribution",
+              title: "Governance Score Distribution"
+            }
+          ],
+          config: {}, // Required field
+          is_active: true
+        })
         .select()
         .single();
 
@@ -77,22 +77,20 @@ export const CreateReportDialog = ({
       // Generate the report
       const { data: report, error: reportError } = await supabase
         .from("generated_reports")
-        .insert([
-          {
-            business_id: businessId,
-            template_id: template.id,
-            report_data: {},
-            status: "pending",
-            date_range: {
-              start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
-              end: new Date().toISOString(),
-            },
-            metadata: {
-              reportType: "comprehensive_esg",
-              visualizationPreferences: visualization
-            }
+        .insert({
+          business_id: businessId,
+          template_id: template.id,
+          report_data: {},
+          status: "pending",
+          date_range: {
+            start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+            end: new Date().toISOString(),
           },
-        ])
+          metadata: {
+            reportType: "comprehensive_esg",
+            visualizationPreferences: visualization
+          }
+        })
         .select()
         .single();
 
@@ -239,4 +237,3 @@ export const CreateReportDialog = ({
     </Dialog>
   );
 };
-
