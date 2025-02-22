@@ -24,6 +24,16 @@ interface AuditLog {
   blockchain_tx_id: string | null;
 }
 
+interface RawAuditLog {
+  id: string;
+  product_id: string;
+  changes: string | Record<string, any>;
+  created_at: string;
+  created_by: string | null;
+  action: string;
+  blockchain_tx_id: string | null;
+}
+
 export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
   const { data: auditLogs, isLoading } = useQuery({
     queryKey: ["product-audit", productId],
@@ -35,7 +45,14 @@ export const ProductAuditLog = ({ productId }: ProductAuditLogProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data as AuditLog[];
+      
+      // Transform the raw data into the correct type
+      return (data as RawAuditLog[]).map(log => ({
+        ...log,
+        changes: typeof log.changes === 'string' 
+          ? JSON.parse(log.changes) 
+          : log.changes
+      })) as AuditLog[];
     },
   });
 
