@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProductDetailsModal } from '@/components/ProductDetailsModal';
 import { useQuery } from '@tanstack/react-query';
@@ -12,18 +12,24 @@ export const ProductDetails = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  // Fetch product details
   const { data: product } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          businesses (
+            id,
+            name
+          )
+        `)
         .eq('id', id)
         .single();
       
       if (error) throw error;
       
-      // Ensure certification_level is one of the allowed values
       if (data && !['Bronze', 'Silver', 'Gold'].includes(data.certification_level)) {
         data.certification_level = 'Bronze';
       }
@@ -32,13 +38,16 @@ export const ProductDetails = () => {
     },
   });
 
-  // Check if user is admin
-  const { data: adminUser } = useQuery({
-    queryKey: ['adminCheck'],
+  // Check if user has admin access to this product's business
+  const { data: businessAccess } = useQuery({
+    queryKey: ['business-access', product?.business_id],
+    enabled: !!product?.business_id,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('admin_users')
+        .from('business_profiles')
         .select('*')
+        .eq('business_id', product?.business_id)
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
       
       if (error) return null;
@@ -46,14 +55,14 @@ export const ProductDetails = () => {
     },
   });
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
+    if (!businessAccess) return;
     // Navigate to edit product page or show edit modal
     console.log('Edit product:', product?.id);
-    // You can implement the edit functionality here
   };
 
   const handleDelete = async () => {
-    if (!product?.id) return;
+    if (!businessAccess || !product?.id) return;
 
     const confirmDelete = window.confirm('Are you sure you want to delete this product?');
     if (!confirmDelete) return;
@@ -62,7 +71,8 @@ export const ProductDetails = () => {
       const { error } = await supabase
         .from('products')
         .delete()
-        .eq('id', product.id);
+        .eq('id', product.id)
+        .eq('business_id', product.business_id); // Extra safety check
 
       if (error) throw error;
 
@@ -90,7 +100,7 @@ export const ProductDetails = () => {
         product={product} 
         isOpen={true} 
         onClose={() => navigate(-1)}
-        isAdmin={!!adminUser}
+        isAdmin={!!businessAccess}
         onEditClick={handleEdit}
         onDeleteClick={handleDelete}
       />
