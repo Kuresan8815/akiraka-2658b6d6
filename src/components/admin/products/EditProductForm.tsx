@@ -40,7 +40,23 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
   const onSubmit = async (formData: any) => {
     try {
       setIsLoading(true);
-      console.log("Updating product with data:", formData);
+      console.log("Starting product update with data:", formData);
+
+      // Convert numeric strings to numbers
+      const updateData = {
+        name: formData.name,
+        category: formData.category,
+        material_composition: formData.material_composition,
+        certification_level: formData.certification_level,
+        carbon_footprint: Number(formData.carbon_footprint),
+        water_usage: Number(formData.water_usage),
+        origin: formData.origin,
+        sustainability_score: Number(formData.sustainability_score),
+        recyclability_percentage: Number(formData.recyclability_percentage),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log("Formatted update data:", updateData);
 
       // Store the previous state for audit log
       const previousState = { ...product };
@@ -48,28 +64,23 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       // Update the product first
       const { error: updateError, data: updatedProduct } = await supabase
         .from("products")
-        .update({
-          name: formData.name,
-          category: formData.category,
-          material_composition: formData.material_composition,
-          certification_level: formData.certification_level,
-          carbon_footprint: formData.carbon_footprint,
-          water_usage: formData.water_usage,
-          origin: formData.origin,
-          sustainability_score: formData.sustainability_score,
-          recyclability_percentage: formData.recyclability_percentage,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq("id", product.id)
         .select()
         .single();
 
       if (updateError) {
-        console.error("Update error:", updateError);
+        console.error("Update error details:", updateError);
         throw updateError;
       }
 
-      // Create audit log entry with proper type handling
+      if (!updatedProduct) {
+        throw new Error("No data returned after update");
+      }
+
+      console.log("Product updated successfully:", updatedProduct);
+
+      // Create audit log entry
       const changes = {
         before: {
           ...previousState,
@@ -83,6 +94,8 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         }
       };
 
+      console.log("Creating audit log with changes:", changes);
+
       const { error: auditError } = await supabase
         .from("product_audit_logs")
         .insert({
@@ -92,8 +105,9 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         });
 
       if (auditError) {
-        console.warn("Failed to create audit log:", auditError);
-        // Don't throw here as the update was successful
+        console.warn("Audit log creation error:", auditError);
+      } else {
+        console.log("Audit log created successfully");
       }
 
       toast({
@@ -103,10 +117,10 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
 
       onSuccess();
     } catch (error) {
-      console.error("Error updating product:", error);
+      console.error("Full error details:", error);
       toast({
         title: "Error",
-        description: "Failed to update product. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update product. Please try again.",
         variant: "destructive",
       });
     } finally {
