@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import * as pdfjsLib from 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.0.379/build/pdf.min.mjs';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -75,12 +76,35 @@ serve(async (req) => {
       generated_at: new Date().toISOString(),
     };
 
-    // Update report with generated data
+    // Generate PDF for the report
+    const pdfBlob = await generatePDF(reportData);
+    
+    // Upload PDF to Supabase Storage
+    const { data: fileData, error: uploadError } = await supabase
+      .storage
+      .from('reports')
+      .upload(`${business_id}/${report_id}.pdf`, pdfBlob, {
+        contentType: 'application/pdf',
+        upsert: true
+      });
+
+    if (uploadError) throw uploadError;
+
+    // Get the public URL for the uploaded file
+    const { data: { publicUrl } } = supabase
+      .storage
+      .from('reports')
+      .getPublicUrl(`${business_id}/${report_id}.pdf`);
+
+    // Update report with generated data and PDF URL
     const { error: updateError } = await supabase
       .from('generated_reports')
       .update({
         status: 'completed',
         report_data: reportData,
+        pdf_url: publicUrl,
+        file_size: pdfBlob.size,
+        page_count: await getPageCount(pdfBlob)
       })
       .eq('id', report_id);
 
@@ -97,6 +121,47 @@ serve(async (req) => {
     });
   }
 });
+
+async function generatePDF(reportData: any) {
+  // In a real implementation, you would use a PDF library to generate the PDF
+  // For this example, we'll create a simple PDF with the report data
+  const { PDFDocument, rgb } = await import('https://cdn.skypack.dev/@pdf-lib/standard@^0.8.1');
+  
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
+
+  // Add content to PDF
+  page.drawText('ESG Performance Report', {
+    x: 50,
+    y: height - 50,
+    size: 24
+  });
+
+  // Add executive summary
+  page.drawText('Executive Summary', {
+    x: 50,
+    y: height - 100,
+    size: 16
+  });
+
+  page.drawText(reportData.executive_summary.overview, {
+    x: 50,
+    y: height - 150,
+    size: 12,
+    maxWidth: width - 100
+  });
+
+  // Save the PDF
+  const pdfBytes = await pdfDoc.save();
+  return new Blob([pdfBytes], { type: 'application/pdf' });
+}
+
+async function getPageCount(pdfBlob: Blob): Promise<number> {
+  const arrayBuffer = await pdfBlob.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  return pdf.numPages;
+}
 
 function generateExecutiveSummary(business: any, metrics: any) {
   // Generate a comprehensive summary based on the metrics
