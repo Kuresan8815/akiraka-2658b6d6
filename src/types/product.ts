@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -15,4 +16,5 @@ export interface Product {
   blockchain_hash?: string;
   blockchain_tx_id?: string;
   created_at: string;
+  updated_at?: string;  // Added this field as optional since it might not always be present
 }

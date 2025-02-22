@@ -69,17 +69,17 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         throw updateError;
       }
 
-      // Create audit log entry
+      // Create audit log entry with proper type handling
       const changes = {
         before: {
           ...previousState,
-          created_at: previousState.created_at?.toString(),
-          updated_at: previousState.updated_at?.toString(),
+          created_at: previousState.created_at,
+          updated_at: previousState.updated_at || null,
         },
         after: {
           ...updatedProduct,
-          created_at: updatedProduct.created_at?.toString(),
-          updated_at: updatedProduct.updated_at?.toString(),
+          created_at: updatedProduct.created_at,
+          updated_at: updatedProduct.updated_at || null,
         }
       };
 
