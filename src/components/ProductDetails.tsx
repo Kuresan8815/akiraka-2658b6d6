@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,6 +18,7 @@ const DEMO_PRODUCT: Product = {
   qr_code_id: "demo",
   sustainability_score: 85,
   created_at: new Date().toISOString(),
+  business_id: "00000000-0000-0000-0000-000000000000", // Added missing business_id
 };
 
 interface ProductDetailsProps {
