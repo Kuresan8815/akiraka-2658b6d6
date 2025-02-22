@@ -42,6 +42,12 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
       setIsLoading(true);
       console.log("Starting product update with data:", formData);
 
+      // Check authentication status
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated. Please log in.");
+      }
+
       // Convert numeric strings to numbers
       const updateData = {
         name: formData.name,
@@ -52,8 +58,7 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         water_usage: Number(formData.water_usage),
         origin: formData.origin,
         sustainability_score: Number(formData.sustainability_score),
-        recyclability_percentage: Number(formData.recyclability_percentage),
-        updated_at: new Date().toISOString()
+        recyclability_percentage: Number(formData.recyclability_percentage)
       };
 
       console.log("Formatted update data:", updateData);
@@ -67,31 +72,23 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
         .update(updateData)
         .eq("id", product.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (updateError) {
         console.error("Update error details:", updateError);
-        throw updateError;
+        throw new Error(updateError.message);
       }
 
       if (!updatedProduct) {
-        throw new Error("No data returned after update");
+        throw new Error("Product not found or no changes made");
       }
 
       console.log("Product updated successfully:", updatedProduct);
 
       // Create audit log entry
       const changes = {
-        before: {
-          ...previousState,
-          created_at: previousState.created_at,
-          updated_at: previousState.updated_at || null,
-        },
-        after: {
-          ...updatedProduct,
-          created_at: updatedProduct.created_at,
-          updated_at: updatedProduct.updated_at || null,
-        }
+        before: previousState,
+        after: updatedProduct
       };
 
       console.log("Creating audit log with changes:", changes);
