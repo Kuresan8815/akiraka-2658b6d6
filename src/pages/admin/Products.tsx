@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +42,7 @@ export const AdminProducts = () => {
     try {
       if (!selectedProduct) return;
 
+      // Create audit log entry first
       const { error: auditError } = await supabase
         .from("product_audit_logs")
         .insert({
@@ -51,6 +53,7 @@ export const AdminProducts = () => {
 
       if (auditError) throw auditError;
 
+      // Then delete the product
       const { error } = await supabase
         .from('products')
         .delete()
@@ -76,49 +79,13 @@ export const AdminProducts = () => {
     }
   };
 
-  const handleUpdateSuccess = async () => {
-    try {
-      if (!selectedProduct) return;
-
-      await queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', selectedProduct.id)
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (!data) {
-        throw new Error('Product not found after update');
-      }
-
-      const updatedProduct = data as Product;
-      setSelectedProduct(updatedProduct);
-      
-      queryClient.setQueryData(['admin-products'], (oldData: Product[] | undefined) => {
-        if (!oldData) return [updatedProduct];
-        return oldData.map(product => 
-          product.id === updatedProduct.id ? updatedProduct : product
-        );
-      });
-
-      setIsEditDialogOpen(false);
-      setIsViewDialogOpen(true);
-      
-      toast({
-        title: "Success",
-        description: "Product updated successfully",
-      });
-    } catch (error) {
-      console.error("Error refreshing product data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh product data",
-        variant: "destructive",
-      });
-    }
+  const handleUpdateSuccess = () => {
+    setIsEditDialogOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+    toast({
+      title: "Success",
+      description: "Product updated successfully",
+    });
   };
 
   const filteredProducts = products?.filter(product => {
