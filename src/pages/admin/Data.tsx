@@ -23,9 +23,14 @@ export const AdminData = () => {
         .from("business_profiles")
         .select("business_id")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching business profile:", error);
+        throw error;
+      }
+
+      console.log("Business profile:", data);
       return data;
     },
   });
@@ -34,8 +39,31 @@ export const AdminData = () => {
   const { data: activeMetrics } = useQuery({
     queryKey: ["active-metrics", businessProfile?.business_id, activeTab],
     queryFn: async () => {
-      if (!businessProfile?.business_id) return null;
+      if (!businessProfile?.business_id) {
+        console.log("No business ID available");
+        return null;
+      }
 
+      console.log("Fetching metrics for business:", businessProfile.business_id, "category:", activeTab);
+
+      // First, get widgets of the selected category
+      const { data: widgets, error: widgetsError } = await supabase
+        .from("widgets")
+        .select("id")
+        .eq("category", activeTab)
+        .eq("is_active", true);
+
+      if (widgetsError) {
+        console.error("Error fetching widgets:", widgetsError);
+        throw widgetsError;
+      }
+
+      if (!widgets?.length) {
+        console.log("No widgets found for category:", activeTab);
+        return [];
+      }
+
+      // Then get business widgets
       const { data, error } = await supabase
         .from("business_widgets")
         .select(`
@@ -52,9 +80,14 @@ export const AdminData = () => {
         `)
         .eq("business_id", businessProfile.business_id)
         .eq("is_active", true)
-        .eq("widget.category", activeTab);
+        .in("widget_id", widgets.map(w => w.id));
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching business widgets:", error);
+        throw error;
+      }
+
+      console.log("Fetched business widgets:", data);
 
       // Transform the data to match BusinessWidget type
       const transformedData = (data || []).map(item => ({
@@ -63,6 +96,8 @@ export const AdminData = () => {
         position: item.position,
         widget: item.widget
       })) as BusinessWidget[];
+
+      console.log("Transformed business widgets:", transformedData);
 
       return transformedData;
     },
@@ -91,7 +126,7 @@ export const AdminData = () => {
           <Card className="p-6">
             <DataEntryTable 
               category="environmental" 
-              activeMetrics={activeMetrics?.filter(m => m.widget?.category === "environmental")}
+              activeMetrics={activeMetrics}
               businessId={businessProfile?.business_id}
             />
           </Card>
@@ -101,7 +136,7 @@ export const AdminData = () => {
           <Card className="p-6">
             <DataEntryTable 
               category="social" 
-              activeMetrics={activeMetrics?.filter(m => m.widget?.category === "social")}
+              activeMetrics={activeMetrics}
               businessId={businessProfile?.business_id}
             />
           </Card>
@@ -111,7 +146,7 @@ export const AdminData = () => {
           <Card className="p-6">
             <DataEntryTable 
               category="governance" 
-              activeMetrics={activeMetrics?.filter(m => m.widget?.category === "governance")}
+              activeMetrics={activeMetrics}
               businessId={businessProfile?.business_id}
             />
           </Card>
