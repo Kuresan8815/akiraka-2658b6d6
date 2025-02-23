@@ -1,3 +1,4 @@
+
 import { BusinessWidget } from "@/types/widgets";
 import { MetricCard } from "./MetricCard";
 
@@ -24,6 +25,14 @@ export const WidgetMetricsGrid = ({
   const validBusinessWidgets = businessWidgets.filter(
     (bw): bw is BusinessWidget => bw !== null && bw.widget !== null
   );
+
+  if (validBusinessWidgets.length === 0) {
+    return (
+      <div className="text-center p-6 bg-gray-50 rounded-lg">
+        <p className="text-gray-500">No active metrics found. Add metrics from the "Add Metrics" tab.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,8 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
   const { data: businessWidgets, refetch } = useQuery({
     queryKey: ["business-widgets", businessId, selectedCategory],
     queryFn: async () => {
+      console.log("Fetching business widgets for:", { businessId, selectedCategory });
+      
       const query = supabase
         .from("business_widgets")
         .select(`
@@ -26,7 +29,7 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
         .eq("is_active", true);
 
       if (selectedCategory) {
-        // First get the widgets of the selected category
+        // Get the widgets of the selected category
         const { data: categoryWidgets } = await supabase
           .from("widgets")
           .select("id")
@@ -34,16 +37,21 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
           .eq("is_active", true);
 
         if (categoryWidgets && categoryWidgets.length > 0) {
-          // Then filter business_widgets by these widget IDs
           query.in("widget_id", categoryWidgets.map(w => w.id));
         }
       }
 
       const { data, error } = await query.order("position");
+      
+      if (error) {
+        console.error("Error fetching business widgets:", error);
+        throw error;
+      }
 
-      if (error) throw error;
+      console.log("Fetched business widgets:", data);
       return data as BusinessWidget[];
     },
+    enabled: !!businessId,
   });
 
   const updateMetric = async (widgetId: string) => {
