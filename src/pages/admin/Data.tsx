@@ -7,6 +7,7 @@ import { APIIntegration } from "@/components/admin/data/APIIntegration";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
+import { BusinessWidget } from "@/types/widgets";
 
 export const AdminData = () => {
   const [activeTab, setActiveTab] = useState<'environmental' | 'social' | 'governance'>('environmental');
@@ -39,6 +40,8 @@ export const AdminData = () => {
         .from("business_widgets")
         .select(`
           id,
+          widget_id,
+          position,
           widget:widgets (
             id,
             name,
@@ -52,7 +55,16 @@ export const AdminData = () => {
         .eq("widget.category", activeTab);
 
       if (error) throw error;
-      return data;
+
+      // Transform the data to match BusinessWidget type
+      const transformedData = (data || []).map(item => ({
+        id: item.id,
+        widget_id: item.widget_id,
+        position: item.position,
+        widget: item.widget
+      })) as BusinessWidget[];
+
+      return transformedData;
     },
     enabled: !!businessProfile?.business_id,
   });
