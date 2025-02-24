@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Save } from "lucide-react";
+import { Save, Link } from "lucide-react";
+import { BlockchainVerification } from "./BlockchainVerification";
 
 interface DataEntryTableProps {
   category: "environmental" | "social" | "governance";
@@ -16,6 +17,7 @@ interface DataEntryTableProps {
 
 export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntryTableProps) => {
   const [metrics, setMetrics] = useState<Record<string, string>>({});
+  const [savedMetrics, setSavedMetrics] = useState<Record<string, any>>({});
   const { toast } = useToast();
 
   if (!businessId) {
@@ -46,15 +48,23 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
     try {
       if (!metrics[widgetId]) return;
 
-      const { error } = await supabase
+      const { data: metricData, error } = await supabase
         .from("widget_metrics")
         .insert({
           business_id: businessId,
           widget_id: widgetId,
           value: parseFloat(metrics[widgetId])
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Save the metric data for blockchain verification
+      setSavedMetrics(prev => ({
+        ...prev,
+        [widgetId]: metricData
+      }));
 
       // Clear the input after successful save
       setMetrics(prev => ({
@@ -102,6 +112,11 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
               <Save className="h-4 w-4 mr-2" />
               Save Value
             </Button>
+            {savedMetrics[metric.widget?.id] && (
+              <div className="mt-2 border-t pt-2">
+                <BlockchainVerification metric={savedMetrics[metric.widget?.id]} />
+              </div>
+            )}
           </div>
         </Card>
       ))}
