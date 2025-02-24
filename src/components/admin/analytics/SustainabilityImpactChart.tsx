@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,179 +13,89 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { AlertCircle } from "lucide-react";
 
 interface SustainabilityImpactChartProps {
   dateRange: DateRange | undefined;
-}
-
-interface SustainabilityMetric {
-  year: string;
-  greenhouseEmissions: number;
-  energyConsumption: number;
-  waterConsumption: number;
-  landUse: number;
-  wasteManagement: number;
 }
 
 export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactChartProps) => {
   const { data: impactData, isLoading } = useQuery({
     queryKey: ["sustainability-impact", dateRange],
     queryFn: async () => {
-      // In a real application, this would fetch from your Supabase database
-      // For now, we'll use dummy data to demonstrate the functionality
-      return [
-        {
-          year: "2020",
-          greenhouseEmissions: 15000,  // Starting high, will decrease (improvement)
-          energyConsumption: 18000,    // Starting low, will increase (challenge)
-          waterConsumption: 35000,     // Starting high, will decrease (improvement)
-          landUse: 1200,               // Relatively stable with small variations
-          wasteManagement: 8000,       // Starting high, will decrease (improvement)
-        },
-        {
-          year: "2021",
-          greenhouseEmissions: 13500,
-          energyConsumption: 20000,
-          waterConsumption: 32000,
-          landUse: 1150,
-          wasteManagement: 7200,
-        },
-        {
-          year: "2022",
-          greenhouseEmissions: 11000,
-          energyConsumption: 23000,
-          waterConsumption: 28000,
-          landUse: 1180,
-          wasteManagement: 6100,
-        },
-        {
-          year: "2023",
-          greenhouseEmissions: 9500,
-          energyConsumption: 25000,
-          waterConsumption: 26000,
-          landUse: 1100,
-          wasteManagement: 5300,
-        },
-        {
-          year: "2024",
-          greenhouseEmissions: 8000,    // Showing improvement
-          energyConsumption: 28000,     // Showing challenge area
-          waterConsumption: 24000,      // Showing improvement
-          landUse: 1160,                // Slight variation
-          wasteManagement: 4500,        // Showing improvement
-        }
-      ];
+      if (!dateRange?.from || !dateRange?.to) return null;
+
+      const { data, error } = await supabase
+        .from('sustainability_metrics')
+        .select('*')
+        .gte('recorded_at', dateRange.from.toISOString())
+        .lte('recorded_at', dateRange.to.toISOString())
+        .order('recorded_at');
+
+      if (error) throw error;
+      return data;
     },
+    enabled: !!dateRange?.from && !!dateRange?.to,
   });
-
-  const formatTooltipValue = (value: number, name: string) => {
-    switch (name) {
-      case "greenhouseEmissions":
-        return `${value} kg CO₂e`;
-      case "energyConsumption":
-        return `${value} kWh`;
-      case "waterConsumption":
-        return `${value} L`;
-      case "landUse":
-        return `${value} m²`;
-      case "wasteManagement":
-        return `${value} kg`;
-      default:
-        return value;
-    }
-  };
-
-  const getMetricName = (key: string) => {
-    const names: { [key: string]: string } = {
-      greenhouseEmissions: "Greenhouse Emissions",
-      energyConsumption: "Energy Consumption",
-      waterConsumption: "Water Consumption",
-      landUse: "Land Use",
-      wasteManagement: "Waste Management",
-    };
-    return names[key] || key;
-  };
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
-          <p className="font-bold text-eco-primary">{`Year: ${label}`}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-sm">
-              <span style={{ color: entry.color }}>
-                {getMetricName(entry.dataKey)}: {formatTooltipValue(entry.value, entry.dataKey)}
-              </span>
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg text-eco-primary">Yearly Sustainability Impact</CardTitle>
+        <CardTitle className="text-lg text-eco-primary">Sustainability Impact</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[400px]">
           {isLoading ? (
-            <p>Loading impact data...</p>
+            <div className="flex items-center justify-center h-full">
+              <p>Loading impact data...</p>
+            </div>
+          ) : !impactData || impactData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <AlertCircle className="h-12 w-12 text-gray-400 mb-2" />
+              <p className="text-gray-500 font-medium">No sustainability data available</p>
+              <p className="text-sm text-gray-400">Start tracking sustainability metrics to see your impact</p>
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={impactData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="year" />
+                <XAxis 
+                  dataKey="recorded_at"
+                  tickFormatter={(value) => {
+                    if (!value) return '';
+                    return new Date(value).toLocaleDateString('en-US', { 
+                      month: 'short',
+                      year: 'numeric'
+                    });
+                  }}
+                />
                 <YAxis />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip
+                  labelFormatter={(label) => {
+                    if (!label) return '';
+                    return new Date(label).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    });
+                  }}
+                />
                 <Legend />
-                <Line 
-                  type="monotone"
-                  dataKey="greenhouseEmissions" 
-                  name="Greenhouse Emissions (kg CO₂e)" 
-                  stroke="#2F5233" 
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone"
-                  dataKey="energyConsumption" 
-                  name="Energy Consumption (kWh)" 
-                  stroke="#4F7942" 
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone"
-                  dataKey="waterConsumption" 
-                  name="Water Consumption (L)" 
-                  stroke="#6B8E23" 
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone"
-                  dataKey="landUse" 
-                  name="Land Use (m²)" 
-                  stroke="#8B4513" 
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-                <Line 
-                  type="monotone"
-                  dataKey="wasteManagement" 
-                  name="Waste Management (kg)" 
-                  stroke="#A0522D" 
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
+                {impactData[0] && Object.keys(impactData[0])
+                  .filter(key => !['id', 'recorded_at', 'created_at', 'updated_at', 'business_id'].includes(key))
+                  .map((metric, index) => (
+                    <Line
+                      key={metric}
+                      type="monotone"
+                      dataKey={metric}
+                      name={metric.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                      stroke={`hsl(${index * 40}, 70%, 50%)`}
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                  ))
+                }
               </LineChart>
             </ResponsiveContainer>
           )}

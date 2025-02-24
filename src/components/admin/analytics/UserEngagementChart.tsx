@@ -1,6 +1,8 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LineChart,
   Line,
@@ -11,6 +13,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { AlertCircle } from "lucide-react";
 
 interface UserEngagementChartProps {
   dateRange: DateRange | undefined;
@@ -20,21 +23,13 @@ export const UserEngagementChart = ({ dateRange }: UserEngagementChartProps) => 
   const { data: engagementData, isLoading } = useQuery({
     queryKey: ["user-engagement", dateRange],
     queryFn: async () => {
-      // Return dummy data showing projected growth
-      return [
-        { month: "Jan", currentYear: 1200, projectedGrowth: 1300 },
-        { month: "Feb", currentYear: 1400, projectedGrowth: 1600 },
-        { month: "Mar", currentYear: 1800, projectedGrowth: 2000 },
-        { month: "Apr", currentYear: 2200, projectedGrowth: 2500 },
-        { month: "May", currentYear: 2600, projectedGrowth: 3000 },
-        { month: "Jun", currentYear: 3000, projectedGrowth: 3600 },
-        { month: "Jul", currentYear: 3400, projectedGrowth: 4200 },
-        { month: "Aug", currentYear: 3800, projectedGrowth: 4800 },
-        { month: "Sep", currentYear: 4200, projectedGrowth: 5400 },
-        { month: "Oct", currentYear: 4600, projectedGrowth: 6000 },
-        { month: "Nov", currentYear: 5000, projectedGrowth: 6600 },
-        { month: "Dec", currentYear: 5400, projectedGrowth: 7200 }
-      ];
+      const { data, error } = await supabase
+        .from('monthly_scanning_activity')
+        .select('*')
+        .order('month');
+
+      if (error) throw error;
+      return data;
     },
   });
 
@@ -46,29 +41,43 @@ export const UserEngagementChart = ({ dateRange }: UserEngagementChartProps) => 
       <CardContent>
         <div className="h-[300px]">
           {isLoading ? (
-            <p>Loading engagement data...</p>
+            <div className="flex items-center justify-center h-full">
+              <p>Loading engagement data...</p>
+            </div>
+          ) : !engagementData || engagementData.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <AlertCircle className="h-12 w-12 text-gray-400 mb-2" />
+              <p className="text-gray-500 font-medium">No engagement data available</p>
+              <p className="text-sm text-gray-400">Add products and start tracking user engagement</p>
+            </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={engagementData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis 
+                  dataKey="month"
+                  tickFormatter={(value) => {
+                    if (!value) return '';
+                    return new Date(value).toLocaleDateString('en-US', { month: 'short' });
+                  }}
+                />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(label) => {
+                    if (!label) return '';
+                    return new Date(label).toLocaleDateString('en-US', {
+                      month: 'long',
+                      year: 'numeric'
+                    });
+                  }}
+                />
                 <Legend />
                 <Line
                   type="monotone"
-                  dataKey="currentYear"
-                  name="Current Year"
+                  dataKey="scan_count"
+                  name="Scans"
                   stroke="#2F5233"
                   strokeWidth={2}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="projectedGrowth"
-                  name="Projected Growth"
-                  stroke="#4F7942"
-                  strokeWidth={2}
-                  strokeDasharray="5 5"
                 />
               </LineChart>
             </ResponsiveContainer>
