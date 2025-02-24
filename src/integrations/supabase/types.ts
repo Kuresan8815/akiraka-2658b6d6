@@ -245,6 +245,36 @@ export type Database = {
           },
         ]
       }
+      business_widgets_backup: {
+        Row: {
+          business_id: string | null
+          created_at: string | null
+          id: string | null
+          is_active: boolean | null
+          position: number | null
+          updated_at: string | null
+          widget_id: string | null
+        }
+        Insert: {
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          position?: number | null
+          updated_at?: string | null
+          widget_id?: string | null
+        }
+        Update: {
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          position?: number | null
+          updated_at?: string | null
+          widget_id?: string | null
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           activities: string[] | null
@@ -1280,6 +1310,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      widget_metrics_backup: {
+        Row: {
+          blockchain_hash: string | null
+          blockchain_tx_id: string | null
+          business_id: string | null
+          created_at: string | null
+          id: string | null
+          recorded_at: string | null
+          tezos_block_level: number | null
+          tezos_contract_address: string | null
+          tezos_operation_hash: string | null
+          updated_at: string | null
+          value: number | null
+          widget_id: string | null
+        }
+        Insert: {
+          blockchain_hash?: string | null
+          blockchain_tx_id?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          recorded_at?: string | null
+          tezos_block_level?: number | null
+          tezos_contract_address?: string | null
+          tezos_operation_hash?: string | null
+          updated_at?: string | null
+          value?: number | null
+          widget_id?: string | null
+        }
+        Update: {
+          blockchain_hash?: string | null
+          blockchain_tx_id?: string | null
+          business_id?: string | null
+          created_at?: string | null
+          id?: string | null
+          recorded_at?: string | null
+          tezos_block_level?: number | null
+          tezos_contract_address?: string | null
+          tezos_operation_hash?: string | null
+          updated_at?: string | null
+          value?: number | null
+          widget_id?: string | null
+        }
+        Relationships: []
       }
       widgets: {
         Row: {
