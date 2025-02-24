@@ -57,7 +57,7 @@ export const AdminData = () => {
 
       console.log("Fetching metrics for business:", businessProfile.business_id, "category:", activeTab);
 
-      // First, get active business widgets of the selected category
+      // Get active business widgets with their associated widget information
       const { data, error } = await supabase
         .from("business_widgets")
         .select(`
@@ -70,12 +70,13 @@ export const AdminData = () => {
             name,
             description,
             category,
-            unit
+            unit,
+            metric_type
           )
         `)
         .eq("business_id", businessProfile.business_id)
         .eq("is_active", true)
-        .eq("widget.category", activeTab);
+        .eq("widgets.category", activeTab);
 
       if (error) {
         console.error("Error fetching business widgets:", error);
