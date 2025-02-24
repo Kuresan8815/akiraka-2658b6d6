@@ -19,10 +19,14 @@ export const AdminData = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user?.id) return null;
 
+      // Get the first active business profile for this user
       const { data, error } = await supabase
         .from("business_profiles")
-        .select("business_id")
+        .select("*")
         .eq("user_id", session.user.id)
+        .eq("role", "admin")
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {
@@ -46,30 +50,14 @@ export const AdminData = () => {
 
       console.log("Fetching metrics for business:", businessProfile.business_id, "category:", activeTab);
 
-      // First, get widgets of the selected category
-      const { data: widgets, error: widgetsError } = await supabase
-        .from("widgets")
-        .select("id")
-        .eq("category", activeTab)
-        .eq("is_active", true);
-
-      if (widgetsError) {
-        console.error("Error fetching widgets:", widgetsError);
-        throw widgetsError;
-      }
-
-      if (!widgets?.length) {
-        console.log("No widgets found for category:", activeTab);
-        return [];
-      }
-
-      // Then get business widgets
+      // First, get active business widgets of the selected category
       const { data, error } = await supabase
         .from("business_widgets")
         .select(`
           id,
           widget_id,
           position,
+          is_active,
           widget:widgets (
             id,
             name,
@@ -80,7 +68,7 @@ export const AdminData = () => {
         `)
         .eq("business_id", businessProfile.business_id)
         .eq("is_active", true)
-        .in("widget_id", widgets.map(w => w.id));
+        .eq("widget.category", activeTab);
 
       if (error) {
         console.error("Error fetching business widgets:", error);
@@ -90,15 +78,16 @@ export const AdminData = () => {
       console.log("Fetched business widgets:", data);
 
       // Transform the data to match BusinessWidget type
-      const transformedData = (data || []).map(item => ({
-        id: item.id,
-        widget_id: item.widget_id,
-        position: item.position,
-        widget: item.widget
-      })) as BusinessWidget[];
+      const transformedData = (data || [])
+        .filter(item => item.widget !== null) // Filter out any null widgets
+        .map(item => ({
+          id: item.id,
+          widget_id: item.widget_id,
+          position: item.position,
+          widget: item.widget
+        })) as BusinessWidget[];
 
       console.log("Transformed business widgets:", transformedData);
-
       return transformedData;
     },
     enabled: !!businessProfile?.business_id,

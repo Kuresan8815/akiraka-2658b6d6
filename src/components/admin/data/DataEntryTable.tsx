@@ -18,6 +18,14 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
   const [metrics, setMetrics] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
+  if (!businessId) {
+    return (
+      <div className="text-center p-6">
+        <p className="text-gray-500">No business profile selected.</p>
+      </div>
+    );
+  }
+
   if (!activeMetrics || activeMetrics.length === 0) {
     return (
       <div className="text-center p-6">
@@ -36,7 +44,7 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
 
   const handleSaveMetric = async (widgetId: string) => {
     try {
-      if (!businessId || !metrics[widgetId]) return;
+      if (!metrics[widgetId]) return;
 
       const { error } = await supabase
         .from("widget_metrics")
@@ -48,6 +56,7 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
 
       if (error) throw error;
 
+      // Clear the input after successful save
       setMetrics(prev => ({
         ...prev,
         [widgetId]: ""
