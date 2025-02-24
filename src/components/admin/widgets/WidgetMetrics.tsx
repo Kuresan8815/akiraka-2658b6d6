@@ -97,7 +97,7 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
         .eq("widget_id", widgetId);
 
       refetch();
-      queryClient.invalidateQueries(["active-metrics"]);
+      queryClient.invalidateQueries({ queryKey: ["active-metrics"] });
 
       toast({
         title: "Success",
@@ -135,4 +135,3 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
     </div>
   );
 };
-

@@ -29,8 +29,8 @@ export const WidgetCard = ({ widget, onAdd, businessId }: WidgetCardProps) => {
       if (error) throw error;
 
       // Refresh queries to update the UI
-      queryClient.invalidateQueries(["business-widgets"]);
-      queryClient.invalidateQueries(["active-metrics"]);
+      queryClient.invalidateQueries({ queryKey: ["business-widgets"] });
+      queryClient.invalidateQueries({ queryKey: ["active-metrics"] });
 
       toast({
         title: "Success",

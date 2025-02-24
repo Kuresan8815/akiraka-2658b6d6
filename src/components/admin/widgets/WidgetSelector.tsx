@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,6 +88,7 @@ export const WidgetSelector = ({ businessId }: { businessId: string }) => {
               key={widget.id}
               widget={widget}
               onAdd={addWidget}
+              businessId={businessId}
             />
           ))}
         </div>
