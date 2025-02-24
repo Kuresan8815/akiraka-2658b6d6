@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { BusinessWidget } from "@/types/widgets";
@@ -11,6 +11,7 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
   const [metrics, setMetrics] = useState<Record<string, string>>({});
   const [selectedCategory, setSelectedCategory] = useState<'environmental' | 'social' | 'governance' | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: businessWidgets, refetch } = useQuery({
     queryKey: ["business-widgets", businessId, selectedCategory],
@@ -23,22 +24,13 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
           id,
           widget_id,
           position,
+          is_active,
           widget:widgets(*)
         `)
-        .eq("business_id", businessId)
-        .eq("is_active", true);
+        .eq("business_id", businessId);
 
       if (selectedCategory) {
-        // Get the widgets of the selected category
-        const { data: categoryWidgets } = await supabase
-          .from("widgets")
-          .select("id")
-          .eq("category", selectedCategory)
-          .eq("is_active", true);
-
-        if (categoryWidgets && categoryWidgets.length > 0) {
-          query.in("widget_id", categoryWidgets.map(w => w.id));
-        }
+        query.eq("widget.category", selectedCategory);
       }
 
       const { data, error } = await query.order("position");
@@ -97,11 +89,19 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
 
       if (error) throw error;
 
+      // Also clear any existing metric data for this widget
+      await supabase
+        .from("widget_metrics")
+        .delete()
+        .eq("business_id", businessId)
+        .eq("widget_id", widgetId);
+
       refetch();
+      queryClient.invalidateQueries(["active-metrics"]);
 
       toast({
         title: "Success",
-        description: "Widget removed successfully",
+        description: "Widget removed and data cleared successfully",
       });
     } catch (error: any) {
       toast({
@@ -135,3 +135,4 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
     </div>
   );
 };
+
