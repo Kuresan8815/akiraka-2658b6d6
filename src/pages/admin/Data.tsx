@@ -56,28 +56,25 @@ export const AdminData = () => {
       }
 
       console.log("Fetching metrics for business:", businessProfile.business_id, "category:", activeTab);
-
-      // Get active business widgets with their associated widget information
-      const { data, error } = await supabase
+      
+      const query = supabase
         .from("business_widgets")
         .select(`
           id,
           widget_id,
           position,
           is_active,
-          widget:widgets (
-            id,
-            name,
-            description,
-            category,
-            unit,
-            metric_type
-          )
+          widget:widgets(*)
         `)
         .eq("business_id", businessProfile.business_id)
-        .eq("is_active", true)
-        .eq("widgets.category", activeTab);
+        .eq("is_active", true);
 
+      if (activeTab) {
+        query.eq("widgets.category", activeTab);
+      }
+
+      const { data, error } = await query.order("position");
+      
       if (error) {
         console.error("Error fetching business widgets:", error);
         throw error;
