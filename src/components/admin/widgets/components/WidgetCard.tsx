@@ -19,14 +19,44 @@ export const WidgetCard = ({ widget, onAdd, businessId }: WidgetCardProps) => {
 
   const handleActivate = async () => {
     try {
-      // Update the widget to active status
-      const { error } = await supabase
+      // First check if the widget already exists for this business
+      const { data: existingWidget } = await supabase
         .from("business_widgets")
-        .update({ is_active: true })
+        .select("id")
         .eq("business_id", businessId)
-        .eq("widget_id", widget.id);
+        .eq("widget_id", widget.id)
+        .single();
 
-      if (error) throw error;
+      if (existingWidget) {
+        // If it exists, update it to active
+        const { error } = await supabase
+          .from("business_widgets")
+          .update({ is_active: true })
+          .eq("id", existingWidget.id);
+
+        if (error) throw error;
+      } else {
+        // If it doesn't exist, insert a new record
+        const { data: businessWidgets } = await supabase
+          .from("business_widgets")
+          .select("position")
+          .eq("business_id", businessId)
+          .order("position", { ascending: false })
+          .limit(1);
+
+        const nextPosition = (businessWidgets?.[0]?.position ?? 0) + 1;
+
+        const { error } = await supabase
+          .from("business_widgets")
+          .insert({
+            business_id: businessId,
+            widget_id: widget.id,
+            position: nextPosition,
+            is_active: true,
+          });
+
+        if (error) throw error;
+      }
 
       // Refresh queries to update the UI
       queryClient.invalidateQueries({ queryKey: ["business-widgets"] });
