@@ -27,7 +27,8 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
           is_active,
           widget:widgets(*)
         `)
-        .eq("business_id", businessId);
+        .eq("business_id", businessId)
+        .eq("is_active", true); // Only fetch active widgets
 
       if (selectedCategory) {
         query.eq("widget.category", selectedCategory);
@@ -89,15 +90,27 @@ export const WidgetMetrics = ({ businessId }: { businessId: string }) => {
 
       if (error) throw error;
 
-      // Also clear any existing metric data for this widget
+      // Clear any existing metric data for this widget
       await supabase
         .from("widget_metrics")
         .delete()
         .eq("business_id", businessId)
         .eq("widget_id", widgetId);
 
-      refetch();
-      queryClient.invalidateQueries({ queryKey: ["active-metrics"] });
+      // Invalidate all relevant queries to ensure UI updates
+      await queryClient.invalidateQueries({ 
+        queryKey: ["business-widgets", businessId]
+      });
+      await queryClient.invalidateQueries({ 
+        queryKey: ["active-metrics"]
+      });
+
+      // Clear the local metric state for the removed widget
+      setMetrics((prev) => {
+        const newMetrics = { ...prev };
+        delete newMetrics[widgetId];
+        return newMetrics;
+      });
 
       toast({
         title: "Success",
