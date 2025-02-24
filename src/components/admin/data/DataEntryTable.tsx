@@ -33,7 +33,7 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
         .select('*')
         .eq('business_id', businessId)
         .in('widget_id', widgetIds)
-        .is('tezos_operation_hash', 'not.null') // Only get verified metrics
+        .not('tezos_operation_hash', 'is', null) // Correct syntax for checking non-null values
         .order('recorded_at', { ascending: false });
 
       if (error) {
