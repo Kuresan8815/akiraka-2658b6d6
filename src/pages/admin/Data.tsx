@@ -22,7 +22,14 @@ export const AdminData = () => {
       // Get the first active business profile for this user
       const { data, error } = await supabase
         .from("business_profiles")
-        .select("*")
+        .select(`
+          id,
+          business_id,
+          user_id,
+          role,
+          created_at,
+          updated_at
+        `)
         .eq("user_id", session.user.id)
         .eq("role", "admin")
         .order("created_at", { ascending: false })
