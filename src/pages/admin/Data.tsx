@@ -12,50 +12,45 @@ import { BusinessWidget } from "@/types/widgets";
 export const AdminData = () => {
   const [activeTab, setActiveTab] = useState<'environmental' | 'social' | 'governance'>('environmental');
 
-  // Get the current business ID
-  const { data: businessProfile } = useQuery({
-    queryKey: ["business-profile"],
+  // Get the current user's session
+  const { data: session } = useQuery({
+    queryKey: ["session"],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.id) return null;
+      return session;
+    },
+  });
 
-      // Get the first active business profile for this user
-      const { data, error } = await supabase
-        .from("business_profiles")
-        .select(`
-          id,
-          business_id,
-          user_id,
-          role,
-          created_at,
-          updated_at
-        `)
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
+  // Get the current business ID from user metadata
+  const { data: currentBusiness } = useQuery({
+    queryKey: ["current-business", session?.user?.id],
+    enabled: !!session?.user?.id,
+    queryFn: async () => {
+      const currentBusinessId = session?.user?.user_metadata?.current_business_id;
+      
+      if (!currentBusinessId) return null;
 
-      if (error) {
-        console.error("Error fetching business profile:", error);
-        throw error;
-      }
+      const { data } = await supabase
+        .from("businesses")
+        .select("*")
+        .eq("id", currentBusinessId)
+        .single();
 
-      console.log("Business profile:", data);
       return data;
     },
   });
 
   // Fetch active metrics for the current business
   const { data: activeMetrics } = useQuery({
-    queryKey: ["active-metrics", businessProfile?.business_id, activeTab],
+    queryKey: ["active-metrics", currentBusiness?.id, activeTab],
+    enabled: !!currentBusiness?.id,
     queryFn: async () => {
-      if (!businessProfile?.business_id) {
+      if (!currentBusiness?.id) {
         console.log("No business ID available");
         return null;
       }
 
-      console.log("Fetching metrics for business:", businessProfile.business_id, "category:", activeTab);
+      console.log("Fetching metrics for business:", currentBusiness.id, "category:", activeTab);
       
       const query = supabase
         .from("business_widgets")
@@ -66,7 +61,7 @@ export const AdminData = () => {
           is_active,
           widget:widgets(*)
         `)
-        .eq("business_id", businessProfile.business_id)
+        .eq("business_id", currentBusiness.id)
         .eq("is_active", true);
 
       if (activeTab) {
@@ -84,7 +79,7 @@ export const AdminData = () => {
 
       // Transform the data to match BusinessWidget type
       const transformedData = (data || [])
-        .filter(item => item.widget !== null) // Filter out any null widgets
+        .filter(item => item.widget !== null)
         .map(item => ({
           id: item.id,
           widget_id: item.widget_id,
@@ -95,7 +90,6 @@ export const AdminData = () => {
       console.log("Transformed business widgets:", transformedData);
       return transformedData;
     },
-    enabled: !!businessProfile?.business_id,
   });
 
   return (
@@ -121,7 +115,7 @@ export const AdminData = () => {
             <DataEntryTable 
               category="environmental" 
               activeMetrics={activeMetrics}
-              businessId={businessProfile?.business_id}
+              businessId={currentBusiness?.id}
             />
           </Card>
         </TabsContent>
@@ -131,7 +125,7 @@ export const AdminData = () => {
             <DataEntryTable 
               category="social" 
               activeMetrics={activeMetrics}
-              businessId={businessProfile?.business_id}
+              businessId={currentBusiness?.id}
             />
           </Card>
         </TabsContent>
@@ -141,7 +135,7 @@ export const AdminData = () => {
             <DataEntryTable 
               category="governance" 
               activeMetrics={activeMetrics}
-              businessId={businessProfile?.business_id}
+              businessId={currentBusiness?.id}
             />
           </Card>
         </TabsContent>
