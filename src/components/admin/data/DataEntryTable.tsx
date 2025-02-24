@@ -1,10 +1,10 @@
 
 import { BusinessWidget } from "@/types/widgets";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Save } from "lucide-react";
 
@@ -76,28 +76,32 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
   };
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {activeMetrics.map((metric) => (
-        <Card key={metric.id} className="p-4">
-          <div className="flex flex-col space-y-2">
-            <h3 className="font-semibold">{metric.widget?.name}</h3>
+        <Card key={metric.id} className="p-4 flex flex-col">
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg">{metric.widget?.name}</h3>
             <p className="text-sm text-gray-500">{metric.widget?.description}</p>
-            <div className="flex gap-2">
-              <Input
-                type="number"
-                placeholder={`Enter value${metric.widget?.unit ? ` (${metric.widget.unit})` : ''}`}
-                value={metrics[metric.widget?.id] || ""}
-                onChange={(e) => handleMetricChange(metric.widget?.id, e.target.value)}
-              />
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => handleSaveMetric(metric.widget?.id)}
-                disabled={!metrics[metric.widget?.id]}
-              >
-                <Save className="h-4 w-4" />
-              </Button>
+            <div className="text-xs text-gray-400">
+              Unit: {metric.widget?.unit || 'N/A'}
             </div>
+          </div>
+          <div className="mt-4 space-y-2">
+            <Input
+              type="number"
+              placeholder={`Enter value${metric.widget?.unit ? ` (${metric.widget.unit})` : ''}`}
+              value={metrics[metric.widget?.id] || ""}
+              onChange={(e) => handleMetricChange(metric.widget?.id, e.target.value)}
+            />
+            <Button
+              className="w-full"
+              variant="secondary"
+              onClick={() => handleSaveMetric(metric.widget?.id)}
+              disabled={!metrics[metric.widget?.id]}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save Value
+            </Button>
           </div>
         </Card>
       ))}
