@@ -26,6 +26,9 @@ export const Scan = () => {
         variant: "destructive"
       });
     }
+    
+    // Stop scanning after successful scan
+    setIsScanning(false);
   };
 
   return (

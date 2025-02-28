@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ProductDetailsModal } from "../ProductDetailsModal";
 import { ScanCard } from "./ScanCard";
@@ -39,6 +40,10 @@ export const ScanHistoryList = ({
     setIsModalOpen(true);
   };
 
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
   // Always show the demo scan
   const scansToDisplay = [DEMO_SCAN, ...filteredHistory];
 
@@ -57,7 +62,7 @@ export const ScanHistoryList = ({
       <ProductDetailsModal 
         product={selectedProduct}
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={handleCloseModal}
       />
     </div>
   );
