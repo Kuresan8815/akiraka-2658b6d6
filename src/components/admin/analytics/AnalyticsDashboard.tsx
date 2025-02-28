@@ -89,8 +89,8 @@ export const AnalyticsDashboard = () => {
         const baseData = data[0] as AnalyticsData;
         const extendedData: ExtendedAnalyticsData = {
           ...baseData,
-          // Add avg_purchase_per_user if it exists in the data
-          ...(data[0].avg_purchase_per_user !== undefined && { 
+          // Add avg_purchase_per_user if it exists in the raw API response
+          ...(typeof data[0].avg_purchase_per_user !== 'undefined' && { 
             avg_purchase_per_user: data[0].avg_purchase_per_user 
           })
         };
