@@ -85,15 +85,26 @@ export const AnalyticsDashboard = () => {
           return defaultData;
         }
 
-        // Convert the retrieved data to our extended type with additional properties
-        const baseData = data[0] as AnalyticsData;
-        const extendedData: ExtendedAnalyticsData = {
-          ...baseData,
-          // Add avg_purchase_per_user if it exists in the raw API response
-          ...(typeof data[0].avg_purchase_per_user !== 'undefined' && { 
-            avg_purchase_per_user: data[0].avg_purchase_per_user 
-          })
+        // Extract the basic analytics data fields we know exist
+        const baseData: AnalyticsData = {
+          total_scans: data[0].total_scans,
+          unique_users: data[0].unique_users,
+          avg_scans_per_user: data[0].avg_scans_per_user,
+          total_carbon_saved: data[0].total_carbon_saved,
+          total_water_saved: data[0].total_water_saved,
+          avg_sustainability_score: data[0].avg_sustainability_score
         };
+        
+        // Create the extended data with optional fields
+        const extendedData: ExtendedAnalyticsData = {
+          ...baseData
+        };
+        
+        // Add avg_purchase_per_user only if it exists in the API response
+        // Using a dynamic approach to check if the property exists
+        if ('avg_purchase_per_user' in data[0]) {
+          extendedData.avg_purchase_per_user = data[0].avg_purchase_per_user;
+        }
         
         return extendedData;
       } catch (err) {
