@@ -1,134 +1,89 @@
-import { DashboardWidgets } from "@/components/admin/dashboard/DashboardWidgets";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BusinessWidget, Widget } from "@/types/widgets";
-import { ESGMetricsLoading } from "./ESGMetricsLoading";
-import { ESGMetricsEmpty } from "./ESGMetricsEmpty";
-import { ESGMetricsError } from "./ESGMetricsError";
+import { AlertCircle } from "lucide-react";
 
 interface ESGMetricsSectionProps {
   businessId: string;
 }
 
-interface RawBusinessWidget {
-  id: string;
-  widget_id: string;
-  position: number;
-  widget: Widget;
-}
-
 export const ESGMetricsSection = ({ businessId }: ESGMetricsSectionProps) => {
-  const { data: activeWidgets, isLoading, error } = useQuery({
-    queryKey: ["business-widgets", businessId],
+  const { data: esgMetrics, isLoading, error } = useQuery({
+    queryKey: ["esg-metrics", businessId],
     queryFn: async () => {
-      console.log("Fetching widgets for business:", businessId);
-      
-      // Fetch only active business widgets with their associated widget data
-      const { data: businessWidgets, error: businessWidgetsError } = await supabase
-        .from("business_widgets")
-        .select(`
-          id,
-          widget_id,
-          position,
-          is_active,
-          widget:widgets(
-            id,
-            name,
-            description,
-            category,
-            metric_type,
-            unit,
-            is_active
-          )
-        `)
-        .eq("business_id", businessId)
-        .eq("is_active", true) // Only get active business widgets
-        .order("position");
-
-      if (businessWidgetsError) {
-        console.error("Error fetching business widgets:", businessWidgetsError);
-        throw businessWidgetsError;
-      }
-
-      console.log("Raw business widgets data:", businessWidgets);
-
-      if (!businessWidgets?.length) {
-        console.log("No widgets found for business");
+      try {
+        // Fetch ESG metrics data from sustainability metrics
+        const { data, error } = await supabase
+          .from('sustainability_metrics')
+          .select('*')
+          .eq('business_id', businessId)
+          .order('recorded_at', { ascending: false })
+          .limit(3);
+          
+        if (error) throw error;
+        
+        return data || [];
+      } catch (error) {
+        console.error("Error fetching ESG metrics:", error);
         return [];
       }
-
-      // Filter to ensure we only get widgets that are active themselves
-      const activeBusinessWidgets = businessWidgets.filter(
-        (bw) => bw.widget?.is_active
-      );
-
-      if (!activeBusinessWidgets.length) {
-        console.log("No active widgets found");
-        return [];
-      }
-
-      // Fetch the latest metrics for active widgets
-      const { data: metrics, error: metricsError } = await supabase
-        .from("widget_metrics")
-        .select("*")
-        .eq("business_id", businessId)
-        .in(
-          "widget_id",
-          activeBusinessWidgets.map((bw) => bw.widget.id)
-        )
-        .order("recorded_at", { ascending: false });
-
-      if (metricsError) {
-        console.error("Error fetching widget metrics:", metricsError);
-        throw metricsError;
-      }
-
-      console.log("Widget metrics data:", metrics);
-
-      // Create a map of latest values for each widget
-      const latestMetrics = new Map();
-      metrics?.forEach((metric) => {
-        if (!latestMetrics.has(metric.widget_id)) {
-          latestMetrics.set(metric.widget_id, metric.value);
-        }
-      });
-
-      // Transform the active widgets with their latest values
-      const transformedWidgets = activeBusinessWidgets.map((bw) => ({
-        id: bw.id,
-        widget_id: bw.widget_id,
-        position: bw.position,
-        widget: bw.widget,
-        latest_value: latestMetrics.get(bw.widget.id) ?? 0
-      }));
-
-      console.log("Final transformed widgets:", transformedWidgets);
-      return transformedWidgets as BusinessWidget[];
-    },
-    enabled: !!businessId,
-    staleTime: 1000 * 60, // Cache for 1 minute
+    }
   });
 
-  if (error) {
-    console.error("Error in ESGMetricsSection:", error);
-    return <ESGMetricsError error={error as Error} />;
-  }
-
   if (isLoading) {
-    return <ESGMetricsLoading />;
+    return (
+      <Card className="p-6">
+        <div className="text-center">
+          <p className="text-gray-500">Loading ESG metrics data...</p>
+        </div>
+      </Card>
+    );
   }
-
-  if (!activeWidgets?.length) {
-    return <ESGMetricsEmpty />;
+  
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-red-500">
+          Failed to load ESG metrics data
+        </div>
+      </Card>
+    );
+  }
+  
+  if (!esgMetrics || esgMetrics.length === 0) {
+    return (
+      <Card className="p-6">
+        <CardContent className="pt-6">
+          <div className="flex flex-col items-center justify-center h-48 text-center">
+            <AlertCircle className="h-12 w-12 text-gray-400 mb-2" />
+            <p className="text-gray-500 font-medium">No ESG metrics available</p>
+            <p className="text-sm text-gray-400">Start tracking sustainability metrics to see ESG data here</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="mt-8">
-      <h2 className="text-xl font-bold text-eco-primary mb-6">ESG Metrics</h2>
-      <DashboardWidgets 
-        businessId={businessId} 
-        activeWidgets={activeWidgets}
-      />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {esgMetrics.map((metric, index) => (
+        <Card key={index} className="bg-white shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold text-eco-primary mb-2">{metric.metric_name}</h3>
+            <div className="flex items-end justify-between">
+              <div>
+                <p className="text-3xl font-bold text-gray-800">{metric.value}</p>
+                <p className="text-sm text-gray-500">{metric.unit}</p>
+              </div>
+              
+              <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
+                Category: {metric.category}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

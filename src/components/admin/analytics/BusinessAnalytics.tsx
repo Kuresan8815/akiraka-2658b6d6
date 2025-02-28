@@ -27,7 +27,7 @@ export const BusinessAnalytics = ({ analyticsData, dateRange }: BusinessAnalytic
 
   return (
     <div className="space-y-8">
-      <ESGMetricsSection metrics={analyticsData} />
+      <ESGMetricsSection businessId="nmlpmvsxqkmfrddvdfaw" />
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <UserEngagementChart dateRange={dateRange} />

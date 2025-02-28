@@ -47,12 +47,12 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
         }
 
         // Group by category 
-        const grouped = metricsData.reduce((acc, metric) => {
-          const category = metric.category;
+        const grouped: Record<string, number> = metricsData.reduce((acc: Record<string, number>, metric) => {
+          const category = String(metric.category); // Convert to string to ensure type safety
           if (!acc[category]) {
             acc[category] = 0;
           }
-          acc[category] += parseFloat(metric.value);
+          acc[category] += parseFloat(String(metric.value)); // Convert to string first to be safe
           return acc;
         }, {});
 

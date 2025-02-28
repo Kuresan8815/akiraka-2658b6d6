@@ -1,10 +1,11 @@
+
 import { AnalyticsMetricCard } from "./AnalyticsMetricCard";
 
 interface AnalyticsData {
   total_scans: number;
   unique_users: number;
   avg_scans_per_user: number;
-  avg_purchase_per_user: number;
+  avg_purchase_per_user?: number;
 }
 
 interface AnalyticsMetricsGridProps {

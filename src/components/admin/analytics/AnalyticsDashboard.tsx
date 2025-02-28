@@ -18,6 +18,17 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
+// Define the data structure explicitly
+interface AnalyticsData {
+  total_scans: number;
+  unique_users: number;
+  avg_scans_per_user: number;
+  total_carbon_saved: number;
+  total_water_saved: number;
+  avg_sustainability_score: number;
+  avg_purchase_per_user?: number; // Make this optional since it may not be in the API response
+}
+
 export const AnalyticsDashboard = () => {
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -51,7 +62,7 @@ export const AnalyticsDashboard = () => {
 
         // If no data returned, provide default empty values
         if (!data || data.length === 0) {
-          return {
+          const defaultData: AnalyticsData = {
             total_scans: 0,
             unique_users: 0,
             avg_scans_per_user: 0,
@@ -60,13 +71,16 @@ export const AnalyticsDashboard = () => {
             avg_sustainability_score: 0,
             avg_purchase_per_user: 0
           };
+          return defaultData;
         }
 
-        // Add avg_purchase_per_user if not present (it's not part of the function)
-        return {
+        // Return data with the correct type, adding avg_purchase_per_user if it doesn't exist
+        const result: AnalyticsData = {
           ...data[0],
           avg_purchase_per_user: data[0].avg_purchase_per_user || 0
         };
+        
+        return result;
       } catch (err) {
         console.error("Error fetching analytics data:", err);
         toast({
@@ -94,7 +108,7 @@ export const AnalyticsDashboard = () => {
         ["Total Scans", analyticsData.total_scans],
         ["Unique Users", analyticsData.unique_users],
         ["Average Scans per User", analyticsData.avg_scans_per_user],
-        ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user],
+        ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user || 0],
       ])
     ]
       .map((row) => row.join(","))
