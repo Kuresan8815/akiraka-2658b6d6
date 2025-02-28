@@ -4,8 +4,8 @@ import { DateRange } from "react-day-picker";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,22 +20,52 @@ interface SustainabilityImpactChartProps {
 }
 
 export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactChartProps) => {
+  const startDate = dateRange?.from?.toISOString();
+  const endDate = dateRange?.to?.toISOString();
+
   const { data: impactData, isLoading } = useQuery({
-    queryKey: ["sustainability-impact", dateRange],
+    queryKey: ["sustainability-impact", startDate, endDate],
     queryFn: async () => {
-      if (!dateRange?.from || !dateRange?.to) return null;
+      try {
+        if (!startDate || !endDate) {
+          return [];
+        }
 
-      const { data, error } = await supabase
-        .from('sustainability_metrics')
-        .select('*')
-        .gte('recorded_at', dateRange.from.toISOString())
-        .lte('recorded_at', dateRange.to.toISOString())
-        .order('recorded_at');
+        // Fetch sustainability metrics data
+        const { data: metricsData, error: metricsError } = await supabase
+          .from('sustainability_metrics')
+          .select('*')
+          .gte('recorded_at', startDate)
+          .lte('recorded_at', endDate)
+          .order('recorded_at');
 
-      if (error) throw error;
-      return data;
+        if (metricsError) throw metricsError;
+
+        // If no data, return empty array
+        if (!metricsData || metricsData.length === 0) {
+          return [];
+        }
+
+        // Group by category 
+        const grouped = metricsData.reduce((acc, metric) => {
+          const category = metric.category;
+          if (!acc[category]) {
+            acc[category] = 0;
+          }
+          acc[category] += parseFloat(metric.value);
+          return acc;
+        }, {});
+
+        // Transform to chart data format
+        return Object.entries(grouped).map(([category, value]) => ({
+          category: category.charAt(0).toUpperCase() + category.slice(1).toLowerCase(),
+          value
+        }));
+      } catch (error) {
+        console.error("Error fetching sustainability impact data:", error);
+        return [];
+      }
     },
-    enabled: !!dateRange?.from && !!dateRange?.to,
   });
 
   return (
@@ -44,7 +74,7 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
         <CardTitle className="text-lg text-eco-primary">Sustainability Impact</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
+        <div className="h-[300px]">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <p>Loading impact data...</p>
@@ -52,51 +82,24 @@ export const SustainabilityImpactChart = ({ dateRange }: SustainabilityImpactCha
           ) : !impactData || impactData.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <AlertCircle className="h-12 w-12 text-gray-400 mb-2" />
-              <p className="text-gray-500 font-medium">No sustainability data available</p>
-              <p className="text-sm text-gray-400">Start tracking sustainability metrics to see your impact</p>
+              <p className="text-gray-500 font-medium">No impact data available</p>
+              <p className="text-sm text-gray-400">Start tracking sustainability metrics to see data here</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={impactData}>
+              <BarChart data={impactData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
-                  dataKey="recorded_at"
-                  tickFormatter={(value) => {
-                    if (!value) return '';
-                    return new Date(value).toLocaleDateString('en-US', { 
-                      month: 'short',
-                      year: 'numeric'
-                    });
-                  }}
-                />
+                <XAxis dataKey="category" />
                 <YAxis />
-                <Tooltip
-                  labelFormatter={(label) => {
-                    if (!label) return '';
-                    return new Date(label).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric'
-                    });
-                  }}
-                />
+                <Tooltip />
                 <Legend />
-                {impactData[0] && Object.keys(impactData[0])
-                  .filter(key => !['id', 'recorded_at', 'created_at', 'updated_at', 'business_id'].includes(key))
-                  .map((metric, index) => (
-                    <Line
-                      key={metric}
-                      type="monotone"
-                      dataKey={metric}
-                      name={metric.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                      stroke={`hsl(${index * 40}, 70%, 50%)`}
-                      strokeWidth={2}
-                      dot={{ r: 4 }}
-                      activeDot={{ r: 6 }}
-                    />
-                  ))
-                }
-              </LineChart>
+                <Bar
+                  dataKey="value"
+                  name="Impact Value"
+                  fill="#4ade80"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
             </ResponsiveContainer>
           )}
         </div>

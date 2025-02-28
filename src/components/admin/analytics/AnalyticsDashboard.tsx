@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { DateRange } from "react-day-picker";
@@ -15,16 +16,7 @@ import { BusinessAnalytics } from "./BusinessAnalytics";
 import { CustomerAnalytics } from "./CustomerAnalytics";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-
-interface AnalyticsData {
-  total_scans: number;
-  unique_users: number;
-  avg_scans_per_user: number;
-  total_carbon_saved: number;
-  total_water_saved: number;
-  avg_sustainability_score: number;
-  avg_purchase_per_user: number;
-}
+import { supabase } from "@/integrations/supabase/client";
 
 export const AnalyticsDashboard = () => {
   const { toast } = useToast();
@@ -34,19 +26,46 @@ export const AnalyticsDashboard = () => {
   });
   const [analyticsType, setAnalyticsType] = useState<"business" | "customer">("business");
 
+  // Convert date range to ISO strings for API
+  const startDate = dateRange?.from?.toISOString();
+  const endDate = dateRange?.to?.toISOString();
+
   const { data: analyticsData, isLoading, error } = useQuery({
-    queryKey: ["analytics", dateRange],
+    queryKey: ["analytics", startDate, endDate],
     queryFn: async () => {
       try {
-        // Simulated API call - replace with actual API endpoint
+        if (!startDate || !endDate) {
+          throw new Error("Date range is required");
+        }
+
+        // Using the get_analytics_data Supabase function
+        const { data, error } = await supabase.rpc('get_analytics_data', {
+          start_date: startDate,
+          end_date: endDate
+        });
+
+        if (error) {
+          console.error("Error fetching analytics data:", error);
+          throw error;
+        }
+
+        // If no data returned, provide default empty values
+        if (!data || data.length === 0) {
+          return {
+            total_scans: 0,
+            unique_users: 0,
+            avg_scans_per_user: 0,
+            total_carbon_saved: 0,
+            total_water_saved: 0, 
+            avg_sustainability_score: 0,
+            avg_purchase_per_user: 0
+          };
+        }
+
+        // Add avg_purchase_per_user if not present (it's not part of the function)
         return {
-          total_scans: 15742,
-          unique_users: 3256,
-          avg_scans_per_user: 4.8,
-          total_carbon_saved: 25890,
-          total_water_saved: 158900,
-          avg_sustainability_score: 85.4,
-          avg_purchase_per_user: 3000
+          ...data[0],
+          avg_purchase_per_user: data[0].avg_purchase_per_user || 0
         };
       } catch (err) {
         console.error("Error fetching analytics data:", err);
@@ -145,7 +164,7 @@ export const AnalyticsDashboard = () => {
         </Card>
       ) : (
         analyticsType === "business" ? (
-          <BusinessAnalytics dateRange={dateRange} />
+          <BusinessAnalytics analyticsData={analyticsData} dateRange={dateRange} />
         ) : (
           <CustomerAnalytics analyticsData={analyticsData} dateRange={dateRange} />
         )

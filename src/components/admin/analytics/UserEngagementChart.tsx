@@ -20,16 +20,38 @@ interface UserEngagementChartProps {
 }
 
 export const UserEngagementChart = ({ dateRange }: UserEngagementChartProps) => {
-  const { data: engagementData, isLoading } = useQuery({
-    queryKey: ["user-engagement", dateRange],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('monthly_scanning_activity')
-        .select('*')
-        .order('month');
+  const startDate = dateRange?.from?.toISOString();
+  const endDate = dateRange?.to?.toISOString();
 
-      if (error) throw error;
-      return data;
+  const { data: engagementData, isLoading } = useQuery({
+    queryKey: ["user-engagement", startDate, endDate],
+    queryFn: async () => {
+      try {
+        if (!startDate || !endDate) {
+          return [];
+        }
+        
+        const { data, error } = await supabase
+          .from('monthly_scanning_activity')
+          .select('*')
+          .gte('month', startDate)
+          .lte('month', endDate)
+          .order('month');
+
+        if (error) throw error;
+        
+        if (!data || data.length === 0) {
+          // Return sample data if no real data exists
+          return [
+            { month: new Date().toISOString(), scan_count: 0, user_id: null }
+          ];
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("Error fetching user engagement data:", error);
+        return [];
+      }
     },
   });
 
