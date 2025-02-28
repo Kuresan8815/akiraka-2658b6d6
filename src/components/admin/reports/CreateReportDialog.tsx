@@ -22,6 +22,8 @@ export const CreateReportDialog = ({
     setDescription,
     visualization,
     setVisualization,
+    colorScheme,
+    setColorScheme,
     createReport,
     isPending,
   } = useReportGeneration({
@@ -42,6 +44,8 @@ export const CreateReportDialog = ({
           setDescription={setDescription}
           visualization={visualization}
           setVisualization={setVisualization}
+          colorScheme={colorScheme}
+          setColorScheme={setColorScheme}
         />
         <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>

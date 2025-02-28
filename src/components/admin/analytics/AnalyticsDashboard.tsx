@@ -18,7 +18,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Define the data structure explicitly
+// Define the data structure explicitly with all possible fields
 interface AnalyticsData {
   total_scans: number;
   unique_users: number;
@@ -26,7 +26,11 @@ interface AnalyticsData {
   total_carbon_saved: number;
   total_water_saved: number;
   avg_sustainability_score: number;
-  avg_purchase_per_user?: number; // Make this optional since it may not be in the API response
+}
+
+// Extended interface that includes optional fields
+interface ExtendedAnalyticsData extends AnalyticsData {
+  avg_purchase_per_user?: number;
 }
 
 interface CustomerData {
@@ -69,7 +73,7 @@ export const AnalyticsDashboard = () => {
 
         // If no data returned, provide default empty values
         if (!data || data.length === 0) {
-          const defaultData: AnalyticsData = {
+          const defaultData: ExtendedAnalyticsData = {
             total_scans: 0,
             unique_users: 0,
             avg_scans_per_user: 0,
@@ -81,13 +85,17 @@ export const AnalyticsDashboard = () => {
           return defaultData;
         }
 
-        // Return data with the correct type, adding avg_purchase_per_user if it doesn't exist
-        const result: AnalyticsData = {
-          ...data[0],
-          avg_purchase_per_user: data[0].avg_purchase_per_user || 0
+        // Convert the retrieved data to our extended type with additional properties
+        const baseData = data[0] as AnalyticsData;
+        const extendedData: ExtendedAnalyticsData = {
+          ...baseData,
+          // Add avg_purchase_per_user if it exists in the data
+          ...(data[0].avg_purchase_per_user !== undefined && { 
+            avg_purchase_per_user: data[0].avg_purchase_per_user 
+          })
         };
         
-        return result;
+        return extendedData;
       } catch (err) {
         console.error("Error fetching analytics data:", err);
         toast({
@@ -115,8 +123,7 @@ export const AnalyticsDashboard = () => {
         ["Total Scans", analyticsData.total_scans],
         ["Unique Users", analyticsData.unique_users],
         ["Average Scans per User", analyticsData.avg_scans_per_user],
-        // Make sure to handle the case where avg_purchase_per_user might not exist
-        ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user !== undefined ? analyticsData.avg_purchase_per_user : 0],
+        ["Average Purchase per User (¥)", (analyticsData as ExtendedAnalyticsData).avg_purchase_per_user || 0],
       ])
     ]
       .map((row) => row.join(","))
@@ -154,9 +161,9 @@ export const AnalyticsDashboard = () => {
     total_scans: analyticsData.total_scans,
     unique_users: analyticsData.unique_users,
     avg_scans_per_user: analyticsData.avg_scans_per_user,
-    // Only include avg_purchase_per_user if it exists
-    ...(analyticsData.avg_purchase_per_user !== undefined && { 
-      avg_purchase_per_user: analyticsData.avg_purchase_per_user 
+    // Only include avg_purchase_per_user if it exists in the extended data
+    ...((analyticsData as ExtendedAnalyticsData).avg_purchase_per_user !== undefined && { 
+      avg_purchase_per_user: (analyticsData as ExtendedAnalyticsData).avg_purchase_per_user 
     })
   } : undefined;
 
