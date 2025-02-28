@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/types/product";
+import { ProductBlockchainVerification } from "./ProductBlockchainVerification";
 import {
   Select,
   SelectContent,
@@ -125,6 +126,10 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
     }
   };
 
+  const handleVerificationComplete = () => {
+    onSuccess();
+  };
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -210,6 +215,13 @@ export const EditProductForm = ({ product, onSuccess }: EditProductFormProps) =>
           />
           {errors.recyclability_percentage && <span className="text-red-500 text-sm">Percentage must be between 0 and 100</span>}
         </div>
+      </div>
+
+      <div className="col-span-2">
+        <ProductBlockchainVerification 
+          product={product} 
+          onVerificationComplete={handleVerificationComplete} 
+        />
       </div>
 
       <div className="flex justify-end gap-2">
