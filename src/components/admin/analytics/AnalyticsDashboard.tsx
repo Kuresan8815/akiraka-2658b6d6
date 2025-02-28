@@ -115,7 +115,8 @@ export const AnalyticsDashboard = () => {
         ["Total Scans", analyticsData.total_scans],
         ["Unique Users", analyticsData.unique_users],
         ["Average Scans per User", analyticsData.avg_scans_per_user],
-        ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user || 0],
+        // Make sure to handle the case where avg_purchase_per_user might not exist
+        ["Average Purchase per User (¥)", analyticsData.avg_purchase_per_user !== undefined ? analyticsData.avg_purchase_per_user : 0],
       ])
     ]
       .map((row) => row.join(","))
@@ -153,7 +154,10 @@ export const AnalyticsDashboard = () => {
     total_scans: analyticsData.total_scans,
     unique_users: analyticsData.unique_users,
     avg_scans_per_user: analyticsData.avg_scans_per_user,
-    avg_purchase_per_user: analyticsData.avg_purchase_per_user
+    // Only include avg_purchase_per_user if it exists
+    ...(analyticsData.avg_purchase_per_user !== undefined && { 
+      avg_purchase_per_user: analyticsData.avg_purchase_per_user 
+    })
   } : undefined;
 
   return (
