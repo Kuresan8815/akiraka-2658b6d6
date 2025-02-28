@@ -103,7 +103,8 @@ export const AnalyticsDashboard = () => {
         // Add avg_purchase_per_user only if it exists in the API response
         // Using a dynamic approach to check if the property exists
         if ('avg_purchase_per_user' in data[0]) {
-          extendedData.avg_purchase_per_user = data[0].avg_purchase_per_user;
+          // Use type assertion to safely assign the value
+          extendedData.avg_purchase_per_user = Number(data[0].avg_purchase_per_user);
         }
         
         return extendedData;
