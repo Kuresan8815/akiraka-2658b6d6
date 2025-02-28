@@ -15,8 +15,13 @@ interface ReportFormProps {
     showPieCharts: boolean;
     showTables: boolean;
     showTimeline: boolean;
+    showWaterfall?: boolean;
+    showHeatmaps?: boolean;
+    showInfographics?: boolean;
   };
   setVisualization: (value: any) => void;
+  colorScheme?: string;
+  setColorScheme?: (value: string) => void;
 }
 
 export const ReportForm = ({
@@ -26,6 +31,8 @@ export const ReportForm = ({
   setDescription,
   visualization,
   setVisualization,
+  colorScheme,
+  setColorScheme,
 }: ReportFormProps) => {
   return (
     <div className="space-y-4 py-4">
@@ -50,6 +57,8 @@ export const ReportForm = ({
       <VisualizationOptions
         visualization={visualization}
         setVisualization={setVisualization}
+        colorScheme={colorScheme}
+        setColorScheme={setColorScheme}
       />
     </div>
   );

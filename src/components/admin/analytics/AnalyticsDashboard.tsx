@@ -29,6 +29,13 @@ interface AnalyticsData {
   avg_purchase_per_user?: number; // Make this optional since it may not be in the API response
 }
 
+interface CustomerData {
+  total_scans: number;
+  unique_users: number;
+  avg_scans_per_user: number;
+  avg_purchase_per_user?: number;
+}
+
 export const AnalyticsDashboard = () => {
   const { toast } = useToast();
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
@@ -141,6 +148,14 @@ export const AnalyticsDashboard = () => {
     );
   }
 
+  // Create customer-specific data when needed
+  const customerData: CustomerData | undefined = analyticsData ? {
+    total_scans: analyticsData.total_scans,
+    unique_users: analyticsData.unique_users,
+    avg_scans_per_user: analyticsData.avg_scans_per_user,
+    avg_purchase_per_user: analyticsData.avg_purchase_per_user
+  } : undefined;
+
   return (
     <div className="space-y-6 p-6">
       <div className="flex justify-between items-center">
@@ -180,7 +195,7 @@ export const AnalyticsDashboard = () => {
         analyticsType === "business" ? (
           <BusinessAnalytics analyticsData={analyticsData} dateRange={dateRange} />
         ) : (
-          <CustomerAnalytics analyticsData={analyticsData} dateRange={dateRange} />
+          <CustomerAnalytics analyticsData={customerData} dateRange={dateRange} />
         )
       )}
     </div>

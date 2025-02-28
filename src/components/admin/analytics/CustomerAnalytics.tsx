@@ -8,7 +8,7 @@ interface CustomerAnalyticsProps {
     total_scans: number;
     unique_users: number;
     avg_scans_per_user: number;
-    avg_purchase_per_user: number;
+    avg_purchase_per_user?: number;
   } | undefined;
   dateRange: DateRange | undefined;
 }

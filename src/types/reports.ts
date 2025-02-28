@@ -24,6 +24,10 @@ export type ReportTemplate = {
     showPieCharts: boolean;
     showTables: boolean;
     showTimeline: boolean;
+    showLineCharts?: boolean;
+    showWaterfall?: boolean;
+    showHeatmaps?: boolean;
+    showInfographics?: boolean;
   } | null;
   ai_generated?: boolean;
   ai_prompt?: string;
