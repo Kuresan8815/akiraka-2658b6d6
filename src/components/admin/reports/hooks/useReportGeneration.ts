@@ -213,10 +213,42 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
 
         if (fnError) {
           console.error("Edge function error:", fnError);
+          
+          // Update report status to failed
+          await supabase
+            .from("generated_reports")
+            .update({ 
+              status: "failed", 
+              report_data: { 
+                error: fnError.message,
+                timestamp: new Date().toISOString()
+              } 
+            })
+            .eq("id", report.id);
+            
           throw new Error(`Edge function error: ${fnError.message}`);
         }
         
         console.log("Edge function response:", fnResponse);
+        
+        // Check for PDF URL in the response
+        if (fnResponse && fnResponse.pdf_url) {
+          // Update the report with the PDF URL
+          const { error: updateError } = await supabase
+            .from("generated_reports")
+            .update({ 
+              pdf_url: fnResponse.pdf_url,
+              status: "completed"
+            })
+            .eq("id", report.id);
+            
+          if (updateError) {
+            console.error("Error updating report with PDF URL:", updateError);
+          }
+        } else {
+          console.warn("PDF URL missing in function response:", fnResponse);
+        }
+        
         return report;
       } catch (fnInvokeError: any) {
         console.error("Error invoking edge function:", fnInvokeError);
@@ -231,6 +263,18 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           }
         }
         
+        // Update report status to failed
+        await supabase
+          .from("generated_reports")
+          .update({ 
+            status: "failed", 
+            report_data: { 
+              error: fnInvokeError.message || "Unknown error",
+              timestamp: new Date().toISOString()
+            } 
+          })
+          .eq("id", report.id);
+          
         throw new Error(`Failed to start report generation process: ${fnInvokeError.message}`);
       }
     },

@@ -1,244 +1,303 @@
 
-import "xhr";
-import { serve } from "std/http/server.ts";
+// Supabase Edge Function for generating ESG reports
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "supabase-js";
-
-// Define CORS headers to allow cross-origin requests
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-// Get environment variables
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const openAiKey = Deno.env.get("OPENAI_API_KEY");
+import { corsHeaders } from "../_shared/cors.ts";
 
 serve(async (req) => {
-  console.log("ESG Report generation function invoked");
-  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders,
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
-  
+
   try {
-    // Create Supabase client with service key for admin rights
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Parse the request body
-    const { report_id, business_id, configuration } = await req.json();
-    
+    const body = await req.json();
+    const { report_id, business_id, configuration } = body;
+
+    console.log("Report generation request received:", { report_id, business_id });
+    console.log("Configuration:", JSON.stringify(configuration));
+
     if (!report_id || !business_id) {
-      console.error("Missing required parameters: report_id or business_id");
       return new Response(
-        JSON.stringify({ error: "Missing required parameters" }),
+        JSON.stringify({
+          error: "Missing required parameters: report_id and business_id are required",
+        }),
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    console.log("Checking report existence...");
     
-    console.log(`Processing report ${report_id} for business ${business_id} with config:`, configuration);
+    // Check if report exists
+    const { data: reportData, error: reportCheckError } = await supabase
+      .from("generated_reports")
+      .select("*")
+      .eq("id", report_id)
+      .single();
+
+    if (reportCheckError || !reportData) {
+      console.error("Report not found:", reportCheckError);
+      return new Response(
+        JSON.stringify({
+          error: "Report not found",
+          details: reportCheckError,
+        }),
+        {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Report found, updating status to processing...");
     
     // Update report status to processing
     const { error: updateError } = await supabase
       .from("generated_reports")
       .update({ status: "processing" })
       .eq("id", report_id);
-      
+
     if (updateError) {
       console.error("Error updating report status:", updateError);
       return new Response(
-        JSON.stringify({ error: "Failed to update report status" }),
+        JSON.stringify({
+          error: "Failed to update report status",
+          details: updateError,
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
+
+    console.log("Fetching business data...");
     
-    // Fetch business data to include in the report
+    // Fetch business data
     const { data: businessData, error: businessError } = await supabase
       .from("businesses")
       .select("*")
       .eq("id", business_id)
       .single();
-      
-    if (businessError) {
-      console.error("Error fetching business data:", businessError);
-      await updateReportStatus(supabase, report_id, "failed", "Failed to fetch business data");
+
+    if (businessError || !businessData) {
+      console.error("Business not found:", businessError);
+      await supabase
+        .from("generated_reports")
+        .update({ 
+          status: "failed", 
+          report_data: { error: "Business not found" } 
+        })
+        .eq("id", report_id);
+        
       return new Response(
-        JSON.stringify({ error: "Failed to fetch business data" }),
+        JSON.stringify({
+          error: "Business not found",
+          details: businessError,
+        }),
         {
-          status: 500,
+          status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
 
-    console.log("Fetched business data:", businessData);
-    
-    // Fetch business metrics data
-    const { data: metricsData, error: metricsError } = await supabase
-      .from("widget_metrics")
-      .select(`
-        id,
-        value,
-        recorded_at,
-        widget:widgets(name, category, unit, metric_type)
-      `)
+    console.log("Business found:", businessData.name);
+
+    // Get sustainability metrics for this business
+    const { data: metrics, error: metricsError } = await supabase
+      .from("sustainability_metrics")
+      .select("*")
       .eq("business_id", business_id)
       .order("recorded_at", { ascending: false })
       .limit(100);
-    
+
     if (metricsError) {
-      console.error("Error fetching metrics data:", metricsError);
-      // Continue with the process even if metrics fail
+      console.error("Error fetching sustainability metrics:", metricsError);
+      // We'll continue even if no metrics are found
     }
 
-    console.log(`Fetched ${metricsData?.length || 0} metrics records`);
+    console.log(`Found ${metrics?.length || 0} sustainability metrics`);
 
-    // Group metrics by category (environmental, social, governance)
-    const groupedMetrics = {
-      environmental: [],
-      social: [],
-      governance: []
-    };
+    // Generate a sample PDF for demonstration
+    // In a real implementation, this would use the metrics and configuration to generate a proper report
+    const reportTitle = configuration.title || "ESG Performance Report";
+    const currentDate = new Date().toISOString().split('T')[0];
+    const fileName = `${businessData.name.replace(/\s+/g, '_')}_ESG_Report_${currentDate}.pdf`;
+    
+    console.log("Generating PDF content...");
+    
+    // In production, we'd generate a real PDF here
+    // For now, we're creating a simple blob to upload
+    const pdfContent = new TextEncoder().encode(
+      `%PDF-1.7
+1 0 obj
+<</Type/Catalog/Pages 2 0 R>>
+endobj
+2 0 obj
+<</Type/Pages/Count 1/Kids[3 0 R]>>
+endobj
+3 0 obj
+<</Type/Page/Parent 2 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>/ProcSet[/PDF/Text]>>/MediaBox[0 0 612 792]/Contents 4 0 R>>
+endobj
+4 0 obj
+<</Length 210>>
+stream
+BT
+/F1 24 Tf
+72 720 Td
+(${reportTitle}) Tj
+/F1 12 Tf
+0 -40 Td
+(Business: ${businessData.name}) Tj
+0 -20 Td
+(Generated: ${new Date().toLocaleDateString()}) Tj
+0 -40 Td
+(This is a system-generated ESG report for ${businessData.name}) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000010 00000 n
+0000000056 00000 n
+0000000111 00000 n
+0000000274 00000 n
+trailer
+<</Size 5/Root 1 0 R>>
+startxref
+537
+%%EOF`
+    );
 
-    metricsData?.forEach(metric => {
-      const category = metric.widget?.category;
-      if (category && groupedMetrics[category]) {
-        groupedMetrics[category].push({
-          name: metric.widget?.name,
-          value: metric.value,
-          unit: metric.widget?.unit,
-          recorded_at: metric.recorded_at
+    console.log("Uploading PDF to storage...");
+    
+    try {
+      // Create a storage bucket if it doesn't exist
+      const { data: bucketData, error: bucketError } = await supabase
+        .storage
+        .createBucket('reports', {
+          public: false,
+          fileSizeLimit: 10485760,  // 10MB limit
         });
+
+      if (bucketError && !bucketError.message.includes('already exists')) {
+        console.error("Error creating storage bucket:", bucketError);
+        throw bucketError;
       }
-    });
-    
-    // Get date range from the request or use default (last month)
-    const dateRange = configuration?.date_range || {
-      start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
-      end: new Date().toISOString(),
-    };
-    
-    // Generate color palette based on configuration
-    const colorPalette = generateColorPalette(configuration?.colorScheme || "greenBlue");
-    
-    // Generate the report data
-    const reportData = {
-      title: configuration?.title || "ESG Performance Report",
-      description: configuration?.description || "Comprehensive ESG analysis",
-      generated_at: new Date().toISOString(),
-      business: {
-        id: businessData.id,
-        name: businessData.name,
-        industry: businessData.industry_type,
-        description: businessData.description,
-        website: businessData.website,
-        logo_url: businessData.logo_url
-      },
-      date_range: dateRange,
-      metrics: {
-        environmental: groupedMetrics.environmental,
-        social: groupedMetrics.social,
-        governance: groupedMetrics.governance
-      },
-      charts: generateCharts(groupedMetrics, colorPalette, configuration),
-      sections: [
-        {
-          title: "Executive Summary",
-          content: generateExecutiveSummary(businessData, groupedMetrics)
-        },
-        {
-          title: "Environmental Performance",
-          content: generateSectionContent("environmental", groupedMetrics.environmental),
-          metrics: groupedMetrics.environmental
-        },
-        {
-          title: "Social Impact",
-          content: generateSectionContent("social", groupedMetrics.social),
-          metrics: groupedMetrics.social
-        },
-        {
-          title: "Governance",
-          content: generateSectionContent("governance", groupedMetrics.governance),
-          metrics: groupedMetrics.governance
-        }
-      ],
-      recommendations: generateRecommendations(groupedMetrics),
-      visualization_preferences: configuration?.visualization || {
-        showBarCharts: true,
-        showLineCharts: true,
-        showPieCharts: true,
-        showTables: true
-      },
-      color_scheme: colorPalette
-    };
-    
-    // Mock PDF URL - in a real implementation this would be generated and uploaded
-    const pdfUrl = `${supabaseUrl}/storage/v1/object/public/reports/${report_id}.pdf`;
-    
-    // Update the report with generated data
-    const { error: reportUpdateError } = await supabase
-      .from("generated_reports")
-      .update({
-        status: "completed",
-        report_data: reportData,
-        pdf_url: pdfUrl,
-        file_size: Math.floor(Math.random() * 1000) + 500, // Mock file size
-        page_count: Math.floor(Math.random() * 10) + 5 // Mock page count
-      })
-      .eq("id", report_id);
       
-    if (reportUpdateError) {
-      console.error("Error updating report data:", reportUpdateError);
-      await updateReportStatus(supabase, report_id, "failed", "Failed to update report data");
+      // Set a unique file path
+      const filePath = `${business_id}/${report_id}/${fileName}`;
+      
+      // Upload the PDF to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase
+        .storage
+        .from('reports')
+        .upload(filePath, pdfContent, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+  
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw uploadError;
+      }
+      
+      console.log("Successfully uploaded PDF:", uploadData);
+      
+      // Create a signed URL for the PDF that's valid for 7 days
+      const { data: signedUrlData, error: signedUrlError } = await supabase
+        .storage
+        .from('reports')
+        .createSignedUrl(filePath, 7 * 24 * 60 * 60); // 7 days in seconds
+  
+      if (signedUrlError) {
+        console.error("Error creating signed URL:", signedUrlError);
+        throw signedUrlError;
+      }
+      
+      const pdfUrl = signedUrlData.signedUrl;
+      console.log("Generated signed URL:", pdfUrl);
+      
+      // Update the report with the PDF URL and mark as completed
+      const { error: completeError } = await supabase
+        .from("generated_reports")
+        .update({ 
+          status: "completed", 
+          pdf_url: pdfUrl,
+          file_size: pdfContent.length,
+          page_count: 1,
+          report_data: {
+            generated_at: new Date().toISOString(),
+            metrics_count: metrics?.length || 0,
+            business_name: businessData.name,
+            report_type: "ESG Performance",
+            title: reportTitle
+          }
+        })
+        .eq("id", report_id);
+  
+      if (completeError) {
+        console.error("Error updating report as completed:", completeError);
+        throw completeError;
+      }
+      
+      console.log("Report generation completed successfully");
+      
       return new Response(
-        JSON.stringify({ error: "Failed to update report data" }),
+        JSON.stringify({
+          success: true,
+          message: "Report generated successfully",
+          pdf_url: pdfUrl,
+          report_id
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    } catch (error) {
+      console.error("Error in PDF generation/upload process:", error);
+      
+      // Update report as failed
+      await supabase
+        .from("generated_reports")
+        .update({ 
+          status: "failed", 
+          report_data: { 
+            error: error.message || "Unknown error in PDF generation",
+            timestamp: new Date().toISOString()
+          } 
+        })
+        .eq("id", report_id);
+        
+      return new Response(
+        JSON.stringify({
+          error: "Failed to generate or upload PDF",
+          details: error.message
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
-    
-    console.log(`Successfully generated report ${report_id}`);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        report_id, 
-        status: "completed",
-        business_name: businessData.name 
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
   } catch (error) {
-    console.error("Unexpected error in generate-esg-report:", error);
-    
-    // Try to update the report status if possible
-    try {
-      if (req.method !== "OPTIONS") {
-        const { report_id } = await req.json();
-        if (report_id) {
-          const supabase = createClient(supabaseUrl, supabaseServiceKey);
-          await updateReportStatus(supabase, report_id, "failed", error.message);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to update report status after error:", e);
-    }
-    
+    console.error("Unhandled exception:", error);
     return new Response(
-      JSON.stringify({ error: "Internal server error", details: error.message }),
+      JSON.stringify({
+        error: "An unexpected error occurred",
+        details: error.message
+      }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -246,145 +305,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Helper function to update report status
-async function updateReportStatus(supabase: any, reportId: string, status: string, errorMessage?: string) {
-  const updateData: Record<string, any> = { status };
-  if (errorMessage) {
-    updateData.report_data = { error: errorMessage };
-  }
-  
-  try {
-    const { error } = await supabase
-      .from("generated_reports")
-      .update(updateData)
-      .eq("id", reportId);
-      
-    if (error) {
-      console.error("Error updating report status:", error);
-    }
-  } catch (e) {
-    console.error("Unexpected error updating report status:", e);
-  }
-}
-
-// Helper function to generate color palette
-function generateColorPalette(scheme: string) {
-  const palettes: Record<string, string[]> = {
-    greenBlue: ["#10B981", "#3B82F6", "#8B5CF6"],
-    vibrant: ["#F59E0B", "#10B981", "#3B82F6", "#EC4899"],
-    earthy: ["#D97706", "#65A30D", "#0369A1", "#A16207"],
-    contrast: ["#10B981", "#EC4899", "#F59E0B", "#8B5CF6"],
-    rainbow: ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899"]
-  };
-  return palettes[scheme] || palettes.greenBlue;
-}
-
-// Helper function to generate executive summary
-function generateExecutiveSummary(business: any, metrics: any) {
-  const envMetricsCount = metrics.environmental.length;
-  const socialMetricsCount = metrics.social.length;
-  const govMetricsCount = metrics.governance.length;
-  
-  return `This report provides a comprehensive ESG (Environmental, Social, and Governance) analysis for ${business.name}, operating in the ${business.industry_type} industry. ${
-    business.description ? `${business.description} ` : ''
-  }The analysis covers ${envMetricsCount + socialMetricsCount + govMetricsCount} metrics across environmental (${envMetricsCount}), social (${socialMetricsCount}), and governance (${govMetricsCount}) categories. The data presented reflects the company's performance and sustainability efforts, highlighting both achievements and areas for improvement.`;
-}
-
-// Helper function to generate section content
-function generateSectionContent(category: string, metrics: any[]) {
-  if (!metrics || metrics.length === 0) {
-    return `No ${category} metrics data available for this reporting period.`;
-  }
-  
-  const categoryText = {
-    environmental: "Environmental metrics focus on the company's impact on the natural environment and its mitigation strategies.",
-    social: "Social metrics address the company's relationship with employees, suppliers, customers, and communities.",
-    governance: "Governance metrics examine the internal systems, controls, and procedures the company uses to govern itself."
-  };
-  
-  let content = categoryText[category] || "";
-  content += ` This section presents data on ${metrics.length} key ${category} metrics.`;
-  
-  if (metrics.length > 0) {
-    const metricsSummary = metrics.slice(0, 3).map(m => `${m.name}: ${m.value}${m.unit ? ` ${m.unit}` : ''}`).join(", ");
-    content += ` Key highlights include ${metricsSummary}${metrics.length > 3 ? ', among others' : ''}.`;
-  }
-  
-  return content;
-}
-
-// Helper function to generate charts based on metrics
-function generateCharts(metrics: any, colorPalette: string[], configuration: any) {
-  const charts = [];
-  const prefs = configuration?.visualization || {};
-  
-  // Environmental metrics line chart
-  if (prefs.showLineCharts !== false && metrics.environmental.length > 0) {
-    charts.push({
-      type: "line",
-      title: "Environmental Metrics Trend",
-      data: metrics.environmental.slice(0, 5).map(m => ({ name: m.name, value: m.value })),
-      colors: [colorPalette[0]]
-    });
-  }
-  
-  // Social metrics bar chart
-  if (prefs.showBarCharts !== false && metrics.social.length > 0) {
-    charts.push({
-      type: "bar",
-      title: "Social Impact Metrics",
-      data: metrics.social.slice(0, 5).map(m => ({ name: m.name, value: m.value })),
-      colors: [colorPalette[1]]
-    });
-  }
-  
-  // Governance metrics pie chart
-  if (prefs.showPieCharts !== false && metrics.governance.length > 0) {
-    charts.push({
-      type: "pie",
-      title: "Governance Metrics Distribution",
-      data: metrics.governance.slice(0, 5).map(m => ({ name: m.name, value: m.value })),
-      colors: colorPalette
-    });
-  }
-  
-  // ESG category comparison
-  if (prefs.showBarCharts !== false) {
-    charts.push({
-      type: "bar",
-      title: "ESG Categories Comparison",
-      data: [
-        { name: "Environmental", value: metrics.environmental.length },
-        { name: "Social", value: metrics.social.length },
-        { name: "Governance", value: metrics.governance.length }
-      ],
-      colors: colorPalette
-    });
-  }
-  
-  return charts;
-}
-
-// Helper function to generate recommendations
-function generateRecommendations(metrics: any) {
-  const recommendations = [
-    "Conduct a comprehensive ESG materiality assessment to identify priority focus areas",
-    "Implement a real-time ESG data collection system to improve reporting accuracy and timeliness",
-    "Establish science-based targets for environmental metrics to align with global sustainability goals"
-  ];
-  
-  if (metrics.environmental.length < 5) {
-    recommendations.push("Expand environmental metrics tracking to cover a broader range of impacts");
-  }
-  
-  if (metrics.social.length < 5) {
-    recommendations.push("Develop additional social impact metrics to better assess community and employee engagement");
-  }
-  
-  if (metrics.governance.length < 5) {
-    recommendations.push("Enhance governance tracking with additional metrics on board diversity and ethical business practices");
-  }
-  
-  return recommendations;
-}

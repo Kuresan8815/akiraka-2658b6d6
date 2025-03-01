@@ -1,11 +1,13 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GeneratedReport } from "@/types/reports";
-import { Download, FileText, Loader2, BarChart3, PieChart } from "lucide-react";
+import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 
 interface GeneratedReportsProps {
   businessId?: string;
@@ -37,6 +39,57 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       })) as (GeneratedReport & { report_template: any })[];
     },
   });
+
+  const handleDownload = async (report: GeneratedReport & { report_template: any }) => {
+    if (!report.pdf_url) {
+      toast({
+        title: "Error",
+        description: "PDF URL is missing. Please regenerate the report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Try to fetch the file to check if it exists
+      const response = await fetch(report.pdf_url, { method: 'HEAD' });
+      
+      if (!response.ok) {
+        console.error(`PDF file not found: ${report.pdf_url}`, response.status, response.statusText);
+        
+        toast({
+          title: "File Not Found",
+          description: "The PDF file could not be found. Please regenerate the report.",
+          variant: "destructive",
+        });
+        
+        // Update the report status to reflect the issue
+        await supabase
+          .from("generated_reports")
+          .update({ 
+            status: "failed", 
+            report_data: { 
+              ...report.report_data,
+              error: "PDF file not found",
+              timestamp: new Date().toISOString()
+            } 
+          })
+          .eq("id", report.id);
+        
+        return;
+      }
+      
+      // File exists, proceed with download
+      window.open(report.pdf_url, '_blank');
+    } catch (error) {
+      console.error("Error checking/downloading PDF:", error);
+      toast({
+        title: "Download Error",
+        description: "There was an error downloading the file. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return <div>Loading reports...</div>;
@@ -84,21 +137,34 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                   </div>
                 )}
               </div>
-              {report.pdf_url && report.status === 'completed' && (
-                <Button variant="outline" size="sm" asChild>
-                  <a href={report.pdf_url} target="_blank" rel="noopener noreferrer">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download PDF
-                    {report.file_size && (
-                      <span className="ml-2 text-xs text-gray-500">
-                        ({Math.round(report.file_size / 1024)}KB)
-                      </span>
-                    )}
-                  </a>
+              
+              {report.status === 'completed' && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => handleDownload(report)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download PDF
+                  {report.file_size && (
+                    <span className="ml-2 text-xs text-gray-500">
+                      ({Math.round(report.file_size / 1024)}KB)
+                    </span>
+                  )}
                 </Button>
               )}
+              
               {report.status === 'processing' && (
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              )}
+              
+              {report.status === 'failed' && (
+                <div className="flex flex-col items-end">
+                  <AlertTriangle className="h-5 w-5 text-destructive mb-1" />
+                  <span className="text-xs text-destructive">
+                    Report generation failed
+                  </span>
+                </div>
               )}
             </div>
           </CardHeader>
@@ -127,6 +193,12 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                   {report.report_template.visualization_config.showPieCharts && (
                     <PieChart className="h-4 w-4 text-gray-400" />
                   )}
+                </div>
+              )}
+              
+              {report.status === 'failed' && report.report_data?.error && (
+                <div className="mt-2 p-2 bg-red-50 text-red-700 rounded text-xs">
+                  Error: {report.report_data.error}
                 </div>
               )}
             </div>
