@@ -1,14 +1,13 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GeneratedReport } from "@/types/reports";
-import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle, Info, RotateCw, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { parseReportData } from "./utils/reportDataUtils";
+import { ReportErrorMessage } from "./components/ReportErrorMessage";
+import { ReportsLoading } from "./components/ReportsLoading";
+import { EmptyReportsState } from "./components/EmptyReportsState";
+import { ReportCard } from "./components/ReportCard";
 
 interface GeneratedReportsProps {
   businessId?: string;
@@ -130,215 +129,26 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
   };
 
   if (error) {
-    return (
-      <Card className="bg-red-50">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-2">
-            <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
-            <CardTitle>Error Loading Reports</CardTitle>
-            <CardDescription className="text-red-600">
-              {error instanceof Error ? error.message : "Failed to load reports"}
-            </CardDescription>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ReportErrorMessage error={error} />;
   }
 
   if (isLoading) {
-    return (
-      <Card className="bg-gray-50">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-2">
-            <Loader2 className="mx-auto h-12 w-12 text-gray-400 animate-spin" />
-            <CardTitle>Loading reports...</CardTitle>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ReportsLoading />;
   }
 
   if (!reports?.length) {
-    return (
-      <Card className="bg-gray-50">
-        <CardContent className="pt-6">
-          <div className="text-center space-y-2">
-            <FileText className="mx-auto h-12 w-12 text-gray-400" />
-            <CardTitle>No generated reports</CardTitle>
-            <CardDescription>
-              Generate a report from one of your templates to see it here
-            </CardDescription>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <EmptyReportsState />;
   }
 
   return (
     <div className="space-y-4">
       {reports.map((report) => (
-        <Card key={report.id} className={report.status === 'failed' ? 'border-red-300 bg-red-50' : ''}>
-          <CardHeader>
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <CardTitle className="flex items-center gap-2">
-                  Report #{report.id.slice(0, 8)}
-                  <Badge variant={
-                    report.status === 'completed' ? 'default' :
-                    report.status === 'failed' ? 'destructive' :
-                    'secondary'
-                  }>
-                    {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
-                  </Badge>
-                  {report.report_data?.empty_metrics && (
-                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                      Empty Metrics
-                    </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  Generated on {format(new Date(report.generated_at), "PPP")}
-                </CardDescription>
-                {report.report_template && (
-                  <div className="text-sm text-muted-foreground">
-                    Template: {report.report_template.name} ({report.report_template.report_type})
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center gap-2">
-                {report.status === 'completed' && report.pdf_url && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleDownload(report)}
-                    className="flex items-center gap-2"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download PDF
-                    {report.file_size && (
-                      <span className="ml-2 text-xs text-gray-500">
-                        ({Math.round(report.file_size / 1024)}KB)
-                      </span>
-                    )}
-                  </Button>
-                )}
-
-                {report.status === 'completed' && report.pdf_url && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(report.pdf_url, '_blank')}
-                    title="Open PDF directly in browser"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                )}
-                
-                {report.status === 'processing' && (
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                )}
-                
-                {(report.status === 'failed' || 
-                  (report.status === 'completed' && report.page_count === 0) || 
-                  (report.status === 'completed' && !report.pdf_url)) && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleRetry(report)}
-                    className="gap-2"
-                  >
-                    <RotateCw className="h-4 w-4" />
-                    Retry with Empty Metrics
-                  </Button>
-                )}
-                
-                {report.status === 'failed' && (
-                  <AlertTriangle className="h-5 w-5 text-destructive" />
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-sm space-y-2">
-              <div className="text-gray-500">
-                Date Range: {report.date_range ? (
-                  <span>
-                    {format(new Date(report.date_range.start), "PP")} -{" "}
-                    {format(new Date(report.date_range.end), "PP")}
-                  </span>
-                ) : (
-                  "All Time"
-                )}
-              </div>
-              {report.page_count ? (
-                <div className="text-gray-500">
-                  Pages: {report.page_count}
-                </div>
-              ) : report.status === 'completed' ? (
-                <div className="text-amber-600">
-                  Warning: Report has 0 pages
-                </div>
-              ) : null}
-              {report.report_template?.visualization_config && (
-                <div className="flex gap-2 mt-2">
-                  {report.report_template.visualization_config.showBarCharts && (
-                    <BarChart3 className="h-4 w-4 text-gray-400" />
-                  )}
-                  {report.report_template.visualization_config.showPieCharts && (
-                    <PieChart className="h-4 w-4 text-gray-400" />
-                  )}
-                </div>
-              )}
-              
-              {report.status === 'failed' && report.report_data?.error && (
-                <div className="mt-2 p-2 bg-red-50 text-red-700 rounded text-xs">
-                  Error: {report.report_data.error}
-                </div>
-              )}
-              
-              {report.report_data?.empty_metrics && (
-                <div className="mt-2 p-2 bg-amber-50 text-amber-700 rounded text-xs">
-                  This report contains empty metrics. The report will show the metric structure but may not have data values.
-                </div>
-              )}
-              
-              {report.status === 'completed' && report.pdf_url && (
-                <div className="mt-2 text-xs text-gray-500 break-all">
-                  <span className="font-semibold">PDF URL:</span> {report.pdf_url}
-                </div>
-              )}
-              
-              {(report.status === 'completed' && (!report.pdf_url || !report.page_count || report.page_count === 0)) && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center mt-2 text-xs text-amber-600 cursor-help">
-                        <Info className="h-4 w-4 mr-1" />
-                        Potential issues detected
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-md">
-                      <div className="text-xs">
-                        <p className="font-bold">Debug Information:</p>
-                        <ul className="list-disc pl-4 mt-1 space-y-1">
-                          {!report.pdf_url && <li>PDF URL is missing</li>}
-                          {!report.page_count && <li>Page count is missing</li>}
-                          {report.page_count === 0 && <li>Page count is zero (empty report)</li>}
-                          {report.report_data?.empty_metrics && <li>Report generated with empty metrics handling</li>}
-                          {report.pdf_url && <li>PDF URL: {report.pdf_url}</li>}
-                          <li>Report data keys: {Object.keys(report.report_data || {}).join(', ') || 'none'}</li>
-                          <li>Generated at: {report.generated_at}</li>
-                          <li>Status updates: {Array.isArray(report.report_data?.status_updates) ? report.report_data.status_updates.join(', ') : 'none'}</li>
-                        </ul>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <ReportCard 
+          key={report.id}
+          report={report}
+          onDownload={handleDownload}
+          onRetry={handleRetry}
+        />
       ))}
     </div>
   );
