@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -59,6 +58,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
     mutationFn: async () => {
       if (!businessId) throw new Error("No business selected");
 
+      console.log("Creating report for business:", businessId);
       const colorPalette = getColorPalette(colorScheme);
 
       const { data: template, error: templateError } = await supabase
@@ -124,7 +124,12 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         .select()
         .single();
 
-      if (templateError) throw templateError;
+      if (templateError) {
+        console.error("Template creation error:", templateError);
+        throw templateError;
+      }
+
+      console.log("Template created successfully:", template);
 
       const { data: report, error: reportError } = await supabase
         .from("generated_reports")
@@ -152,10 +157,15 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         .select()
         .single();
 
-      if (reportError) throw reportError;
+      if (reportError) {
+        console.error("Report creation error:", reportError);
+        throw reportError;
+      }
 
-      const { error: fnError } = await supabase.functions.invoke('generate-esg-report', {
-        body: { 
+      console.log("Report record created successfully:", report);
+
+      try {
+        console.log("Invoking edge function with params:", {
           report_id: report.id,
           business_id: businessId,
           configuration: {
@@ -171,11 +181,39 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               highlightKeyFindings: true
             }
           }
-        }
-      });
+        });
+        
+        const { data: fnResponse, error: fnError } = await supabase.functions.invoke('generate-esg-report', {
+          body: { 
+            report_id: report.id,
+            business_id: businessId,
+            configuration: {
+              title,
+              description,
+              visualization,
+              colorScheme,
+              includeExecutiveSummary: true,
+              categorizeByESG: true,
+              infographicOptions: {
+                showIcons: true,
+                useAnimations: true,
+                highlightKeyFindings: true
+              }
+            }
+          }
+        });
 
-      if (fnError) throw fnError;
-      return report;
+        if (fnError) {
+          console.error("Edge function error:", fnError);
+          throw new Error(`Edge function error: ${fnError.message}`);
+        }
+        
+        console.log("Edge function response:", fnResponse);
+        return report;
+      } catch (fnInvokeError) {
+        console.error("Error invoking edge function:", fnInvokeError);
+        throw new Error(`Failed to start report generation process: ${fnInvokeError.message}`);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["generated-reports"] });
