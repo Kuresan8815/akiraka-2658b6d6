@@ -3,6 +3,8 @@ project_id = "nmlpmvsxqkmfrddvdfaw"
 
 [generate-ai-report]
 verify_jwt = true
+import_map = "import_map.json"
 
 [generate-esg-report]
 verify_jwt = true
+import_map = "import_map.json"
