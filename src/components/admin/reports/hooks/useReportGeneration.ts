@@ -1,113 +1,38 @@
 
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useReportForm } from "./useReportForm";
+import { ReportData, getColorPalette, parseReportData, getStatusUpdates } from "../utils/reportDataUtils";
 
 interface UseReportGenerationProps {
   businessId?: string;
   onSuccess: () => void;
 }
 
-// Define a type for the report data structure
-interface ReportData {
-  empty_metrics?: boolean;
-  useExternalCharts?: boolean;
-  error?: string;
-  timestamp?: string;
-  status_updates?: string[];
-  warning?: string;
-  [key: string]: any;
-}
-
 export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerationProps) => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [visualization, setVisualization] = useState({
-    showBarCharts: true,
-    showLineCharts: true,
-    showPieCharts: true,
-    showTables: true,
-    showTimeline: true,
-    showWaterfall: true,
-    showHeatmaps: true,
-    showInfographics: true,
-  });
-  
-  const [colorScheme, setColorScheme] = useState("greenBlue");
-  const [handleEmptyMetrics, setHandleEmptyMetrics] = useState(true);
-  const [useExternalCharts, setUseExternalCharts] = useState(true); // New state for external chart API
-
+  const formState = useReportForm();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  // Helper function to safely parse report data
-  const parseReportData = (data: any): ReportData => {
-    if (!data) return {};
-    if (typeof data === 'object') return data as ReportData;
-    try {
-      if (typeof data === 'string') return JSON.parse(data) as ReportData;
-    } catch (e) {
-      console.error("Error parsing report data:", e);
-    }
-    return {};
-  };
-
-  // Helper function to get status updates safely
-  const getStatusUpdates = (data: any): string[] => {
-    const parsedData = parseReportData(data);
-    return Array.isArray(parsedData.status_updates) 
-      ? parsedData.status_updates 
-      : ["Created report record"];
-  };
-
-  const resetForm = () => {
-    setTitle("");
-    setDescription("");
-    setVisualization({
-      showBarCharts: true,
-      showLineCharts: true,
-      showPieCharts: true,
-      showTables: true,
-      showTimeline: true,
-      showWaterfall: true,
-      showHeatmaps: true,
-      showInfographics: true,
-    });
-    setColorScheme("greenBlue");
-    setHandleEmptyMetrics(true);
-    setUseExternalCharts(true);
-  };
-
-  const getColorPalette = (scheme: string) => {
-    const palettes = {
-      greenBlue: ["#10B981", "#3B82F6", "#8B5CF6"],
-      vibrant: ["#F59E0B", "#10B981", "#3B82F6", "#EC4899"],
-      earthy: ["#D97706", "#65A30D", "#0369A1", "#A16207"],
-      contrast: ["#10B981", "#EC4899", "#F59E0B", "#8B5CF6"],
-      rainbow: ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899"]
-    };
-    return palettes[scheme as keyof typeof palettes] || palettes.greenBlue;
-  };
 
   const { mutate: createReport, isPending } = useMutation({
     mutationFn: async () => {
       if (!businessId) throw new Error("No business selected");
 
       console.log("Creating report for business:", businessId);
-      const colorPalette = getColorPalette(colorScheme);
+      const colorPalette = getColorPalette(formState.colorScheme);
 
       // Step 1: Create template
       const { data: template, error: templateError } = await supabase
         .from("report_templates")
         .insert({
           business_id: businessId,
-          name: title,
-          description,
+          name: formState.title,
+          description: formState.description,
           layout_type: "infographic",
           theme_colors: colorPalette,
           report_type: "combined",
-          visualization_config: visualization,
+          visualization_config: formState.visualization,
           charts_config: [
             {
               type: "line",
@@ -147,7 +72,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             }
           ],
           config: {
-            infographicTemplates: visualization.showInfographics ? ["esg_summary", "impact_highlights", "sustainability_journey"] : [],
+            infographicTemplates: formState.visualization.showInfographics ? ["esg_summary", "impact_highlights", "sustainability_journey"] : [],
             includeExecutiveSummary: true,
             headingFont: "Poppins",
             bodyFont: "Inter",
@@ -155,7 +80,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             enableInteractivity: true,
             pageLayout: "modern",
             showDataSources: true,
-            useExternalChartProvider: useExternalCharts // Add the new configuration
+            useExternalChartProvider: formState.useExternalCharts
           },
           is_active: true
         })
@@ -176,8 +101,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
       };
       
       const initialReportData: ReportData = {
-        empty_metrics: handleEmptyMetrics,
-        useExternalCharts: useExternalCharts,
+        empty_metrics: formState.handleEmptyMetrics,
+        useExternalCharts: formState.useExternalCharts,
         status_updates: ["Created report record"]
       };
       
@@ -191,10 +116,10 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           date_range: dateRange,
           metadata: {
             reportType: "comprehensive_esg",
-            visualizationPreferences: visualization,
-            colorScheme: colorScheme,
-            handleEmptyMetrics: handleEmptyMetrics,
-            useExternalCharts: useExternalCharts, // Add to metadata as well
+            visualizationPreferences: formState.visualization,
+            colorScheme: formState.colorScheme,
+            handleEmptyMetrics: formState.handleEmptyMetrics,
+            useExternalCharts: formState.useExternalCharts,
             infographicOptions: {
               showIcons: true,
               useAnimations: true,
@@ -213,167 +138,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
 
       console.log("Report record created successfully:", report);
 
-      // Step 3: Invoke edge function to generate the report
-      try {
-        console.log("Invoking edge function with params:", {
-          report_id: report.id,
-          business_id: businessId,
-          handle_empty_metrics: handleEmptyMetrics,
-          use_external_charts: useExternalCharts, // Add new parameter
-          configuration: {
-            title,
-            description,
-            visualization,
-            colorScheme,
-            date_range: dateRange,
-            includeExecutiveSummary: true,
-            categorizeByESG: true,
-            handleEmptyMetrics: handleEmptyMetrics,
-            useExternalCharts: useExternalCharts, // Add to configuration
-            chartProvider: "quickchart", // Specify which chart provider to use
-            infographicOptions: {
-              showIcons: true,
-              useAnimations: true,
-              highlightKeyFindings: true
-            }
-          }
-        });
-        
-        const { data: fnResponse, error: fnError } = await supabase.functions.invoke('generate-esg-report', {
-          body: { 
-            report_id: report.id,
-            business_id: businessId,
-            handle_empty_metrics: handleEmptyMetrics,
-            use_external_charts: useExternalCharts, // Add the flag to the edge function
-            configuration: {
-              title,
-              description,
-              visualization,
-              colorScheme,
-              date_range: dateRange,
-              includeExecutiveSummary: true,
-              categorizeByESG: true,
-              handleEmptyMetrics: handleEmptyMetrics,
-              useExternalCharts: useExternalCharts, // Add flag to configuration
-              chartProvider: "quickchart", // Specify which chart provider to use
-              infographicOptions: {
-                showIcons: true,
-                useAnimations: true,
-                highlightKeyFindings: true
-              }
-            }
-          }
-        });
-
-        if (fnError) {
-          console.error("Edge function error:", fnError);
-          
-          // Update report status to failed
-          const reportData = parseReportData(report.report_data);
-          const statusUpdates = getStatusUpdates(reportData);
-          statusUpdates.push("Edge function failed");
-          
-          await supabase
-            .from("generated_reports")
-            .update({ 
-              status: "failed", 
-              report_data: { 
-                error: fnError.message,
-                empty_metrics: handleEmptyMetrics,
-                useExternalCharts: useExternalCharts,
-                timestamp: new Date().toISOString(),
-                status_updates: statusUpdates
-              } 
-            })
-            .eq("id", report.id);
-            
-          throw new Error(`Edge function error: ${fnError.message}`);
-        }
-        
-        console.log("Edge function response:", fnResponse);
-        
-        // Check for PDF URL in the response
-        if (fnResponse && fnResponse.pdf_url) {
-          // Update the report with the PDF URL
-          const reportData = parseReportData(report.report_data);
-          const statusUpdates = getStatusUpdates(reportData);
-          statusUpdates.push("Report completed with PDF");
-          
-          const { error: updateError } = await supabase
-            .from("generated_reports")
-            .update({ 
-              pdf_url: fnResponse.pdf_url,
-              status: "completed",
-              report_data: {
-                ...reportData,
-                empty_metrics: handleEmptyMetrics,
-                useExternalCharts: useExternalCharts,
-                status_updates: statusUpdates
-              }
-            })
-            .eq("id", report.id);
-            
-          if (updateError) {
-            console.error("Error updating report with PDF URL:", updateError);
-          }
-        } else {
-          console.warn("PDF URL missing in function response:", fnResponse);
-          
-          // Update the report with a warning about missing PDF URL
-          const reportData = parseReportData(report.report_data);
-          const statusUpdates = getStatusUpdates(reportData);
-          statusUpdates.push("Completed but missing PDF URL");
-          
-          await supabase
-            .from("generated_reports")
-            .update({ 
-              status: "completed",
-              report_data: {
-                ...reportData,
-                empty_metrics: handleEmptyMetrics,
-                useExternalCharts: useExternalCharts,
-                warning: "PDF URL missing in edge function response",
-                status_updates: statusUpdates
-              }
-            })
-            .eq("id", report.id);
-        }
-        
-        return report;
-      } catch (fnInvokeError: any) {
-        console.error("Error invoking edge function:", fnInvokeError);
-        
-        // More detailed error logging
-        if (fnInvokeError.response) {
-          try {
-            const errorBody = await fnInvokeError.response.json();
-            console.error("Edge function response body:", errorBody);
-          } catch (e) {
-            console.error("Couldn't parse edge function error response");
-          }
-        }
-        
-        // Update report status to failed
-        const reportData = parseReportData(report.report_data);
-        const statusUpdates = getStatusUpdates(reportData);
-        statusUpdates.push("Edge function invoke error");
-        
-        await supabase
-          .from("generated_reports")
-          .update({ 
-            status: "failed", 
-            report_data: { 
-              error: fnInvokeError.message || "Unknown error",
-              empty_metrics: handleEmptyMetrics,
-              useExternalCharts: useExternalCharts,
-              timestamp: new Date().toISOString(),
-              status_updates: statusUpdates
-            } 
-          })
-          .eq("id", report.id);
-          
-        throw new Error(`Failed to start report generation process: ${fnInvokeError.message}`);
-      }
+      return await generateReportWithEdgeFunction(report, businessId, formState, dateRange);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["generated-reports"] });
@@ -381,7 +146,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         title: "Success",
         description: "Report generation started. You'll be notified when it's ready.",
       });
-      resetForm();
+      formState.resetForm();
       onSuccess();
     },
     onError: (error: any) => {
@@ -395,19 +160,173 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
   });
 
   return {
-    title,
-    setTitle,
-    description,
-    setDescription,
-    visualization,
-    setVisualization,
-    colorScheme,
-    setColorScheme,
-    handleEmptyMetrics,
-    setHandleEmptyMetrics,
-    useExternalCharts,
-    setUseExternalCharts,
+    ...formState,
     createReport,
     isPending,
   };
 };
+
+async function generateReportWithEdgeFunction(report: any, businessId: string, formState: ReturnType<typeof useReportForm>, dateRange: { start: string; end: string }) {
+  try {
+    console.log("Invoking edge function with params:", {
+      report_id: report.id,
+      business_id: businessId,
+      handle_empty_metrics: formState.handleEmptyMetrics,
+      use_external_charts: formState.useExternalCharts,
+      configuration: {
+        title: formState.title,
+        description: formState.description,
+        visualization: formState.visualization,
+        colorScheme: formState.colorScheme,
+        date_range: dateRange,
+        includeExecutiveSummary: true,
+        categorizeByESG: true,
+        handleEmptyMetrics: formState.handleEmptyMetrics,
+        useExternalCharts: formState.useExternalCharts,
+        chartProvider: "quickchart",
+        infographicOptions: {
+          showIcons: true,
+          useAnimations: true,
+          highlightKeyFindings: true
+        }
+      }
+    });
+    
+    const { data: fnResponse, error: fnError } = await supabase.functions.invoke('generate-esg-report', {
+      body: { 
+        report_id: report.id,
+        business_id: businessId,
+        handle_empty_metrics: formState.handleEmptyMetrics,
+        use_external_charts: formState.useExternalCharts,
+        configuration: {
+          title: formState.title,
+          description: formState.description,
+          visualization: formState.visualization,
+          colorScheme: formState.colorScheme,
+          date_range: dateRange,
+          includeExecutiveSummary: true,
+          categorizeByESG: true,
+          handleEmptyMetrics: formState.handleEmptyMetrics,
+          useExternalCharts: formState.useExternalCharts,
+          chartProvider: "quickchart",
+          infographicOptions: {
+            showIcons: true,
+            useAnimations: true,
+            highlightKeyFindings: true
+          }
+        }
+      }
+    });
+
+    if (fnError) {
+      console.error("Edge function error:", fnError);
+      
+      // Update report status to failed
+      const reportData = parseReportData(report.report_data);
+      const statusUpdates = getStatusUpdates(reportData);
+      statusUpdates.push("Edge function failed");
+      
+      await supabase
+        .from("generated_reports")
+        .update({ 
+          status: "failed", 
+          report_data: { 
+            ...reportData,
+            error: fnError.message,
+            empty_metrics: formState.handleEmptyMetrics,
+            useExternalCharts: formState.useExternalCharts,
+            timestamp: new Date().toISOString(),
+            status_updates: statusUpdates
+          } 
+        })
+        .eq("id", report.id);
+        
+      throw new Error(`Edge function error: ${fnError.message}`);
+    }
+    
+    console.log("Edge function response:", fnResponse);
+    
+    // Check for PDF URL in the response
+    if (fnResponse && fnResponse.pdf_url) {
+      // Update the report with the PDF URL
+      const reportData = parseReportData(report.report_data);
+      const statusUpdates = getStatusUpdates(reportData);
+      statusUpdates.push("Report completed with PDF");
+      
+      const { error: updateError } = await supabase
+        .from("generated_reports")
+        .update({ 
+          pdf_url: fnResponse.pdf_url,
+          status: "completed",
+          report_data: {
+            ...reportData,
+            empty_metrics: formState.handleEmptyMetrics,
+            useExternalCharts: formState.useExternalCharts,
+            status_updates: statusUpdates
+          }
+        })
+        .eq("id", report.id);
+        
+      if (updateError) {
+        console.error("Error updating report with PDF URL:", updateError);
+      }
+    } else {
+      console.warn("PDF URL missing in function response:", fnResponse);
+      
+      // Update the report with a warning about missing PDF URL
+      const reportData = parseReportData(report.report_data);
+      const statusUpdates = getStatusUpdates(reportData);
+      statusUpdates.push("Completed but missing PDF URL");
+      
+      await supabase
+        .from("generated_reports")
+        .update({ 
+          status: "completed",
+          report_data: {
+            ...reportData,
+            empty_metrics: formState.handleEmptyMetrics,
+            useExternalCharts: formState.useExternalCharts,
+            warning: "PDF URL missing in edge function response",
+            status_updates: statusUpdates
+          }
+        })
+        .eq("id", report.id);
+    }
+    
+    return report;
+  } catch (fnInvokeError: any) {
+    console.error("Error invoking edge function:", fnInvokeError);
+    
+    // More detailed error logging
+    if (fnInvokeError.response) {
+      try {
+        const errorBody = await fnInvokeError.response.json();
+        console.error("Edge function response body:", errorBody);
+      } catch (e) {
+        console.error("Couldn't parse edge function error response");
+      }
+    }
+    
+    // Update report status to failed
+    const reportData = parseReportData(report.report_data);
+    const statusUpdates = getStatusUpdates(reportData);
+    statusUpdates.push("Edge function invoke error");
+    
+    await supabase
+      .from("generated_reports")
+      .update({ 
+        status: "failed", 
+        report_data: { 
+          ...reportData,
+          error: fnInvokeError.message || "Unknown error",
+          empty_metrics: formState.handleEmptyMetrics,
+          useExternalCharts: formState.useExternalCharts,
+          timestamp: new Date().toISOString(),
+          status_updates: statusUpdates
+        } 
+      })
+      .eq("id", report.id);
+      
+    throw new Error(`Failed to start report generation process: ${fnInvokeError.message}`);
+  }
+}
