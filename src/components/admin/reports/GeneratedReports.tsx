@@ -3,18 +3,19 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GeneratedReport } from "@/types/reports";
-import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle } from "lucide-react";
+import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface GeneratedReportsProps {
   businessId?: string;
 }
 
 export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
-  const { data: reports, isLoading } = useQuery({
+  const { data: reports, isLoading, error } = useQuery({
     queryKey: ["generated-reports", businessId],
     enabled: !!businessId,
     refetchInterval: 5000, // Poll every 5 seconds for updates
@@ -29,6 +30,8 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
         .order("generated_at", { ascending: false });
 
       if (error) throw error;
+      
+      console.log("Reports fetched:", data); // Debug fetched reports
       
       return (data as any[]).map(report => ({
         ...report,
@@ -50,6 +53,8 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       return;
     }
 
+    console.log("Attempting to download PDF from:", report.pdf_url);
+    
     try {
       // Try to fetch the file to check if it exists
       const response = await fetch(report.pdf_url, { method: 'HEAD' });
@@ -59,7 +64,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
         
         toast({
           title: "File Not Found",
-          description: "The PDF file could not be found. Please regenerate the report.",
+          description: `The PDF file could not be found (${response.status}: ${response.statusText}). Please regenerate the report.`,
           variant: "destructive",
         });
         
@@ -70,7 +75,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
             status: "failed", 
             report_data: { 
               ...report.report_data,
-              error: "PDF file not found",
+              error: `PDF file not found: ${response.status} ${response.statusText}`,
               timestamp: new Date().toISOString()
             } 
           })
@@ -91,8 +96,76 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
     }
   };
 
+  const handleRetry = async (report: GeneratedReport & { report_template: any }) => {
+    try {
+      // Reset the report status to pending for reprocessing
+      const { error } = await supabase
+        .from("generated_reports")
+        .update({ 
+          status: "pending", 
+          report_data: {
+            ...report.report_data,
+            retry_timestamp: new Date().toISOString(),
+            retry_count: (report.report_data.retry_count || 0) + 1
+          }
+        })
+        .eq("id", report.id);
+      
+      if (error) throw error;
+      
+      // Call the edge function to regenerate the report
+      const { data: fnResponse, error: fnError } = await supabase.functions.invoke('generate-esg-report', {
+        body: { 
+          report_id: report.id,
+          business_id: businessId,
+          retry: true
+        }
+      });
+      
+      if (fnError) throw fnError;
+      
+      toast({
+        title: "Report Regeneration Started",
+        description: "Your report is being regenerated. This may take a few moments.",
+      });
+      
+    } catch (error: any) {
+      console.error("Error retrying report generation:", error);
+      toast({
+        title: "Error",
+        description: `Failed to retry report generation: ${error.message}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (error) {
+    return (
+      <Card className="bg-red-50">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-2">
+            <AlertTriangle className="mx-auto h-12 w-12 text-red-500" />
+            <CardTitle>Error Loading Reports</CardTitle>
+            <CardDescription className="text-red-600">
+              {error instanceof Error ? error.message : "Failed to load reports"}
+            </CardDescription>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (isLoading) {
-    return <div>Loading reports...</div>;
+    return (
+      <Card className="bg-gray-50">
+        <CardContent className="pt-6">
+          <div className="text-center space-y-2">
+            <Loader2 className="mx-auto h-12 w-12 text-gray-400 animate-spin" />
+            <CardTitle>Loading reports...</CardTitle>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (!reports?.length) {
@@ -114,7 +187,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
   return (
     <div className="space-y-4">
       {reports.map((report) => (
-        <Card key={report.id}>
+        <Card key={report.id} className={report.status === 'failed' ? 'border-red-300 bg-red-50' : ''}>
           <CardHeader>
             <div className="flex items-start justify-between">
               <div className="space-y-1">
@@ -159,11 +232,16 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
               )}
               
               {report.status === 'failed' && (
-                <div className="flex flex-col items-end">
-                  <AlertTriangle className="h-5 w-5 text-destructive mb-1" />
-                  <span className="text-xs text-destructive">
-                    Report generation failed
-                  </span>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleRetry(report)}
+                  >
+                    <Loader2 className="h-4 w-4 mr-2" />
+                    Retry
+                  </Button>
+                  <AlertTriangle className="h-5 w-5 text-destructive" />
                 </div>
               )}
             </div>
@@ -200,6 +278,31 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                 <div className="mt-2 p-2 bg-red-50 text-red-700 rounded text-xs">
                   Error: {report.report_data.error}
                 </div>
+              )}
+              
+              {/* Debug info for developers */}
+              {(report.status === 'completed' && (!report.pdf_url || !report.page_count)) && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center mt-2 text-xs text-amber-600">
+                        <Info className="h-4 w-4 mr-1" />
+                        Potential issues detected
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-md">
+                      <div className="text-xs">
+                        <p className="font-bold">Debug Information:</p>
+                        <ul className="list-disc pl-4 mt-1 space-y-1">
+                          {!report.pdf_url && <li>PDF URL is missing</li>}
+                          {!report.page_count && <li>Page count is missing (possibly empty report)</li>}
+                          {report.pdf_url && <li>PDF URL: {report.pdf_url}</li>}
+                          <li>Report data keys: {Object.keys(report.report_data).join(', ') || 'none'}</li>
+                        </ul>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
             </div>
           </CardContent>
