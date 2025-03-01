@@ -8,13 +8,16 @@ import { ReportErrorMessage } from "./components/ReportErrorMessage";
 import { ReportsLoading } from "./components/ReportsLoading";
 import { EmptyReportsState } from "./components/EmptyReportsState";
 import { ReportCard } from "./components/ReportCard";
+import { useState } from "react";
 
 interface GeneratedReportsProps {
   businessId?: string;
 }
 
 export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
-  const { data: reports, isLoading, error } = useQuery({
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
+  
+  const { data: reports, isLoading, error, refetch } = useQuery({
     queryKey: ["generated-reports", businessId],
     enabled: !!businessId,
     refetchInterval: 5000,
@@ -75,15 +78,25 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       return;
     }
 
+    setDownloadingReportId(report.id);
     console.log("Attempting to download PDF from:", report.pdf_url);
     
     try {
+      // First, check if the URL exists by making a HEAD request
+      const response = await fetch(report.pdf_url, { method: 'HEAD' });
+      
+      if (!response.ok) {
+        throw new Error(`PDF not found (status: ${response.status})`);
+      }
+      
+      // If the URL exists, open it in a new tab
       window.open(report.pdf_url, '_blank');
       
       const reportData = parseReportData(report.report_data);
       const updatedReportData = {
         ...reportData,
-        last_download_attempt: new Date().toISOString()
+        last_download_attempt: new Date().toISOString(),
+        download_success: true
       };
       
       supabase
@@ -102,9 +115,25 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       console.error("Error downloading PDF:", error);
       toast({
         title: "Download Error",
-        description: "There was an error downloading the file. Please try again later.",
+        description: "The PDF file could not be found or accessed. Please regenerate the report.",
         variant: "destructive",
       });
+      
+      // Update report data to reflect download failure
+      const reportData = parseReportData(report.report_data);
+      supabase
+        .from("generated_reports")
+        .update({ 
+          report_data: {
+            ...reportData,
+            last_download_attempt: new Date().toISOString(),
+            download_success: false,
+            download_error: "PDF file not found or inaccessible"
+          }
+        })
+        .eq("id", report.id);
+    } finally {
+      setDownloadingReportId(null);
     }
   };
 
@@ -164,6 +193,9 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       
       console.log("Edge function response:", fnResponse);
       
+      // Trigger a refetch to get the updated report status
+      refetch();
+      
       toast({
         title: "Report Regeneration Started",
         description: "Your report is being regenerated with empty metrics handling. This may take a few moments.",
@@ -199,6 +231,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
           report={report}
           onDownload={handleDownload}
           onRetry={handleRetry}
+          isDownloading={downloadingReportId === report.id}
         />
       ))}
     </div>

@@ -12,9 +12,10 @@ interface ReportCardProps {
   report: GeneratedReport & { report_template: any };
   onDownload: (report: GeneratedReport & { report_template: any }) => void;
   onRetry: (report: GeneratedReport & { report_template: any }) => void;
+  isDownloading?: boolean;
 }
 
-export const ReportCard = ({ report, onDownload, onRetry }: ReportCardProps) => {
+export const ReportCard = ({ report, onDownload, onRetry, isDownloading = false }: ReportCardProps) => {
   const isPdfUrlValid = (url: string | null) => {
     if (!url) return false;
     
@@ -102,6 +103,12 @@ export const ReportCard = ({ report, onDownload, onRetry }: ReportCardProps) => 
                 <div className="text-red-500 mt-1">
                   <AlertTriangle className="h-3 w-3 inline-block mr-1" />
                   This PDF URL appears to be invalid. You may need to regenerate the report.
+                </div>
+              )}
+              {report.report_data?.download_error && (
+                <div className="text-red-500 mt-1">
+                  <AlertTriangle className="h-3 w-3 inline-block mr-1" />
+                  Last download attempt failed: {report.report_data.download_error}
                 </div>
               )}
             </div>

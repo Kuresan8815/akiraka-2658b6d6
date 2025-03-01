@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Download, ExternalLink, Loader2, RotateCw } from "lucide-react";
 import { GeneratedReport } from "@/types/reports";
 import { toast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface ReportActionsProps {
   report: GeneratedReport & { report_template: any };
@@ -11,6 +12,8 @@ interface ReportActionsProps {
 }
 
 export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProps) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+  
   const isPdfUrlValid = (url: string | null) => {
     if (!url) return false;
     
@@ -38,6 +41,22 @@ export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProp
     window.open(report.pdf_url, '_blank');
   };
 
+  const handleDownload = async () => {
+    setIsDownloading(true);
+    try {
+      await onDownload(report);
+    } catch (error) {
+      console.error("Download error:", error);
+      toast({
+        title: "Download Failed",
+        description: "There was an error downloading the report. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   // Determine if retry should be enabled
   const shouldShowRetry = 
     report.status === 'failed' || 
@@ -55,11 +74,16 @@ export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProp
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={() => onDownload(report)}
+            onClick={handleDownload}
             className="flex items-center gap-2"
+            disabled={isDownloading}
           >
-            <Download className="h-4 w-4" />
-            Download PDF
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            {isDownloading ? "Downloading..." : "Download PDF"}
             {report.file_size && (
               <span className="ml-2 text-xs text-gray-500">
                 ({Math.round(report.file_size / 1024)}KB)
