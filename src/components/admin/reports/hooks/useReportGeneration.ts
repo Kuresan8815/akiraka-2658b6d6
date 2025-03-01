@@ -9,6 +9,17 @@ interface UseReportGenerationProps {
   onSuccess: () => void;
 }
 
+// Define a type for the report data structure
+interface ReportData {
+  empty_metrics?: boolean;
+  useExternalCharts?: boolean;
+  error?: string;
+  timestamp?: string;
+  status_updates?: string[];
+  warning?: string;
+  [key: string]: any;
+}
+
 export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerationProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -29,6 +40,26 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Helper function to safely parse report data
+  const parseReportData = (data: any): ReportData => {
+    if (!data) return {};
+    if (typeof data === 'object') return data as ReportData;
+    try {
+      if (typeof data === 'string') return JSON.parse(data) as ReportData;
+    } catch (e) {
+      console.error("Error parsing report data:", e);
+    }
+    return {};
+  };
+
+  // Helper function to get status updates safely
+  const getStatusUpdates = (data: any): string[] => {
+    const parsedData = parseReportData(data);
+    return Array.isArray(parsedData.status_updates) 
+      ? parsedData.status_updates 
+      : ["Created report record"];
+  };
 
   const resetForm = () => {
     setTitle("");
@@ -144,16 +175,18 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         end: new Date().toISOString(),
       };
       
+      const initialReportData: ReportData = {
+        empty_metrics: handleEmptyMetrics,
+        useExternalCharts: useExternalCharts,
+        status_updates: ["Created report record"]
+      };
+      
       const { data: report, error: reportError } = await supabase
         .from("generated_reports")
         .insert({
           business_id: businessId,
           template_id: template.id,
-          report_data: {
-            empty_metrics: handleEmptyMetrics,
-            useExternalCharts: useExternalCharts, // Add the new flag
-            status_updates: ["Created report record"]
-          },
+          report_data: initialReportData,
           status: "pending",
           date_range: dateRange,
           metadata: {
@@ -236,6 +269,10 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           console.error("Edge function error:", fnError);
           
           // Update report status to failed
+          const reportData = parseReportData(report.report_data);
+          const statusUpdates = getStatusUpdates(reportData);
+          statusUpdates.push("Edge function failed");
+          
           await supabase
             .from("generated_reports")
             .update({ 
@@ -245,7 +282,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
                 empty_metrics: handleEmptyMetrics,
                 useExternalCharts: useExternalCharts,
                 timestamp: new Date().toISOString(),
-                status_updates: ["Created report record", "Edge function failed"]
+                status_updates: statusUpdates
               } 
             })
             .eq("id", report.id);
@@ -258,10 +295,9 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         // Check for PDF URL in the response
         if (fnResponse && fnResponse.pdf_url) {
           // Update the report with the PDF URL
-          const reportData = typeof report.report_data === 'object' ? report.report_data : {};
-          const statusUpdates = Array.isArray(reportData.status_updates) ? 
-            [...reportData.status_updates, "Report completed with PDF"] : 
-            ["Created report record", "Report completed with PDF"];
+          const reportData = parseReportData(report.report_data);
+          const statusUpdates = getStatusUpdates(reportData);
+          statusUpdates.push("Report completed with PDF");
           
           const { error: updateError } = await supabase
             .from("generated_reports")
@@ -284,10 +320,9 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           console.warn("PDF URL missing in function response:", fnResponse);
           
           // Update the report with a warning about missing PDF URL
-          const reportData = typeof report.report_data === 'object' ? report.report_data : {};
-          const statusUpdates = Array.isArray(reportData.status_updates) ? 
-            [...reportData.status_updates, "Completed but missing PDF URL"] : 
-            ["Created report record", "Completed but missing PDF URL"];
+          const reportData = parseReportData(report.report_data);
+          const statusUpdates = getStatusUpdates(reportData);
+          statusUpdates.push("Completed but missing PDF URL");
           
           await supabase
             .from("generated_reports")
@@ -319,10 +354,9 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         }
         
         // Update report status to failed
-        const reportData = typeof report.report_data === 'object' ? report.report_data : {};
-        const statusUpdates = Array.isArray(reportData.status_updates) ? 
-          [...reportData.status_updates, "Edge function invoke error"] : 
-          ["Created report record", "Edge function invoke error"];
+        const reportData = parseReportData(report.report_data);
+        const statusUpdates = getStatusUpdates(reportData);
+        statusUpdates.push("Edge function invoke error");
         
         await supabase
           .from("generated_reports")
