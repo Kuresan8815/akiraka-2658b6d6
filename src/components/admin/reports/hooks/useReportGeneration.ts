@@ -258,16 +258,21 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         // Check for PDF URL in the response
         if (fnResponse && fnResponse.pdf_url) {
           // Update the report with the PDF URL
+          const reportData = typeof report.report_data === 'object' ? report.report_data : {};
+          const statusUpdates = Array.isArray(reportData.status_updates) ? 
+            [...reportData.status_updates, "Report completed with PDF"] : 
+            ["Created report record", "Report completed with PDF"];
+          
           const { error: updateError } = await supabase
             .from("generated_reports")
             .update({ 
               pdf_url: fnResponse.pdf_url,
               status: "completed",
               report_data: {
-                ...report.report_data,
+                ...reportData,
                 empty_metrics: handleEmptyMetrics,
                 useExternalCharts: useExternalCharts,
-                status_updates: [...(report.report_data?.status_updates || []), "Report completed with PDF"]
+                status_updates: statusUpdates
               }
             })
             .eq("id", report.id);
@@ -279,16 +284,21 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           console.warn("PDF URL missing in function response:", fnResponse);
           
           // Update the report with a warning about missing PDF URL
+          const reportData = typeof report.report_data === 'object' ? report.report_data : {};
+          const statusUpdates = Array.isArray(reportData.status_updates) ? 
+            [...reportData.status_updates, "Completed but missing PDF URL"] : 
+            ["Created report record", "Completed but missing PDF URL"];
+          
           await supabase
             .from("generated_reports")
             .update({ 
               status: "completed",
               report_data: {
-                ...report.report_data,
+                ...reportData,
                 empty_metrics: handleEmptyMetrics,
                 useExternalCharts: useExternalCharts,
                 warning: "PDF URL missing in edge function response",
-                status_updates: [...(report.report_data?.status_updates || []), "Completed but missing PDF URL"]
+                status_updates: statusUpdates
               }
             })
             .eq("id", report.id);
@@ -309,6 +319,11 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         }
         
         // Update report status to failed
+        const reportData = typeof report.report_data === 'object' ? report.report_data : {};
+        const statusUpdates = Array.isArray(reportData.status_updates) ? 
+          [...reportData.status_updates, "Edge function invoke error"] : 
+          ["Created report record", "Edge function invoke error"];
+        
         await supabase
           .from("generated_reports")
           .update({ 
@@ -318,7 +333,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               empty_metrics: handleEmptyMetrics,
               useExternalCharts: useExternalCharts,
               timestamp: new Date().toISOString(),
-              status_updates: [...(report.report_data?.status_updates || []), "Edge function invoke error"]
+              status_updates: statusUpdates
             } 
           })
           .eq("id", report.id);

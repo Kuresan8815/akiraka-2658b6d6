@@ -10,7 +10,7 @@ import { Loader2 } from "lucide-react";
 
 interface ReportFormProps {
   businessId?: string;
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export const ReportForm = ({ businessId, onSuccess }: ReportFormProps) => {
@@ -29,7 +29,10 @@ export const ReportForm = ({ businessId, onSuccess }: ReportFormProps) => {
     setUseExternalCharts,
     createReport,
     isPending,
-  } = useReportGeneration({ businessId, onSuccess });
+  } = useReportGeneration({ 
+    businessId, 
+    onSuccess: onSuccess || (() => {})
+  });
 
   return (
     <div className="space-y-6">
