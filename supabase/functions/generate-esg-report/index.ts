@@ -42,7 +42,7 @@ serve(async (req) => {
       );
     }
     
-    console.log(`Processing report ${report_id} for business ${business_id}`);
+    console.log(`Processing report ${report_id} for business ${business_id} with config:`, configuration);
     
     // Update report status to processing
     const { error: updateError } = await supabase
@@ -79,71 +79,120 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log("Fetched business data:", businessData);
     
-    // Get analytics data for the report
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 1);
+    // Fetch business metrics data
+    const { data: metricsData, error: metricsError } = await supabase
+      .from("widget_metrics")
+      .select(`
+        id,
+        value,
+        recorded_at,
+        widget:widgets(name, category, unit, metric_type)
+      `)
+      .eq("business_id", business_id)
+      .order("recorded_at", { ascending: false })
+      .limit(100);
     
-    const { data: analyticsData, error: analyticsError } = await supabase.rpc(
-      "get_analytics_data",
-      {
-        start_date: startDate.toISOString(),
-        end_date: new Date().toISOString(),
-      }
-    );
-    
-    if (analyticsError) {
-      console.error("Error fetching analytics data:", analyticsError);
-      // Continue with the process even if analytics fail
+    if (metricsError) {
+      console.error("Error fetching metrics data:", metricsError);
+      // Continue with the process even if metrics fail
     }
+
+    console.log(`Fetched ${metricsData?.length || 0} metrics records`);
+
+    // Group metrics by category (environmental, social, governance)
+    const groupedMetrics = {
+      environmental: [],
+      social: [],
+      governance: []
+    };
+
+    metricsData?.forEach(metric => {
+      const category = metric.widget?.category;
+      if (category && groupedMetrics[category]) {
+        groupedMetrics[category].push({
+          name: metric.widget?.name,
+          value: metric.value,
+          unit: metric.widget?.unit,
+          recorded_at: metric.recorded_at
+        });
+      }
+    });
     
-    // Generate a mock report data for now
-    // In a real implementation, you would use the OpenAI API to generate the report
+    // Get date range from the request or use default (last month)
+    const dateRange = configuration?.date_range || {
+      start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+      end: new Date().toISOString(),
+    };
+    
+    // Generate color palette based on configuration
+    const colorPalette = generateColorPalette(configuration?.colorScheme || "greenBlue");
+    
+    // Generate the report data
     const reportData = {
       title: configuration?.title || "ESG Performance Report",
       description: configuration?.description || "Comprehensive ESG analysis",
       generated_at: new Date().toISOString(),
-      business: businessData,
-      metrics: analyticsData || {
-        total_scans: 0,
-        unique_users: 0,
-        avg_scans_per_user: 0,
-        total_carbon_saved: 0,
-        total_water_saved: 0,
-        avg_sustainability_score: 0,
+      business: {
+        id: businessData.id,
+        name: businessData.name,
+        industry: businessData.industry_type,
+        description: businessData.description,
+        website: businessData.website,
+        logo_url: businessData.logo_url
       },
+      date_range: dateRange,
+      metrics: {
+        environmental: groupedMetrics.environmental,
+        social: groupedMetrics.social,
+        governance: groupedMetrics.governance
+      },
+      charts: generateCharts(groupedMetrics, colorPalette, configuration),
       sections: [
         {
           title: "Executive Summary",
-          content: "This report provides an overview of environmental, social, and governance performance.",
+          content: generateExecutiveSummary(businessData, groupedMetrics)
         },
         {
-          title: "Environmental Impact",
-          content: `The business has saved approximately ${analyticsData ? analyticsData[0]?.total_carbon_saved || 0 : 0}kg of carbon.`,
+          title: "Environmental Performance",
+          content: generateSectionContent("environmental", groupedMetrics.environmental),
+          metrics: groupedMetrics.environmental
         },
         {
-          title: "Social Responsibility",
-          content: "Details about social responsibility initiatives and metrics.",
+          title: "Social Impact",
+          content: generateSectionContent("social", groupedMetrics.social),
+          metrics: groupedMetrics.social
         },
         {
           title: "Governance",
-          content: "Information about corporate governance practices and transparency.",
-        },
+          content: generateSectionContent("governance", groupedMetrics.governance),
+          metrics: groupedMetrics.governance
+        }
       ],
-      recommendations: [
-        "Increase renewable energy usage",
-        "Implement water conservation measures",
-        "Enhance diversity and inclusion programs",
-      ],
+      recommendations: generateRecommendations(groupedMetrics),
+      visualization_preferences: configuration?.visualization || {
+        showBarCharts: true,
+        showLineCharts: true,
+        showPieCharts: true,
+        showTables: true
+      },
+      color_scheme: colorPalette
     };
     
-    // Save the report data and update status to completed
+    // Mock PDF URL - in a real implementation this would be generated and uploaded
+    const pdfUrl = `${supabaseUrl}/storage/v1/object/public/reports/${report_id}.pdf`;
+    
+    // Update the report with generated data
     const { error: reportUpdateError } = await supabase
       .from("generated_reports")
       .update({
         status: "completed",
         report_data: reportData,
-        pdf_url: `https://example.com/reports/${report_id}.pdf`, // This would be a real URL in production
+        pdf_url: pdfUrl,
+        file_size: Math.floor(Math.random() * 1000) + 500, // Mock file size
+        page_count: Math.floor(Math.random() * 10) + 5 // Mock page count
       })
       .eq("id", report_id);
       
@@ -162,7 +211,12 @@ serve(async (req) => {
     console.log(`Successfully generated report ${report_id}`);
     
     return new Response(
-      JSON.stringify({ success: true, report_id, status: "completed" }),
+      JSON.stringify({ 
+        success: true, 
+        report_id, 
+        status: "completed",
+        business_name: businessData.name 
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
@@ -212,4 +266,125 @@ async function updateReportStatus(supabase: any, reportId: string, status: strin
   } catch (e) {
     console.error("Unexpected error updating report status:", e);
   }
+}
+
+// Helper function to generate color palette
+function generateColorPalette(scheme: string) {
+  const palettes: Record<string, string[]> = {
+    greenBlue: ["#10B981", "#3B82F6", "#8B5CF6"],
+    vibrant: ["#F59E0B", "#10B981", "#3B82F6", "#EC4899"],
+    earthy: ["#D97706", "#65A30D", "#0369A1", "#A16207"],
+    contrast: ["#10B981", "#EC4899", "#F59E0B", "#8B5CF6"],
+    rainbow: ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899"]
+  };
+  return palettes[scheme] || palettes.greenBlue;
+}
+
+// Helper function to generate executive summary
+function generateExecutiveSummary(business: any, metrics: any) {
+  const envMetricsCount = metrics.environmental.length;
+  const socialMetricsCount = metrics.social.length;
+  const govMetricsCount = metrics.governance.length;
+  
+  return `This report provides a comprehensive ESG (Environmental, Social, and Governance) analysis for ${business.name}, operating in the ${business.industry_type} industry. ${
+    business.description ? `${business.description} ` : ''
+  }The analysis covers ${envMetricsCount + socialMetricsCount + govMetricsCount} metrics across environmental (${envMetricsCount}), social (${socialMetricsCount}), and governance (${govMetricsCount}) categories. The data presented reflects the company's performance and sustainability efforts, highlighting both achievements and areas for improvement.`;
+}
+
+// Helper function to generate section content
+function generateSectionContent(category: string, metrics: any[]) {
+  if (!metrics || metrics.length === 0) {
+    return `No ${category} metrics data available for this reporting period.`;
+  }
+  
+  const categoryText = {
+    environmental: "Environmental metrics focus on the company's impact on the natural environment and its mitigation strategies.",
+    social: "Social metrics address the company's relationship with employees, suppliers, customers, and communities.",
+    governance: "Governance metrics examine the internal systems, controls, and procedures the company uses to govern itself."
+  };
+  
+  let content = categoryText[category] || "";
+  content += ` This section presents data on ${metrics.length} key ${category} metrics.`;
+  
+  if (metrics.length > 0) {
+    const metricsSummary = metrics.slice(0, 3).map(m => `${m.name}: ${m.value}${m.unit ? ` ${m.unit}` : ''}`).join(", ");
+    content += ` Key highlights include ${metricsSummary}${metrics.length > 3 ? ', among others' : ''}.`;
+  }
+  
+  return content;
+}
+
+// Helper function to generate charts based on metrics
+function generateCharts(metrics: any, colorPalette: string[], configuration: any) {
+  const charts = [];
+  const prefs = configuration?.visualization || {};
+  
+  // Environmental metrics line chart
+  if (prefs.showLineCharts !== false && metrics.environmental.length > 0) {
+    charts.push({
+      type: "line",
+      title: "Environmental Metrics Trend",
+      data: metrics.environmental.slice(0, 5).map(m => ({ name: m.name, value: m.value })),
+      colors: [colorPalette[0]]
+    });
+  }
+  
+  // Social metrics bar chart
+  if (prefs.showBarCharts !== false && metrics.social.length > 0) {
+    charts.push({
+      type: "bar",
+      title: "Social Impact Metrics",
+      data: metrics.social.slice(0, 5).map(m => ({ name: m.name, value: m.value })),
+      colors: [colorPalette[1]]
+    });
+  }
+  
+  // Governance metrics pie chart
+  if (prefs.showPieCharts !== false && metrics.governance.length > 0) {
+    charts.push({
+      type: "pie",
+      title: "Governance Metrics Distribution",
+      data: metrics.governance.slice(0, 5).map(m => ({ name: m.name, value: m.value })),
+      colors: colorPalette
+    });
+  }
+  
+  // ESG category comparison
+  if (prefs.showBarCharts !== false) {
+    charts.push({
+      type: "bar",
+      title: "ESG Categories Comparison",
+      data: [
+        { name: "Environmental", value: metrics.environmental.length },
+        { name: "Social", value: metrics.social.length },
+        { name: "Governance", value: metrics.governance.length }
+      ],
+      colors: colorPalette
+    });
+  }
+  
+  return charts;
+}
+
+// Helper function to generate recommendations
+function generateRecommendations(metrics: any) {
+  const recommendations = [
+    "Conduct a comprehensive ESG materiality assessment to identify priority focus areas",
+    "Implement a real-time ESG data collection system to improve reporting accuracy and timeliness",
+    "Establish science-based targets for environmental metrics to align with global sustainability goals"
+  ];
+  
+  if (metrics.environmental.length < 5) {
+    recommendations.push("Expand environmental metrics tracking to cover a broader range of impacts");
+  }
+  
+  if (metrics.social.length < 5) {
+    recommendations.push("Develop additional social impact metrics to better assess community and employee engagement");
+  }
+  
+  if (metrics.governance.length < 5) {
+    recommendations.push("Enhance governance tracking with additional metrics on board diversity and ethical business practices");
+  }
+  
+  return recommendations;
 }

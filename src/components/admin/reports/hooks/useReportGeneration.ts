@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -61,6 +62,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
       console.log("Creating report for business:", businessId);
       const colorPalette = getColorPalette(colorScheme);
 
+      // Step 1: Create template
       const { data: template, error: templateError } = await supabase
         .from("report_templates")
         .insert({
@@ -131,6 +133,12 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
 
       console.log("Template created successfully:", template);
 
+      // Step 2: Create report record
+      const dateRange = {
+        start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
+        end: new Date().toISOString(),
+      };
+      
       const { data: report, error: reportError } = await supabase
         .from("generated_reports")
         .insert({
@@ -138,10 +146,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           template_id: template.id,
           report_data: {},
           status: "pending",
-          date_range: {
-            start: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
-            end: new Date().toISOString(),
-          },
+          date_range: dateRange,
           metadata: {
             reportType: "comprehensive_esg",
             visualizationPreferences: visualization,
@@ -164,6 +169,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
 
       console.log("Report record created successfully:", report);
 
+      // Step 3: Invoke edge function to generate the report
       try {
         console.log("Invoking edge function with params:", {
           report_id: report.id,
@@ -173,6 +179,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             description,
             visualization,
             colorScheme,
+            date_range: dateRange,
             includeExecutiveSummary: true,
             categorizeByESG: true,
             infographicOptions: {
@@ -192,6 +199,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               description,
               visualization,
               colorScheme,
+              date_range: dateRange,
               includeExecutiveSummary: true,
               categorizeByESG: true,
               infographicOptions: {
@@ -210,8 +218,19 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         
         console.log("Edge function response:", fnResponse);
         return report;
-      } catch (fnInvokeError) {
+      } catch (fnInvokeError: any) {
         console.error("Error invoking edge function:", fnInvokeError);
+        
+        // More detailed error logging
+        if (fnInvokeError.response) {
+          try {
+            const errorBody = await fnInvokeError.response.json();
+            console.error("Edge function response body:", errorBody);
+          } catch (e) {
+            console.error("Couldn't parse edge function error response");
+          }
+        }
+        
         throw new Error(`Failed to start report generation process: ${fnInvokeError.message}`);
       }
     },
@@ -224,7 +243,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
       resetForm();
       onSuccess();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Report creation error:", error);
       toast({
         title: "Error",
