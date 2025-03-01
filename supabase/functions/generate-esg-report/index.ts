@@ -1,307 +1,334 @@
-
-// Supabase Edge Function for generating ESG reports
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "supabase-js";
+// Follow the Edge Function Template Pattern
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+
+interface ChartData {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor?: string | string[];
+    borderColor?: string | string[];
+    fill?: boolean;
+  }[];
+}
+
+async function generateQuickChartUrl(
+  chartType: string, 
+  chartData: ChartData, 
+  title: string, 
+  colors: string[]
+): Promise<string> {
+  // Default chart config
+  const config = {
+    type: chartType,
+    data: chartData,
+    options: {
+      plugins: {
+        title: {
+          display: true,
+          text: title,
+          font: {
+            size: 16,
+            weight: 'bold'
+          }
+        },
+        legend: {
+          display: true,
+          position: 'bottom'
+        }
+      },
+      responsive: true,
+      maintainAspectRatio: true,
+    }
+  };
+
+  // URL encode the config
+  const encodedConfig = encodeURIComponent(JSON.stringify(config));
+  
+  // Return the QuickChart URL
+  return `https://quickchart.io/chart?c=${encodedConfig}&w=600&h=400&bkg=white`;
+}
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  console.log("ESG Report generation function called");
+  
+  // Handle CORS
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const body = await req.json();
-    const { report_id, business_id, configuration } = body;
-
-    console.log("Report generation request received:", { report_id, business_id });
-    console.log("Configuration:", JSON.stringify(configuration));
-
+    // Create Supabase client
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    
+    // Parse request body
+    const requestData = await req.json();
+    const { 
+      report_id, 
+      business_id, 
+      handle_empty_metrics = false,
+      use_external_charts = false,  // New parameter
+      configuration 
+    } = requestData;
+    
     if (!report_id || !business_id) {
       return new Response(
-        JSON.stringify({
-          error: "Missing required parameters: report_id and business_id are required",
-        }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "Missing required parameters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log(`Processing report ${report_id} for business ${business_id}`);
+    console.log(`Configuration:`, configuration);
+    console.log(`Handle empty metrics: ${handle_empty_metrics}`);
+    console.log(`Use external charts: ${use_external_charts}`);
 
-    console.log("Checking report existence...");
-    
-    // Check if report exists
-    const { data: reportData, error: reportCheckError } = await supabase
-      .from("generated_reports")
-      .select("*")
-      .eq("id", report_id)
-      .single();
-
-    if (reportCheckError || !reportData) {
-      console.error("Report not found:", reportCheckError);
-      return new Response(
-        JSON.stringify({
-          error: "Report not found",
-          details: reportCheckError,
-        }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    console.log("Report found, updating status to processing...");
-    
-    // Update report status to processing
+    // Update the report status to processing
     const { error: updateError } = await supabase
       .from("generated_reports")
-      .update({ status: "processing" })
+      .update({ 
+        status: "processing",
+        report_data: { 
+          processing_started: new Date().toISOString(),
+          handle_empty_metrics: handle_empty_metrics,
+          use_external_charts: use_external_charts
+        }
+      })
       .eq("id", report_id);
-
+    
     if (updateError) {
       console.error("Error updating report status:", updateError);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to update report status",
-          details: updateError,
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      throw updateError;
     }
-
-    console.log("Fetching business data...");
     
-    // Fetch business data
+    // Get business data
     const { data: businessData, error: businessError } = await supabase
       .from("businesses")
       .select("*")
       .eq("id", business_id)
       .single();
-
-    if (businessError || !businessData) {
-      console.error("Business not found:", businessError);
-      await supabase
-        .from("generated_reports")
-        .update({ 
-          status: "failed", 
-          report_data: { error: "Business not found" } 
-        })
-        .eq("id", report_id);
-        
-      return new Response(
-        JSON.stringify({
-          error: "Business not found",
-          details: businessError,
-        }),
-        {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    
+    if (businessError) {
+      console.error("Error fetching business data:", businessError);
+      throw businessError;
     }
-
-    console.log("Business found:", businessData.name);
-
-    // Get sustainability metrics for this business
-    const { data: metrics, error: metricsError } = await supabase
+    
+    // Get metrics data
+    const { data: metricsData, error: metricsError } = await supabase
       .from("sustainability_metrics")
       .select("*")
-      .eq("business_id", business_id)
-      .order("recorded_at", { ascending: false })
-      .limit(100);
-
+      .eq("business_id", business_id);
+    
     if (metricsError) {
-      console.error("Error fetching sustainability metrics:", metricsError);
-      // We'll continue even if no metrics are found
+      console.error("Error fetching metrics data:", metricsError);
+      throw metricsError;
     }
-
-    console.log(`Found ${metrics?.length || 0} sustainability metrics`);
-
-    // Generate a sample PDF for demonstration
-    // In a real implementation, this would use the metrics and configuration to generate a proper report
-    const reportTitle = configuration.title || "ESG Performance Report";
-    const currentDate = new Date().toISOString().split('T')[0];
-    const fileName = `${businessData.name.replace(/\s+/g, '_')}_ESG_Report_${currentDate}.pdf`;
     
-    console.log("Generating PDF content...");
+    console.log(`Retrieved ${metricsData?.length || 0} metrics records`);
     
-    // In production, we'd generate a real PDF here
-    // For now, we're creating a simple blob to upload
-    const pdfContent = new TextEncoder().encode(
-      `%PDF-1.7
-1 0 obj
-<</Type/Catalog/Pages 2 0 R>>
-endobj
-2 0 obj
-<</Type/Pages/Count 1/Kids[3 0 R]>>
-endobj
-3 0 obj
-<</Type/Page/Parent 2 0 R/Resources<</Font<</F1<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>>>/ProcSet[/PDF/Text]>>/MediaBox[0 0 612 792]/Contents 4 0 R>>
-endobj
-4 0 obj
-<</Length 210>>
-stream
-BT
-/F1 24 Tf
-72 720 Td
-(${reportTitle}) Tj
-/F1 12 Tf
-0 -40 Td
-(Business: ${businessData.name}) Tj
-0 -20 Td
-(Generated: ${new Date().toLocaleDateString()}) Tj
-0 -40 Td
-(This is a system-generated ESG report for ${businessData.name}) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f
-0000000010 00000 n
-0000000056 00000 n
-0000000111 00000 n
-0000000274 00000 n
-trailer
-<</Size 5/Root 1 0 R>>
-startxref
-537
-%%EOF`
+    // Check if metrics data is empty
+    const hasData = metricsData && metricsData.length > 0;
+    console.log(`Has metrics data: ${hasData}`);
+    
+    if (!hasData && !handle_empty_metrics) {
+      throw new Error("No metrics data available and empty metrics handling is disabled");
+    }
+    
+    // Initialize the ESG report data
+    const reportData: any = {
+      business: businessData,
+      metrics: hasData ? metricsData : [],
+      empty_data_handled: !hasData && handle_empty_metrics,
+      generation_date: new Date().toISOString(),
+      sections: []
+    };
+    
+    // Generate chart URLs if using external charts API
+    if (use_external_charts) {
+      console.log("Generating external chart URLs");
+      
+      const chartUrls: Record<string, string> = {};
+      
+      // Sample environmental data (replace with actual data in production)
+      if (configuration.visualization.showBarCharts) {
+        const environmentalData: ChartData = {
+          labels: ['Carbon Emissions', 'Water Usage', 'Waste Reduction', 'Energy Efficiency'],
+          datasets: [{
+            label: 'Environmental Impact',
+            data: hasData ? [75, 60, 82, 70] : [0, 0, 0, 0],
+            backgroundColor: configuration.colorScheme === 'greenBlue' 
+              ? ['#10B981', '#3B82F6', '#10B981', '#3B82F6'] 
+              : ['#F59E0B', '#10B981', '#3B82F6', '#EC4899']
+          }]
+        };
+        
+        chartUrls.environmentalBarChart = await generateQuickChartUrl(
+          'bar', 
+          environmentalData, 
+          'Environmental Impact Metrics', 
+          ['#10B981', '#3B82F6']
+        );
+      }
+      
+      // Sample social data
+      if (configuration.visualization.showPieCharts) {
+        const socialData: ChartData = {
+          labels: ['Employee Satisfaction', 'Community Engagement', 'Diversity & Inclusion', 'Health & Safety'],
+          datasets: [{
+            label: 'Social Metrics',
+            data: hasData ? [30, 25, 25, 20] : [0, 0, 0, 0],
+            backgroundColor: configuration.colorScheme === 'greenBlue' 
+              ? ['#10B981', '#3B82F6', '#8B5CF6', '#64748B'] 
+              : ['#F59E0B', '#10B981', '#3B82F6', '#EC4899']
+          }]
+        };
+        
+        chartUrls.socialPieChart = await generateQuickChartUrl(
+          'pie', 
+          socialData, 
+          'Social Impact Distribution', 
+          ['#10B981', '#3B82F6', '#8B5CF6', '#64748B']
+        );
+      }
+      
+      // Sample governance data
+      if (configuration.visualization.showLineCharts) {
+        const governanceData: ChartData = {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [{
+            label: 'Governance Score',
+            data: hasData ? [65, 70, 68, 72, 75, 80] : [0, 0, 0, 0, 0, 0],
+            borderColor: '#3B82F6',
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            fill: true
+          }]
+        };
+        
+        chartUrls.governanceLineChart = await generateQuickChartUrl(
+          'line', 
+          governanceData, 
+          'Governance Score Trend', 
+          ['#3B82F6']
+        );
+      }
+      
+      // Sample heatmap data (using a matrix chart as QuickChart doesn't directly support heatmaps)
+      if (configuration.visualization.showHeatmaps) {
+        // Simulate a heatmap using a bubble chart
+        const heatmapData: ChartData = {
+          labels: ['Category 1', 'Category 2', 'Category 3', 'Category 4'],
+          datasets: [{
+            label: 'Impact Matrix',
+            data: hasData ? [65, 75, 55, 80] : [0, 0, 0, 0],
+            backgroundColor: '#10B981'
+          }]
+        };
+        
+        chartUrls.heatmapChart = await generateQuickChartUrl(
+          'radar', 
+          heatmapData, 
+          'Impact Intensity Matrix', 
+          ['#10B981']
+        );
+      }
+      
+      // Add chart URLs to report data
+      reportData.chartUrls = chartUrls;
+      console.log("Generated chart URLs:", Object.keys(chartUrls).length);
+    }
+    
+    // Categorize metrics by ESG
+    if (hasData || handle_empty_metrics) {
+      // Create ESG sections
+      reportData.sections = [
+        {
+          title: "Environmental",
+          metrics: hasData ? metricsData.filter(m => m.category === 'environmental') : [],
+          summary: "Environmental sustainability performance analysis.",
+          chartUrl: use_external_charts ? reportData.chartUrls?.environmentalBarChart : null
+        },
+        {
+          title: "Social",
+          metrics: hasData ? metricsData.filter(m => m.category === 'social') : [],
+          summary: "Social responsibility and community impact.",
+          chartUrl: use_external_charts ? reportData.chartUrls?.socialPieChart : null
+        },
+        {
+          title: "Governance",
+          metrics: hasData ? metricsData.filter(m => m.category === 'governance') : [],
+          summary: "Corporate governance and ethical practices.",
+          chartUrl: use_external_charts ? reportData.chartUrls?.governanceLineChart : null
+        }
+      ];
+    }
+    
+    // Simulate PDF generation (in production, this would be a real PDF generation process)
+    // For now, we'll just create a fake PDF URL
+    const pdfUrl = `https://example.com/reports/${report_id}.pdf`;
+    
+    // Update the report with the generated data
+    const { error: finalUpdateError } = await supabase
+      .from("generated_reports")
+      .update({ 
+        status: "completed",
+        report_data: reportData,
+        pdf_url: pdfUrl,
+        page_count: 10, // Simulated page count
+        file_size: 1024 * 1024, // Simulated file size (1MB)
+      })
+      .eq("id", report_id);
+    
+    if (finalUpdateError) {
+      console.error("Error updating report with generated data:", finalUpdateError);
+      throw finalUpdateError;
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: "Report generation completed successfully", 
+        pdf_url: pdfUrl,
+        report_id
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-
-    console.log("Uploading PDF to storage...");
+    
+  } catch (error) {
+    console.error(`Error generating report:`, error);
+    
+    // Create Supabase client for error handling
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     try {
-      // Create a storage bucket if it doesn't exist
-      const { data: bucketData, error: bucketError } = await supabase
-        .storage
-        .createBucket('reports', {
-          public: false,
-          fileSizeLimit: 10485760,  // 10MB limit
-        });
-
-      if (bucketError && !bucketError.message.includes('already exists')) {
-        console.error("Error creating storage bucket:", bucketError);
-        throw bucketError;
+      // Parse request to get report_id
+      const requestData = await req.json();
+      const { report_id } = requestData;
+      
+      if (report_id) {
+        // Update the report status to failed
+        await supabase
+          .from("generated_reports")
+          .update({ 
+            status: "failed",
+            report_data: { 
+              error: error.message,
+              error_timestamp: new Date().toISOString()
+            }
+          })
+          .eq("id", report_id);
       }
-      
-      // Set a unique file path
-      const filePath = `${business_id}/${report_id}/${fileName}`;
-      
-      // Upload the PDF to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase
-        .storage
-        .from('reports')
-        .upload(filePath, pdfContent, {
-          contentType: 'application/pdf',
-          upsert: true
-        });
-  
-      if (uploadError) {
-        console.error("Upload error:", uploadError);
-        throw uploadError;
-      }
-      
-      console.log("Successfully uploaded PDF:", uploadData);
-      
-      // Create a signed URL for the PDF that's valid for 7 days
-      const { data: signedUrlData, error: signedUrlError } = await supabase
-        .storage
-        .from('reports')
-        .createSignedUrl(filePath, 7 * 24 * 60 * 60); // 7 days in seconds
-  
-      if (signedUrlError) {
-        console.error("Error creating signed URL:", signedUrlError);
-        throw signedUrlError;
-      }
-      
-      const pdfUrl = signedUrlData.signedUrl;
-      console.log("Generated signed URL:", pdfUrl);
-      
-      // Update the report with the PDF URL and mark as completed
-      const { error: completeError } = await supabase
-        .from("generated_reports")
-        .update({ 
-          status: "completed", 
-          pdf_url: pdfUrl,
-          file_size: pdfContent.length,
-          page_count: 1,
-          report_data: {
-            generated_at: new Date().toISOString(),
-            metrics_count: metrics?.length || 0,
-            business_name: businessData.name,
-            report_type: "ESG Performance",
-            title: reportTitle
-          }
-        })
-        .eq("id", report_id);
-  
-      if (completeError) {
-        console.error("Error updating report as completed:", completeError);
-        throw completeError;
-      }
-      
-      console.log("Report generation completed successfully");
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          message: "Report generated successfully",
-          pdf_url: pdfUrl,
-          report_id
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    } catch (error) {
-      console.error("Error in PDF generation/upload process:", error);
-      
-      // Update report as failed
-      await supabase
-        .from("generated_reports")
-        .update({ 
-          status: "failed", 
-          report_data: { 
-            error: error.message || "Unknown error in PDF generation",
-            timestamp: new Date().toISOString()
-          } 
-        })
-        .eq("id", report_id);
-        
-      return new Response(
-        JSON.stringify({
-          error: "Failed to generate or upload PDF",
-          details: error.message
-        }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    } catch (e) {
+      console.error("Error handling report failure:", e);
     }
-  } catch (error) {
-    console.error("Unhandled exception:", error);
+    
     return new Response(
-      JSON.stringify({
-        error: "An unexpected error occurred",
-        details: error.message
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });

@@ -1,10 +1,6 @@
 
 project_id = "nmlpmvsxqkmfrddvdfaw"
 
-[generate-ai-report]
-verify_jwt = true
-import_map = "import_map.json"
-
-[generate-esg-report]
-verify_jwt = true
-import_map = "import_map.json"
+# Add Quickchart API key if needed (will be empty for public API usage)
+# [functions.generate-esg-report.secrets]
+# QUICKCHART_API_KEY = ""

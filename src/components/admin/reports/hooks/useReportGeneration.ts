@@ -24,7 +24,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
   });
   
   const [colorScheme, setColorScheme] = useState("greenBlue");
-  const [handleEmptyMetrics, setHandleEmptyMetrics] = useState(true); // New state for empty metrics handling
+  const [handleEmptyMetrics, setHandleEmptyMetrics] = useState(true);
+  const [useExternalCharts, setUseExternalCharts] = useState(true); // New state for external chart API
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -44,6 +45,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
     });
     setColorScheme("greenBlue");
     setHandleEmptyMetrics(true);
+    setUseExternalCharts(true);
   };
 
   const getColorPalette = (scheme: string) => {
@@ -121,7 +123,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             showLegends: true,
             enableInteractivity: true,
             pageLayout: "modern",
-            showDataSources: true
+            showDataSources: true,
+            useExternalChartProvider: useExternalCharts // Add the new configuration
           },
           is_active: true
         })
@@ -147,7 +150,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           business_id: businessId,
           template_id: template.id,
           report_data: {
-            empty_metrics: handleEmptyMetrics, // Pass flag for empty metrics handling
+            empty_metrics: handleEmptyMetrics,
+            useExternalCharts: useExternalCharts, // Add the new flag
             status_updates: ["Created report record"]
           },
           status: "pending",
@@ -156,7 +160,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             reportType: "comprehensive_esg",
             visualizationPreferences: visualization,
             colorScheme: colorScheme,
-            handleEmptyMetrics: handleEmptyMetrics, // Add to metadata as well
+            handleEmptyMetrics: handleEmptyMetrics,
+            useExternalCharts: useExternalCharts, // Add to metadata as well
             infographicOptions: {
               showIcons: true,
               useAnimations: true,
@@ -180,7 +185,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         console.log("Invoking edge function with params:", {
           report_id: report.id,
           business_id: businessId,
-          handle_empty_metrics: handleEmptyMetrics, // Pass flag to edge function
+          handle_empty_metrics: handleEmptyMetrics,
+          use_external_charts: useExternalCharts, // Add new parameter
           configuration: {
             title,
             description,
@@ -189,7 +195,9 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             date_range: dateRange,
             includeExecutiveSummary: true,
             categorizeByESG: true,
-            handleEmptyMetrics: handleEmptyMetrics, // Pass flag to configuration
+            handleEmptyMetrics: handleEmptyMetrics,
+            useExternalCharts: useExternalCharts, // Add to configuration
+            chartProvider: "quickchart", // Specify which chart provider to use
             infographicOptions: {
               showIcons: true,
               useAnimations: true,
@@ -202,7 +210,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           body: { 
             report_id: report.id,
             business_id: businessId,
-            handle_empty_metrics: handleEmptyMetrics, // Pass the flag to the edge function
+            handle_empty_metrics: handleEmptyMetrics,
+            use_external_charts: useExternalCharts, // Add the flag to the edge function
             configuration: {
               title,
               description,
@@ -211,7 +220,9 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               date_range: dateRange,
               includeExecutiveSummary: true,
               categorizeByESG: true,
-              handleEmptyMetrics: handleEmptyMetrics, // Pass flag to configuration
+              handleEmptyMetrics: handleEmptyMetrics,
+              useExternalCharts: useExternalCharts, // Add flag to configuration
+              chartProvider: "quickchart", // Specify which chart provider to use
               infographicOptions: {
                 showIcons: true,
                 useAnimations: true,
@@ -232,6 +243,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               report_data: { 
                 error: fnError.message,
                 empty_metrics: handleEmptyMetrics,
+                useExternalCharts: useExternalCharts,
                 timestamp: new Date().toISOString(),
                 status_updates: ["Created report record", "Edge function failed"]
               } 
@@ -254,6 +266,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               report_data: {
                 ...report.report_data,
                 empty_metrics: handleEmptyMetrics,
+                useExternalCharts: useExternalCharts,
                 status_updates: [...(report.report_data?.status_updates || []), "Report completed with PDF"]
               }
             })
@@ -273,6 +286,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               report_data: {
                 ...report.report_data,
                 empty_metrics: handleEmptyMetrics,
+                useExternalCharts: useExternalCharts,
                 warning: "PDF URL missing in edge function response",
                 status_updates: [...(report.report_data?.status_updates || []), "Completed but missing PDF URL"]
               }
@@ -302,6 +316,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             report_data: { 
               error: fnInvokeError.message || "Unknown error",
               empty_metrics: handleEmptyMetrics,
+              useExternalCharts: useExternalCharts,
               timestamp: new Date().toISOString(),
               status_updates: [...(report.report_data?.status_updates || []), "Edge function invoke error"]
             } 
@@ -341,6 +356,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
     setColorScheme,
     handleEmptyMetrics,
     setHandleEmptyMetrics,
+    useExternalCharts,
+    setUseExternalCharts,
     createReport,
     isPending,
   };

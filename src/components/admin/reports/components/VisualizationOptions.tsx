@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 
 interface VisualizationOptionsProps {
   visualization: {
@@ -18,6 +19,8 @@ interface VisualizationOptionsProps {
   setVisualization: (value: any) => void;
   colorScheme?: string;
   setColorScheme?: (value: string) => void;
+  useExternalCharts?: boolean;
+  setUseExternalCharts?: (value: boolean) => void;
 }
 
 export const VisualizationOptions = ({
@@ -25,6 +28,8 @@ export const VisualizationOptions = ({
   setVisualization,
   colorScheme,
   setColorScheme,
+  useExternalCharts,
+  setUseExternalCharts,
 }: VisualizationOptionsProps) => {
   const options = [
     { id: "showBarCharts", label: "Bar Charts" },
@@ -68,8 +73,26 @@ export const VisualizationOptions = ({
         </div>
       </div>
 
+      {/* External Charts Option */}
+      {setUseExternalCharts && (
+        <div className="flex items-center justify-between py-2 border-t pt-4">
+          <div>
+            <Label htmlFor="external-charts" className="font-medium">Use Enhanced Charts API</Label>
+            <p className="text-sm text-gray-500">Generate higher quality charts using external API</p>
+          </div>
+          <Switch
+            id="external-charts"
+            checked={useExternalCharts}
+            onCheckedChange={setUseExternalCharts}
+          />
+          {useExternalCharts && (
+            <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-200">Enhanced</Badge>
+          )}
+        </div>
+      )}
+
       {setColorScheme && (
-        <div className="space-y-2">
+        <div className="space-y-2 border-t pt-4">
           <Label>Color Scheme</Label>
           <RadioGroup 
             value={colorScheme} 
