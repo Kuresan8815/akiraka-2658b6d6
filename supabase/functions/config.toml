@@ -1,5 +1,8 @@
 
 project_id = "nmlpmvsxqkmfrddvdfaw"
 
+[generate-ai-report]
+verify_jwt = true
+
 [generate-esg-report]
 verify_jwt = true
