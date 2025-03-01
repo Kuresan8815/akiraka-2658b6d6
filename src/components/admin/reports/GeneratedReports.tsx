@@ -1,14 +1,14 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GeneratedReport } from "@/types/reports";
-import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle, Info, RotateCw } from "lucide-react";
+import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle, Info, RotateCw, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { parseReportData } from "./utils/reportDataUtils";
 
 interface GeneratedReportsProps {
   businessId?: string;
@@ -18,7 +18,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
   const { data: reports, isLoading, error } = useQuery({
     queryKey: ["generated-reports", businessId],
     enabled: !!businessId,
-    refetchInterval: 5000, // Poll every 5 seconds for updates
+    refetchInterval: 5000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("generated_reports")
@@ -31,7 +31,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
 
       if (error) throw error;
       
-      console.log("Reports fetched:", data); // Debug fetched reports
+      console.log("Reports fetched:", data);
       
       return (data as any[]).map(report => ({
         ...report,
@@ -56,38 +56,28 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
     console.log("Attempting to download PDF from:", report.pdf_url);
     
     try {
-      // Try to fetch the file to check if it exists
-      const response = await fetch(report.pdf_url, { method: 'HEAD' });
-      
-      if (!response.ok) {
-        console.error(`PDF file not found: ${report.pdf_url}`, response.status, response.statusText);
-        
-        toast({
-          title: "File Not Found",
-          description: `The PDF file could not be found (${response.status}: ${response.statusText}). Please regenerate the report.`,
-          variant: "destructive",
-        });
-        
-        // Update the report status to reflect the issue
-        await supabase
-          .from("generated_reports")
-          .update({ 
-            status: "failed", 
-            report_data: { 
-              ...report.report_data,
-              error: `PDF file not found: ${response.status} ${response.statusText}`,
-              timestamp: new Date().toISOString()
-            } 
-          })
-          .eq("id", report.id);
-        
-        return;
-      }
-      
-      // File exists, proceed with download
       window.open(report.pdf_url, '_blank');
+      
+      const reportData = parseReportData(report.report_data);
+      const updatedReportData = {
+        ...reportData,
+        last_download_attempt: new Date().toISOString()
+      };
+      
+      supabase
+        .from("generated_reports")
+        .update({ 
+          report_data: updatedReportData
+        })
+        .eq("id", report.id)
+        .then(({ error }) => {
+          if (error) {
+            console.error("Error updating report download timestamp:", error);
+          }
+        });
+      
     } catch (error) {
-      console.error("Error checking/downloading PDF:", error);
+      console.error("Error downloading PDF:", error);
       toast({
         title: "Download Error",
         description: "There was an error downloading the file. Please try again later.",
@@ -98,7 +88,6 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
 
   const handleRetry = async (report: GeneratedReport & { report_template: any }) => {
     try {
-      // Reset the report status to pending for reprocessing
       const { error } = await supabase
         .from("generated_reports")
         .update({ 
@@ -107,20 +96,19 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
             ...report.report_data,
             retry_timestamp: new Date().toISOString(),
             retry_count: (report.report_data.retry_count || 0) + 1,
-            empty_data_handling: true // Flag to handle empty metrics
+            empty_data_handling: true
           }
         })
         .eq("id", report.id);
       
       if (error) throw error;
       
-      // Call the edge function to regenerate the report
       const { data: fnResponse, error: fnError } = await supabase.functions.invoke('generate-esg-report', {
         body: { 
           report_id: report.id,
           business_id: businessId,
           retry: true,
-          handle_empty_metrics: true // Flag to handle empty metrics
+          handle_empty_metrics: true
         }
       });
       
@@ -219,19 +207,31 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
               </div>
               
               <div className="flex items-center gap-2">
-                {report.status === 'completed' && (
+                {report.status === 'completed' && report.pdf_url && (
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => handleDownload(report)}
+                    className="flex items-center gap-2"
                   >
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="h-4 w-4" />
                     Download PDF
                     {report.file_size && (
                       <span className="ml-2 text-xs text-gray-500">
                         ({Math.round(report.file_size / 1024)}KB)
                       </span>
                     )}
+                  </Button>
+                )}
+
+                {report.status === 'completed' && report.pdf_url && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(report.pdf_url, '_blank')}
+                    title="Open PDF directly in browser"
+                  >
+                    <ExternalLink className="h-4 w-4" />
                   </Button>
                 )}
                 
@@ -297,14 +297,18 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                 </div>
               )}
               
-              {/* Empty metrics notice */}
               {report.report_data?.empty_metrics && (
                 <div className="mt-2 p-2 bg-amber-50 text-amber-700 rounded text-xs">
                   This report contains empty metrics. The report will show the metric structure but may not have data values.
                 </div>
               )}
               
-              {/* Debug info for developers */}
+              {report.status === 'completed' && report.pdf_url && (
+                <div className="mt-2 text-xs text-gray-500 break-all">
+                  <span className="font-semibold">PDF URL:</span> {report.pdf_url}
+                </div>
+              )}
+              
               {(report.status === 'completed' && (!report.pdf_url || !report.page_count || report.page_count === 0)) && (
                 <TooltipProvider>
                   <Tooltip>
@@ -325,7 +329,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                           {report.pdf_url && <li>PDF URL: {report.pdf_url}</li>}
                           <li>Report data keys: {Object.keys(report.report_data || {}).join(', ') || 'none'}</li>
                           <li>Generated at: {report.generated_at}</li>
-                          <li>Status updates: {report.report_data?.status_updates?.join(', ') || 'none'}</li>
+                          <li>Status updates: {Array.isArray(report.report_data?.status_updates) ? report.report_data.status_updates.join(', ') : 'none'}</li>
                         </ul>
                       </div>
                     </TooltipContent>
