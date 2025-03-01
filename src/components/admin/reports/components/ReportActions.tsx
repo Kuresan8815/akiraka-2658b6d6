@@ -38,16 +38,25 @@ export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProp
     window.open(report.pdf_url, '_blank');
   };
 
+  // Determine if retry should be enabled
+  const shouldShowRetry = 
+    report.status === 'failed' || 
+    (report.status === 'completed' && report.page_count === 0) || 
+    (report.status === 'completed' && !report.pdf_url) || 
+    (report.status === 'completed' && report.pdf_url && !isPdfUrlValid(report.pdf_url));
+
+  // Get retry count for better UI feedback
+  const retryCount = report.report_data?.retry_count || 0;
+
   return (
     <div className="flex items-center gap-2">
-      {report.status === 'completed' && report.pdf_url && (
+      {report.status === 'completed' && report.pdf_url && isPdfUrlValid(report.pdf_url) && (
         <>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => onDownload(report)}
             className="flex items-center gap-2"
-            disabled={!isPdfUrlValid(report.pdf_url)}
           >
             <Download className="h-4 w-4" />
             Download PDF
@@ -63,7 +72,6 @@ export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProp
             size="sm"
             onClick={handleOpenPdf}
             title="Open PDF directly in browser"
-            disabled={!isPdfUrlValid(report.pdf_url)}
           >
             <ExternalLink className="h-4 w-4" />
           </Button>
@@ -74,19 +82,24 @@ export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProp
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       )}
       
-      {(report.status === 'failed' || 
-        (report.status === 'completed' && report.page_count === 0) || 
-        (report.status === 'completed' && !report.pdf_url) || 
-        (report.status === 'completed' && report.pdf_url && !isPdfUrlValid(report.pdf_url))) && (
+      {shouldShowRetry && (
         <Button 
           variant="outline" 
           size="sm" 
           onClick={() => onRetry(report)}
           className="gap-2"
+          disabled={report.status === 'pending'}
         >
           <RotateCw className="h-4 w-4" />
-          Retry with Empty Metrics
+          {retryCount > 0 ? `Retry Again (${retryCount})` : "Retry with Empty Metrics"}
         </Button>
+      )}
+      
+      {report.status === 'pending' && (
+        <div className="text-xs text-muted-foreground flex items-center gap-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Processing...
+        </div>
       )}
     </div>
   );

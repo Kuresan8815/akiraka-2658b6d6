@@ -110,31 +110,59 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
 
   const handleRetry = async (report: GeneratedReport & { report_template: any }) => {
     try {
-      const { error } = await supabase
+      toast({
+        title: "Regenerating Report",
+        description: "Starting report regeneration with empty metrics handling...",
+      });
+      
+      // First update the report status to pending and add details
+      const { error: updateError } = await supabase
         .from("generated_reports")
         .update({ 
           status: "pending", 
           report_data: {
-            ...report.report_data,
+            ...parseReportData(report.report_data),
             retry_timestamp: new Date().toISOString(),
-            retry_count: (report.report_data.retry_count || 0) + 1,
-            empty_data_handling: true
+            retry_count: (report.report_data?.retry_count || 0) + 1,
+            empty_metrics: true,
+            force_regenerate: true, // Add a flag to force regeneration
+            status_updates: [...(report.report_data?.status_updates || []), 
+              `Manual retry initiated at ${new Date().toISOString()}`]
           }
         })
         .eq("id", report.id);
       
-      if (error) throw error;
+      if (updateError) throw updateError;
       
+      console.log("Invoking edge function with retry params for report:", report.id);
+      
+      // Call the edge function with specific params to handle the retry
       const { data: fnResponse, error: fnError } = await supabase.functions.invoke('generate-esg-report', {
         body: { 
           report_id: report.id,
           business_id: businessId,
           retry: true,
-          handle_empty_metrics: true
+          handle_empty_metrics: true,
+          force_regenerate: true,
+          configuration: {
+            // Include configuration from the original report if available
+            ...(report.metadata || {}),
+            handleEmptyMetrics: true,
+            useExternalCharts: true,
+            // Add any additional configuration needed for retry
+            retry_context: {
+              retry_reason: "manual_retry",
+              previous_status: report.status,
+              had_pdf_url: !!report.pdf_url,
+              had_valid_pdf: isPdfUrlValid(report.pdf_url)
+            }
+          }
         }
       });
       
       if (fnError) throw fnError;
+      
+      console.log("Edge function response:", fnResponse);
       
       toast({
         title: "Report Regeneration Started",

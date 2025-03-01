@@ -103,7 +103,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
       const initialReportData: ReportData = {
         empty_metrics: formState.handleEmptyMetrics,
         useExternalCharts: formState.useExternalCharts,
-        status_updates: ["Created report record"]
+        status_updates: ["Created report record"],
+        creation_timestamp: new Date().toISOString()
       };
       
       const { data: report, error: reportError } = await supabase
@@ -184,6 +185,7 @@ async function generateReportWithEdgeFunction(report: any, businessId: string, f
         handleEmptyMetrics: formState.handleEmptyMetrics,
         useExternalCharts: formState.useExternalCharts,
         chartProvider: "quickchart",
+        preventExampleUrls: true, // Add this flag to prevent example URLs
         infographicOptions: {
           showIcons: true,
           useAnimations: true,
@@ -209,6 +211,7 @@ async function generateReportWithEdgeFunction(report: any, businessId: string, f
           handleEmptyMetrics: formState.handleEmptyMetrics,
           useExternalCharts: formState.useExternalCharts,
           chartProvider: "quickchart",
+          preventExampleUrls: true, // Add this flag to prevent example URLs
           infographicOptions: {
             showIcons: true,
             useAnimations: true,
@@ -246,8 +249,8 @@ async function generateReportWithEdgeFunction(report: any, businessId: string, f
     
     console.log("Edge function response:", fnResponse);
     
-    // Check for PDF URL in the response
-    if (fnResponse && fnResponse.pdf_url) {
+    // Check for PDF URL in the response and validate it
+    if (fnResponse && fnResponse.pdf_url && !fnResponse.pdf_url.includes('example.com')) {
       // Update the report with the PDF URL
       const reportData = parseReportData(report.report_data);
       const statusUpdates = getStatusUpdates(reportData);
@@ -271,12 +274,12 @@ async function generateReportWithEdgeFunction(report: any, businessId: string, f
         console.error("Error updating report with PDF URL:", updateError);
       }
     } else {
-      console.warn("PDF URL missing in function response:", fnResponse);
+      console.warn("PDF URL missing or invalid in function response:", fnResponse);
       
       // Update the report with a warning about missing PDF URL
       const reportData = parseReportData(report.report_data);
       const statusUpdates = getStatusUpdates(reportData);
-      statusUpdates.push("Completed but missing PDF URL");
+      statusUpdates.push("Completed but missing valid PDF URL");
       
       await supabase
         .from("generated_reports")
@@ -286,7 +289,7 @@ async function generateReportWithEdgeFunction(report: any, businessId: string, f
             ...reportData,
             empty_metrics: formState.handleEmptyMetrics,
             useExternalCharts: formState.useExternalCharts,
-            warning: "PDF URL missing in edge function response",
+            warning: "PDF URL missing or invalid in edge function response",
             status_updates: statusUpdates
           }
         })

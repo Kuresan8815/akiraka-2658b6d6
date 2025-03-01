@@ -1,6 +1,2 @@
 
 project_id = "nmlpmvsxqkmfrddvdfaw"
-
-# Add Quickchart API key if needed (will be empty for public API usage)
-# [functions.generate-esg-report.secrets]
-# QUICKCHART_API_KEY = ""
