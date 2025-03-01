@@ -15,6 +15,19 @@ interface ReportCardProps {
 }
 
 export const ReportCard = ({ report, onDownload, onRetry }: ReportCardProps) => {
+  const isPdfUrlValid = (url: string | null) => {
+    if (!url) return false;
+    
+    try {
+      const parsedUrl = new URL(url);
+      return (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') && 
+             !parsedUrl.hostname.includes('example.com') &&
+             parsedUrl.pathname.length > 1;
+    } catch (e) {
+      return false;
+    }
+  };
+
   return (
     <Card key={report.id} className={report.status === 'failed' ? 'border-red-300 bg-red-50' : ''}>
       <CardHeader>
@@ -85,6 +98,12 @@ export const ReportCard = ({ report, onDownload, onRetry }: ReportCardProps) => 
           {report.status === 'completed' && report.pdf_url && (
             <div className="mt-2 text-xs text-gray-500 break-all">
               <span className="font-semibold">PDF URL:</span> {report.pdf_url}
+              {!isPdfUrlValid(report.pdf_url) && (
+                <div className="text-red-500 mt-1">
+                  <AlertTriangle className="h-3 w-3 inline-block mr-1" />
+                  This PDF URL appears to be invalid. You may need to regenerate the report.
+                </div>
+              )}
             </div>
           )}
           

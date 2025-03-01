@@ -42,11 +42,34 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
     },
   });
 
+  const isPdfUrlValid = (url: string | null) => {
+    if (!url) return false;
+    
+    try {
+      const parsedUrl = new URL(url);
+      // Check if URL has proper protocol and is not just "example.com" or similar
+      return (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') && 
+             !parsedUrl.hostname.includes('example.com') &&
+             parsedUrl.pathname.length > 1;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const handleDownload = async (report: GeneratedReport & { report_template: any }) => {
     if (!report.pdf_url) {
       toast({
         title: "Error",
         description: "PDF URL is missing. Please regenerate the report.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isPdfUrlValid(report.pdf_url)) {
+      toast({
+        title: "Invalid PDF URL",
+        description: "The PDF URL appears to be invalid or incomplete. Please regenerate the report.",
         variant: "destructive",
       });
       return;
