@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GeneratedReport } from "@/types/reports";
-import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle, Info } from "lucide-react";
+import { Download, FileText, Loader2, BarChart3, PieChart, AlertTriangle, Info, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +106,8 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
           report_data: {
             ...report.report_data,
             retry_timestamp: new Date().toISOString(),
-            retry_count: (report.report_data.retry_count || 0) + 1
+            retry_count: (report.report_data.retry_count || 0) + 1,
+            empty_data_handling: true // Flag to handle empty metrics
           }
         })
         .eq("id", report.id);
@@ -118,7 +119,8 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
         body: { 
           report_id: report.id,
           business_id: businessId,
-          retry: true
+          retry: true,
+          handle_empty_metrics: true // Flag to handle empty metrics
         }
       });
       
@@ -126,7 +128,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       
       toast({
         title: "Report Regeneration Started",
-        description: "Your report is being regenerated. This may take a few moments.",
+        description: "Your report is being regenerated with empty metrics handling. This may take a few moments.",
       });
       
     } catch (error: any) {
@@ -200,6 +202,11 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                   }>
                     {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
                   </Badge>
+                  {report.report_data?.empty_metrics && (
+                    <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                      Empty Metrics
+                    </Badge>
+                  )}
                 </CardTitle>
                 <CardDescription>
                   Generated on {format(new Date(report.generated_at), "PPP")}
@@ -211,39 +218,45 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                 )}
               </div>
               
-              {report.status === 'completed' && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => handleDownload(report)}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                  {report.file_size && (
-                    <span className="ml-2 text-xs text-gray-500">
-                      ({Math.round(report.file_size / 1024)}KB)
-                    </span>
-                  )}
-                </Button>
-              )}
-              
-              {report.status === 'processing' && (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              )}
-              
-              {report.status === 'failed' && (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                {report.status === 'completed' && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => handleDownload(report)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                    {report.file_size && (
+                      <span className="ml-2 text-xs text-gray-500">
+                        ({Math.round(report.file_size / 1024)}KB)
+                      </span>
+                    )}
+                  </Button>
+                )}
+                
+                {report.status === 'processing' && (
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                )}
+                
+                {(report.status === 'failed' || 
+                  (report.status === 'completed' && report.page_count === 0) || 
+                  (report.status === 'completed' && !report.pdf_url)) && (
                   <Button 
                     variant="outline" 
                     size="sm" 
                     onClick={() => handleRetry(report)}
+                    className="gap-2"
                   >
-                    <Loader2 className="h-4 w-4 mr-2" />
-                    Retry
+                    <RotateCw className="h-4 w-4" />
+                    Retry with Empty Metrics
                   </Button>
+                )}
+                
+                {report.status === 'failed' && (
                   <AlertTriangle className="h-5 w-5 text-destructive" />
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -258,11 +271,15 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                   "All Time"
                 )}
               </div>
-              {report.page_count && (
+              {report.page_count ? (
                 <div className="text-gray-500">
                   Pages: {report.page_count}
                 </div>
-              )}
+              ) : report.status === 'completed' ? (
+                <div className="text-amber-600">
+                  Warning: Report has 0 pages
+                </div>
+              ) : null}
               {report.report_template?.visualization_config && (
                 <div className="flex gap-2 mt-2">
                   {report.report_template.visualization_config.showBarCharts && (
@@ -280,12 +297,19 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                 </div>
               )}
               
+              {/* Empty metrics notice */}
+              {report.report_data?.empty_metrics && (
+                <div className="mt-2 p-2 bg-amber-50 text-amber-700 rounded text-xs">
+                  This report contains empty metrics. The report will show the metric structure but may not have data values.
+                </div>
+              )}
+              
               {/* Debug info for developers */}
-              {(report.status === 'completed' && (!report.pdf_url || !report.page_count)) && (
+              {(report.status === 'completed' && (!report.pdf_url || !report.page_count || report.page_count === 0)) && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center mt-2 text-xs text-amber-600">
+                      <div className="flex items-center mt-2 text-xs text-amber-600 cursor-help">
                         <Info className="h-4 w-4 mr-1" />
                         Potential issues detected
                       </div>
@@ -295,9 +319,13 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
                         <p className="font-bold">Debug Information:</p>
                         <ul className="list-disc pl-4 mt-1 space-y-1">
                           {!report.pdf_url && <li>PDF URL is missing</li>}
-                          {!report.page_count && <li>Page count is missing (possibly empty report)</li>}
+                          {!report.page_count && <li>Page count is missing</li>}
+                          {report.page_count === 0 && <li>Page count is zero (empty report)</li>}
+                          {report.report_data?.empty_metrics && <li>Report generated with empty metrics handling</li>}
                           {report.pdf_url && <li>PDF URL: {report.pdf_url}</li>}
-                          <li>Report data keys: {Object.keys(report.report_data).join(', ') || 'none'}</li>
+                          <li>Report data keys: {Object.keys(report.report_data || {}).join(', ') || 'none'}</li>
+                          <li>Generated at: {report.generated_at}</li>
+                          <li>Status updates: {report.report_data?.status_updates?.join(', ') || 'none'}</li>
                         </ul>
                       </div>
                     </TooltipContent>

@@ -24,6 +24,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
   });
   
   const [colorScheme, setColorScheme] = useState("greenBlue");
+  const [handleEmptyMetrics, setHandleEmptyMetrics] = useState(true); // New state for empty metrics handling
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,6 +43,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
       showInfographics: true,
     });
     setColorScheme("greenBlue");
+    setHandleEmptyMetrics(true);
   };
 
   const getColorPalette = (scheme: string) => {
@@ -144,13 +146,17 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         .insert({
           business_id: businessId,
           template_id: template.id,
-          report_data: {},
+          report_data: {
+            empty_metrics: handleEmptyMetrics, // Pass flag for empty metrics handling
+            status_updates: ["Created report record"]
+          },
           status: "pending",
           date_range: dateRange,
           metadata: {
             reportType: "comprehensive_esg",
             visualizationPreferences: visualization,
             colorScheme: colorScheme,
+            handleEmptyMetrics: handleEmptyMetrics, // Add to metadata as well
             infographicOptions: {
               showIcons: true,
               useAnimations: true,
@@ -174,6 +180,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
         console.log("Invoking edge function with params:", {
           report_id: report.id,
           business_id: businessId,
+          handle_empty_metrics: handleEmptyMetrics, // Pass flag to edge function
           configuration: {
             title,
             description,
@@ -182,6 +189,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             date_range: dateRange,
             includeExecutiveSummary: true,
             categorizeByESG: true,
+            handleEmptyMetrics: handleEmptyMetrics, // Pass flag to configuration
             infographicOptions: {
               showIcons: true,
               useAnimations: true,
@@ -194,6 +202,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           body: { 
             report_id: report.id,
             business_id: businessId,
+            handle_empty_metrics: handleEmptyMetrics, // Pass the flag to the edge function
             configuration: {
               title,
               description,
@@ -202,6 +211,7 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               date_range: dateRange,
               includeExecutiveSummary: true,
               categorizeByESG: true,
+              handleEmptyMetrics: handleEmptyMetrics, // Pass flag to configuration
               infographicOptions: {
                 showIcons: true,
                 useAnimations: true,
@@ -221,7 +231,9 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
               status: "failed", 
               report_data: { 
                 error: fnError.message,
-                timestamp: new Date().toISOString()
+                empty_metrics: handleEmptyMetrics,
+                timestamp: new Date().toISOString(),
+                status_updates: ["Created report record", "Edge function failed"]
               } 
             })
             .eq("id", report.id);
@@ -238,7 +250,12 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             .from("generated_reports")
             .update({ 
               pdf_url: fnResponse.pdf_url,
-              status: "completed"
+              status: "completed",
+              report_data: {
+                ...report.report_data,
+                empty_metrics: handleEmptyMetrics,
+                status_updates: [...(report.report_data?.status_updates || []), "Report completed with PDF"]
+              }
             })
             .eq("id", report.id);
             
@@ -247,6 +264,20 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
           }
         } else {
           console.warn("PDF URL missing in function response:", fnResponse);
+          
+          // Update the report with a warning about missing PDF URL
+          await supabase
+            .from("generated_reports")
+            .update({ 
+              status: "completed",
+              report_data: {
+                ...report.report_data,
+                empty_metrics: handleEmptyMetrics,
+                warning: "PDF URL missing in edge function response",
+                status_updates: [...(report.report_data?.status_updates || []), "Completed but missing PDF URL"]
+              }
+            })
+            .eq("id", report.id);
         }
         
         return report;
@@ -270,7 +301,9 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
             status: "failed", 
             report_data: { 
               error: fnInvokeError.message || "Unknown error",
-              timestamp: new Date().toISOString()
+              empty_metrics: handleEmptyMetrics,
+              timestamp: new Date().toISOString(),
+              status_updates: [...(report.report_data?.status_updates || []), "Edge function invoke error"]
             } 
           })
           .eq("id", report.id);
@@ -306,6 +339,8 @@ export const useReportGeneration = ({ businessId, onSuccess }: UseReportGenerati
     setVisualization,
     colorScheme,
     setColorScheme,
+    handleEmptyMetrics,
+    setHandleEmptyMetrics,
     createReport,
     isPending,
   };
