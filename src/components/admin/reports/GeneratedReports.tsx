@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,6 +8,8 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { ReportCard } from "./components/ReportCard";
 import { GeneratedReport } from "@/types/reports";
 import { toast } from "@/hooks/use-toast";
+import { parseReportData } from "./utils/reportDataUtils";
+import { Json } from "@/integrations/supabase/types";
 
 export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
   const [activeTab, setActiveTab] = useState<"all" | "completed" | "failed">("all");
@@ -34,7 +35,22 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
         .order("generated_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      
+      return (data || []).map(report => ({
+        id: report.id,
+        template_id: report.template_id,
+        business_id: report.business_id,
+        generated_at: report.generated_at,
+        report_data: parseReportData(report.report_data),
+        pdf_url: report.pdf_url,
+        status: report.status,
+        generated_by: report.generated_by,
+        date_range: report.date_range as any,
+        metadata: report.metadata as Record<string, any> | null,
+        file_size: report.file_size,
+        page_count: report.page_count,
+        report_template: report.report_template
+      }));
     },
     enabled: !!businessId,
   });
@@ -43,7 +59,6 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
   const downloadMutation = useMutation({
     mutationFn: async (report: GeneratedReport) => {
       try {
-        // Create a link and click it to download the PDF
         const link = document.createElement("a");
         link.href = report.pdf_url || "";
         link.target = "_blank";
@@ -70,7 +85,6 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
   const retryMutation = useMutation({
     mutationFn: async (report: GeneratedReport) => {
       try {
-        // Log the retry attempt in the report
         const retryCount = (report.report_data?.retry_count || 0) + 1;
         const { error: updateError } = await supabase
           .from("generated_reports")
@@ -86,7 +100,6 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
 
         if (updateError) throw updateError;
         
-        // Call the generate-test-pdf edge function to create a test PDF
         const { data, error } = await supabase.functions.invoke("generate-test-pdf", {
           body: { reportId: report.id }
         });
@@ -94,7 +107,6 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
         if (error) throw error;
         if (data.error) throw new Error(data.error);
         
-        // No need to update the report status here as the edge function will do it
         return data;
       } catch (error) {
         throw error;
@@ -105,7 +117,6 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
         title: "Report Retry Initiated",
         description: "The report is being regenerated with test data. It will be available shortly.",
       });
-      // Refetch reports after a short delay to allow the edge function to complete
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ["generated-reports", businessId] });
       }, 2000);
@@ -149,7 +160,7 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
   }
 
   if (!reports?.length) {
-    return <EmptyReportsState businessId={businessId} />;
+    return <EmptyReportsState business_id={businessId} />;
   }
 
   return (

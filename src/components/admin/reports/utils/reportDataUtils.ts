@@ -9,13 +9,16 @@ export interface ReportData {
   timestamp?: string;
   status_updates?: string[];
   warning?: string;
+  retry_count?: number;
+  retry_at?: string;
+  download_error?: string;
   [key: string]: any;
 }
 
 // Helper function to safely parse report data
-export const parseReportData = (data: any): ReportData => {
+export const parseReportData = (data: Json | null): ReportData => {
   if (!data) return {};
-  if (typeof data === 'object') return data as ReportData;
+  if (typeof data === 'object' && data !== null) return data as ReportData;
   try {
     if (typeof data === 'string') return JSON.parse(data) as ReportData;
   } catch (e) {
@@ -25,8 +28,8 @@ export const parseReportData = (data: any): ReportData => {
 };
 
 // Helper function to get status updates safely
-export const getStatusUpdates = (data: any): string[] => {
-  const parsedData = parseReportData(data);
+export const getStatusUpdates = (data: Json | ReportData | null): string[] => {
+  const parsedData = typeof data === 'object' && data !== null ? data as ReportData : parseReportData(data);
   return Array.isArray(parsedData.status_updates) 
     ? parsedData.status_updates 
     : ["Created report record"];
