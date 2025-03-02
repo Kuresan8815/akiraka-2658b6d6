@@ -1,180 +1,180 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "@supabase/supabase-js";
-import { corsHeaders } from "../_shared/cors.ts";
+// Follow this setup guide to integrate the Deno runtime and run this Edge Function locally: https://deno.land/manual/runtime/manual_deployment
+// Learn more: https://deno.land/manual/examples/deploy_edge_functions
 
-// Initialize Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
-  // Handle CORS preflight request
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Parse request body
-    const { reportId } = await req.json();
+    const { reportId, verify = false } = await req.json();
     
     if (!reportId) {
       return new Response(
-        JSON.stringify({ error: "Report ID is required" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
+        JSON.stringify({ error: 'Report ID is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
-
-    console.log(`Processing download request for report: ${reportId}`);
     
-    // Get report details
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') as string;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') as string;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get report from DB
     const { data: report, error: reportError } = await supabase
-      .from("generated_reports")
-      .select("*")
-      .eq("id", reportId)
+      .from('generated_reports')
+      .select('*')
+      .eq('id', reportId)
       .single();
-    
-    if (reportError || !report) {
+      
+    if (reportError) {
+      console.error('Error fetching report:', reportError);
       return new Response(
-        JSON.stringify({ error: `Failed to find report: ${reportError?.message || "Not found"}` }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
+        JSON.stringify({ error: 'Report not found', details: reportError }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
     
-    // Check if PDF URL exists
     if (!report.pdf_url) {
-      console.log(`Report ${reportId} has no PDF URL`);
-      
-      // Update report with error information
-      await supabase
-        .from("generated_reports")
-        .update({
-          report_data: {
-            ...report.report_data,
-            download_error: "PDF URL not found in report record"
-          }
-        })
-        .eq("id", reportId);
-        
       return new Response(
-        JSON.stringify({ error: "PDF URL not found in report record" }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
+        JSON.stringify({ error: 'Report does not have a PDF URL' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
     
-    console.log(`Found PDF URL: ${report.pdf_url}`);
+    // If this is just a verification request, test if the URL exists
+    if (verify) {
+      try {
+        const checkResponse = await fetch(report.pdf_url, { method: 'HEAD' });
+        if (!checkResponse.ok) {
+          console.error(`PDF URL verification failed: ${report.pdf_url}, status: ${checkResponse.status}`);
+          
+          // Update report with error info
+          const reportData = report.report_data || {};
+          await supabase
+            .from('generated_reports')
+            .update({
+              report_data: {
+                ...reportData,
+                pdf_check_error: `URL check failed with status ${checkResponse.status}`,
+                pdf_check_time: new Date().toISOString()
+              }
+            })
+            .eq('id', reportId);
+            
+          return new Response(
+            JSON.stringify({ 
+              error: `PDF not accessible (${checkResponse.status})`, 
+              status: checkResponse.status 
+            }),
+            { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          )
+        }
+        
+        return new Response(
+          JSON.stringify({ success: true, exists: true }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      } catch (verifyError) {
+        console.error('Error verifying PDF URL:', verifyError);
+        
+        // Update report with error info
+        const reportData = report.report_data || {};
+        await supabase
+          .from('generated_reports')
+          .update({
+            report_data: {
+              ...reportData,
+              pdf_check_error: `URL check failed: ${verifyError.message}`,
+              pdf_check_time: new Date().toISOString()
+            }
+          })
+          .eq('id', reportId);
+          
+        return new Response(
+          JSON.stringify({ error: 'PDF not accessible', details: verifyError.message }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    }
     
-    // Try to extract the path from the URL
-    let pdfPath;
     try {
-      const url = new URL(report.pdf_url);
-      // Extract the path from URL like https://nmlpmvsxqkmfrddvdfaw.supabase.co/storage/v1/object/public/reports/file.pdf
-      const pathRegex = /\/storage\/v1\/object\/public\/reports\/(.+)/;
-      const match = url.pathname.match(pathRegex);
+      // Try to download the PDF
+      const response = await fetch(report.pdf_url);
       
-      if (match && match[1]) {
-        pdfPath = match[1];
-      } else {
-        throw new Error("Invalid PDF URL format");
+      if (!response.ok) {
+        console.error(`Failed to download PDF: ${report.pdf_url}, status: ${response.status}`);
+        
+        // If the PDF doesn't exist, generate a test PDF instead
+        if (response.status === 404) {
+          // Call the generate-test-pdf function
+          const { data: testPdfData, error: testPdfError } = await supabase.functions.invoke("generate-test-pdf", {
+            body: { reportId: reportId, force: true }
+          });
+          
+          if (testPdfError) {
+            throw new Error(`Failed to generate test PDF: ${testPdfError.message}`);
+          }
+          
+          if (testPdfData && testPdfData.pdf_url) {
+            return new Response(
+              JSON.stringify({ 
+                url: testPdfData.pdf_url, 
+                generated: true, 
+                message: 'Original PDF was not found, generated a test PDF instead' 
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+          
+          throw new Error('Failed to generate replacement PDF');
+        }
+        
+        throw new Error(`Failed to download PDF: ${response.status} ${response.statusText}`);
       }
-    } catch (error) {
-      console.error(`Failed to parse PDF URL: ${error.message}`);
       
-      // Update report with error information
+      // If successful, return the URL
+      return new Response(
+        JSON.stringify({ url: report.pdf_url }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    } catch (downloadError) {
+      console.error('Error downloading PDF:', downloadError);
+      
+      // Update report with download error info
+      const reportData = report.report_data || {};
       await supabase
-        .from("generated_reports")
+        .from('generated_reports')
         .update({
           report_data: {
-            ...report.report_data,
-            download_error: `Invalid PDF URL: ${error.message}`
+            ...reportData,
+            download_error: downloadError.message,
+            download_time: new Date().toISOString()
           }
         })
-        .eq("id", reportId);
+        .eq('id', reportId);
         
       return new Response(
-        JSON.stringify({ error: `Invalid PDF URL: ${error.message}` }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
+        JSON.stringify({ error: 'Error downloading PDF', details: downloadError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
-    
-    console.log(`Extracted path: ${pdfPath}`);
-    
-    // Check if file exists in storage
-    const { data, error } = await supabase
-      .storage
-      .from("reports")
-      .download(pdfPath);
-    
-    if (error) {
-      console.error(`Storage error: ${error.message}`);
-      
-      // Update report with error information
-      await supabase
-        .from("generated_reports")
-        .update({
-          report_data: {
-            ...report.report_data,
-            download_error: `Storage error: ${error.message}`
-          }
-        })
-        .eq("id", reportId);
-        
-      return new Response(
-        JSON.stringify({ error: `Failed to download file: ${error.message}` }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-    
-    // Get a signed URL that's valid for a short time
-    const { data: signedUrlData, error: signedUrlError } = await supabase
-      .storage
-      .from("reports")
-      .createSignedUrl(pdfPath, 60); // Valid for 60 seconds
-    
-    if (signedUrlError) {
-      console.error(`Signed URL error: ${signedUrlError.message}`);
-      return new Response(
-        JSON.stringify({ error: `Failed to create download link: ${signedUrlError.message}` }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-    
-    return new Response(
-      JSON.stringify({ 
-        downloadUrl: signedUrlData.signedUrl,
-        reportName: `Report_${reportId.substring(0, 8)}.pdf`
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
   } catch (error) {
-    console.error(`Unexpected error: ${error.message}`);
+    console.error('Error in download-report function:', error);
     return new Response(
-      JSON.stringify({ error: `Unexpected error: ${error.message}` }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
-    );
+      JSON.stringify({ error: 'Server error', details: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-});
+})

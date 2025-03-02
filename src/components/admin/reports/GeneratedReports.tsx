@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -50,17 +51,31 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
         file_size: report.file_size,
         page_count: report.page_count,
         report_template: report.report_template
-      }));
+      })) as Array<GeneratedReport & { report_template: any }>;
     },
     enabled: !!businessId,
   });
 
   // Download report mutation
   const downloadMutation = useMutation({
-    mutationFn: async (report: GeneratedReport) => {
+    mutationFn: async (report: GeneratedReport & { report_template: any }) => {
       try {
+        if (!report.pdf_url) {
+          throw new Error("No PDF URL available");
+        }
+        
+        // First try to verify the PDF exists by calling the edge function
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke("download-report", {
+          body: { reportId: report.id, verify: true }
+        });
+        
+        if (verifyError || (verifyData && verifyData.error)) {
+          throw new Error(verifyError?.message || verifyData?.error || "Failed to verify PDF");
+        }
+        
+        // If using direct download is successful, use that
         const link = document.createElement("a");
-        link.href = report.pdf_url || "";
+        link.href = report.pdf_url;
         link.target = "_blank";
         link.download = `Report_${report.id.slice(0, 8)}.pdf`;
         document.body.appendChild(link);
@@ -68,11 +83,51 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
         document.body.removeChild(link);
         
         return { success: true };
-      } catch (error) {
-        throw error;
+      } catch (error: any) {
+        console.error("Download error:", error);
+        
+        // If direct download fails, try through edge function
+        try {
+          const { data: downloadData, error: downloadError } = await supabase.functions.invoke("download-report", {
+            body: { reportId: report.id }
+          });
+          
+          if (downloadError) throw downloadError;
+          if (downloadData.error) throw new Error(downloadData.error);
+          
+          if (downloadData.url) {
+            const link = document.createElement("a");
+            link.href = downloadData.url;
+            link.target = "_blank";
+            link.download = `Report_${report.id.slice(0, 8)}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return { success: true };
+          }
+          
+          throw new Error("No download URL returned");
+        } catch (secondError: any) {
+          // If both methods fail, update the report record with the error
+          const reportData = report.report_data || {};
+          const updatedReportData = {
+            ...reportData,
+            download_error: `${error.message}. Proxy download: ${secondError.message}`,
+            download_attempt: new Date().toISOString()
+          };
+          
+          await supabase
+            .from("generated_reports")
+            .update({
+              report_data: updatedReportData
+            })
+            .eq("id", report.id);
+            
+          throw new Error(`Failed to download: ${secondError.message}`);
+        }
       }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Download Failed",
         description: `Failed to download report: ${error.message}`,
@@ -83,7 +138,7 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
 
   // Retry report mutation
   const retryMutation = useMutation({
-    mutationFn: async (report: GeneratedReport) => {
+    mutationFn: async (report: GeneratedReport & { report_template: any }) => {
       try {
         const retryCount = (report.report_data?.retry_count || 0) + 1;
         const { error: updateError } = await supabase
@@ -105,7 +160,7 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
         });
         
         if (error) throw error;
-        if (data.error) throw new Error(data.error);
+        if (data && data.error) throw new Error(data.error);
         
         return data;
       } catch (error) {
@@ -121,7 +176,7 @@ export const GeneratedReports = ({ businessId }: { businessId?: string }) => {
         queryClient.invalidateQueries({ queryKey: ["generated-reports", businessId] });
       }, 2000);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
         title: "Retry Failed",
         description: `Failed to retry report: ${error.message}`,

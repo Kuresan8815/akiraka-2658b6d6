@@ -25,7 +25,6 @@ export const EmptyReportsState = ({ business_id }: { business_id?: string }) => 
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         businessId={business_id}
-        onSuccess={() => setIsDialogOpen(false)}
       />
     </div>
   );
