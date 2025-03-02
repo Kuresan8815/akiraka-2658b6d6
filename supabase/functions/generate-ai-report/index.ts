@@ -1,6 +1,6 @@
 
 import { serve } from "std/http/server.ts"
-import { createClient } from "supabase-js"
+import { createClient } from "@supabase/supabase-js"
 import { corsHeaders, handleCors } from "../_shared/cors.ts"
 import "xhr"
 
