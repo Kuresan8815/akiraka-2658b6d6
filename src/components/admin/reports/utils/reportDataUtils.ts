@@ -13,6 +13,9 @@ export interface ReportData {
   retry_at?: string;
   download_error?: string;
   download_attempt?: string;
+  creation_timestamp?: string;
+  processing_started?: string;
+  processing_completed?: string;
   [key: string]: any;
 }
 
@@ -20,11 +23,11 @@ export interface ReportData {
 export const parseReportData = (data: Json | null): ReportData => {
   if (!data) return {};
   
-  if (typeof data === 'object' && data !== null) {
-    return data as ReportData;
-  }
-  
   try {
+    if (typeof data === 'object' && data !== null) {
+      return data as ReportData;
+    }
+    
     if (typeof data === 'string') {
       return JSON.parse(data) as ReportData;
     }
@@ -46,6 +49,21 @@ export const getStatusUpdates = (data: Json | ReportData | null): string[] => {
     : ["Created report record"];
 };
 
+// Function to add a status update
+export const addStatusUpdate = (existingData: ReportData, update: string): ReportData => {
+  const statusUpdates = Array.isArray(existingData.status_updates) 
+    ? [...existingData.status_updates] 
+    : [];
+  
+  statusUpdates.push(update);
+  
+  return {
+    ...existingData,
+    status_updates: statusUpdates,
+    timestamp: new Date().toISOString()
+  };
+};
+
 // Function to get color palette based on scheme
 export const getColorPalette = (scheme: string) => {
   const palettes = {
@@ -56,4 +74,19 @@ export const getColorPalette = (scheme: string) => {
     rainbow: ["#EF4444", "#F59E0B", "#10B981", "#3B82F6", "#8B5CF6", "#EC4899"]
   };
   return palettes[scheme as keyof typeof palettes] || palettes.greenBlue;
+};
+
+// Helper to validate PDF URL
+export const isPdfUrlValid = (url: string | null): boolean => {
+  if (!url) return false;
+  
+  try {
+    const parsedUrl = new URL(url);
+    return (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') && 
+           !parsedUrl.hostname.includes('example.com') &&
+           parsedUrl.pathname.length > 1 &&
+           parsedUrl.pathname.includes('storage/v1/object/public/reports/');
+  } catch (e) {
+    return false;
+  }
 };
