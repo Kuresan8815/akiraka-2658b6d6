@@ -23,7 +23,8 @@ export const ReportCard = ({ report, onDownload, onRetry, isDownloading = false 
       const parsedUrl = new URL(url);
       return (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') && 
              !parsedUrl.hostname.includes('example.com') &&
-             parsedUrl.pathname.length > 1;
+             parsedUrl.pathname.length > 1 &&
+             parsedUrl.pathname.includes('storage/v1/object/public/reports/');
     } catch (e) {
       return false;
     }

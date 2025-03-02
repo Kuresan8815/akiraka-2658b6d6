@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GeneratedReport } from "@/types/reports";
@@ -50,10 +49,10 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
     
     try {
       const parsedUrl = new URL(url);
-      // Check if URL has proper protocol and is not just "example.com" or similar
       return (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') && 
              !parsedUrl.hostname.includes('example.com') &&
-             parsedUrl.pathname.length > 1;
+             parsedUrl.pathname.length > 1 &&
+             parsedUrl.pathname.includes('storage/v1/object/public/reports/');
     } catch (e) {
       return false;
     }
@@ -69,48 +68,42 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       return;
     }
 
-    if (!isPdfUrlValid(report.pdf_url)) {
-      toast({
-        title: "Invalid PDF URL",
-        description: "The PDF URL appears to be invalid or incomplete. Please regenerate the report.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setDownloadingReportId(report.id);
     console.log("Attempting to download PDF from:", report.pdf_url);
     
     try {
-      // First, check if the URL exists by making a HEAD request
-      const response = await fetch(report.pdf_url, { method: 'HEAD' });
+      // First try to use the download-report edge function for better error handling
+      const { data: response, error: fnError } = await supabase.functions.invoke('download-report', {
+        body: { reportId: report.id }
+      });
       
-      if (!response.ok) {
-        throw new Error(`PDF not found (status: ${response.status})`);
+      if (fnError) {
+        console.error("Edge function error:", fnError);
+        
+        // Fall back to direct download if edge function fails
+        if (isPdfUrlValid(report.pdf_url)) {
+          window.open(report.pdf_url, '_blank');
+        } else {
+          throw new Error("Invalid PDF URL and edge function failed");
+        }
+      } else if (response.error) {
+        throw new Error(response.error);
+      } else {
+        // Edge function worked, update report data if needed
+        const reportData = parseReportData(report.report_data);
+        const updatedReportData = {
+          ...reportData,
+          last_download_attempt: new Date().toISOString(),
+          download_success: true
+        };
+        
+        await supabase
+          .from("generated_reports")
+          .update({ 
+            report_data: updatedReportData
+          })
+          .eq("id", report.id);
       }
-      
-      // If the URL exists, open it in a new tab
-      window.open(report.pdf_url, '_blank');
-      
-      const reportData = parseReportData(report.report_data);
-      const updatedReportData = {
-        ...reportData,
-        last_download_attempt: new Date().toISOString(),
-        download_success: true
-      };
-      
-      supabase
-        .from("generated_reports")
-        .update({ 
-          report_data: updatedReportData
-        })
-        .eq("id", report.id)
-        .then(({ error }) => {
-          if (error) {
-            console.error("Error updating report download timestamp:", error);
-          }
-        });
-      
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast({
@@ -121,14 +114,14 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
       
       // Update report data to reflect download failure
       const reportData = parseReportData(report.report_data);
-      supabase
+      await supabase
         .from("generated_reports")
         .update({ 
           report_data: {
             ...reportData,
             last_download_attempt: new Date().toISOString(),
             download_success: false,
-            download_error: "PDF file not found or inaccessible"
+            download_error: error instanceof Error ? error.message : "Unknown error"
           }
         })
         .eq("id", report.id);
@@ -154,7 +147,7 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
             retry_timestamp: new Date().toISOString(),
             retry_count: (report.report_data?.retry_count || 0) + 1,
             empty_metrics: true,
-            force_regenerate: true, // Add a flag to force regeneration
+            force_regenerate: true,
             status_updates: [...(report.report_data?.status_updates || []), 
               `Manual retry initiated at ${new Date().toISOString()}`]
           }
@@ -174,11 +167,9 @@ export const GeneratedReports = ({ businessId }: GeneratedReportsProps) => {
           handle_empty_metrics: true,
           force_regenerate: true,
           configuration: {
-            // Include configuration from the original report if available
             ...(report.metadata || {}),
             handleEmptyMetrics: true,
             useExternalCharts: true,
-            // Add any additional configuration needed for retry
             retry_context: {
               retry_reason: "manual_retry",
               previous_status: report.status,

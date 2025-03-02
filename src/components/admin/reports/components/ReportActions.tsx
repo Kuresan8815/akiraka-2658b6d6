@@ -4,6 +4,7 @@ import { Download, ExternalLink, Loader2, RotateCw } from "lucide-react";
 import { GeneratedReport } from "@/types/reports";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReportActionsProps {
   report: GeneratedReport & { report_template: any };
@@ -22,7 +23,8 @@ export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProp
       // Check if URL has proper protocol and is not just "example.com" or similar
       return (parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:') && 
              !parsedUrl.hostname.includes('example.com') &&
-             parsedUrl.pathname.length > 1;
+             parsedUrl.pathname.length > 1 &&
+             parsedUrl.pathname.includes('storage/v1/object/public/reports/');
     } catch (e) {
       return false;
     }
@@ -44,7 +46,31 @@ export const ReportActions = ({ report, onDownload, onRetry }: ReportActionsProp
   const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      await onDownload(report);
+      if (!isPdfUrlValid(report.pdf_url)) {
+        // Try to download via edge function for better error handling
+        const { data: response, error } = await supabase.functions.invoke('download-report', {
+          body: { reportId: report.id }
+        });
+        
+        if (error) {
+          throw new Error(`Edge function error: ${error.message}`);
+        }
+        
+        if (response.error) {
+          throw new Error(response.error);
+        }
+        
+        // If the function returned a download URL, open it
+        if (response.downloadUrl) {
+          window.open(response.downloadUrl, '_blank');
+        } else {
+          // Call the original download handler as fallback
+          await onDownload(report);
+        }
+      } else {
+        // If URL seems valid, try the normal download
+        await onDownload(report);
+      }
     } catch (error) {
       console.error("Download error:", error);
       toast({
