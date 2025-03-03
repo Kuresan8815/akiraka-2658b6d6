@@ -1,7 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ExternalLink, FileText, Loader2 } from "lucide-react";
@@ -16,6 +15,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { supabase } from "@/integrations/supabase/client";
+import { 
+  verifyMetricOnBlockchain, 
+  getBlockchainContractStorage,
+  BlockchainVerificationResult
+} from "@/utils/blockchainUtils";
 
 interface BlockchainVerificationProps {
   metric: {
@@ -29,92 +34,86 @@ interface BlockchainVerificationProps {
 
 export const BlockchainVerification = ({ metric }: BlockchainVerificationProps) => {
   const { toast } = useToast();
-  const [isVerifying, setIsVerifying] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-
-  const { data: storageData, refetch: refetchStorage, isLoading: isStorageLoading } = useQuery({
+  const queryClient = useQueryClient();
+  
+  // Query for blockchain storage data
+  const { 
+    data: storageData, 
+    refetch: refetchStorage, 
+    isLoading: isStorageLoading 
+  } = useQuery({
     queryKey: ['tezos-storage', metric?.tezos_contract_address],
     queryFn: async () => {
       if (!metric?.tezos_contract_address) return null;
       
       try {
-        console.log('Calling verify-tezos-metric function with params:', {
-          action: 'getStorage',
-          contractAddress: metric.tezos_contract_address
-        });
-
-        const { data, error } = await supabase.functions.invoke('verify-tezos-metric', {
-          body: {
-            action: 'getStorage',
-            contractAddress: metric.tezos_contract_address
-          }
-        });
-
-        if (error) {
-          console.error('Edge function error:', error);
-          throw error;
-        }
-
-        console.log('Edge function response:', data);
-        return data.storage;
+        return await getBlockchainContractStorage(metric.tezos_contract_address);
       } catch (error) {
-        console.error('Failed to call edge function:', error);
-        throw error;
+        console.error('Failed to fetch contract storage:', error);
+        return null;
       }
     },
     enabled: !!metric?.tezos_contract_address,
     retry: 1
   });
 
-  const handleRecordMetric = async () => {
-    if (!metric.id || !metric.value) {
-      toast({
-        title: "Error",
-        description: "Missing metric data",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Mutation for recording metric on blockchain
+  const verifyMutation = useMutation({
+    mutationFn: async () => {
+      if (!metric.id || !metric.value) {
+        throw new Error("Missing metric data");
+      }
 
-    setIsVerifying(true);
-
-    try {
-      const payload = {
-        action: 'recordMetric',
+      const verificationResult = await verifyMetricOnBlockchain({
         metricId: metric.id,
         value: metric.value,
         businessId: "test-business" // This should be dynamic based on context
-      };
-
-      console.log('Recording metric on blockchain:', payload);
-
-      const { data, error } = await supabase.functions.invoke('verify-tezos-metric', {
-        body: payload
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
+      if (verificationResult.status !== "success") {
+        throw new Error(verificationResult.message);
       }
 
-      console.log('Record metric response:', data);
+      // Update the local database with the blockchain verification data
+      const { error: updateError } = await supabase
+        .from("widget_metrics")
+        .update({
+          tezos_operation_hash: verificationResult.transaction_hash,
+          tezos_block_level: verificationResult.block_level,
+          tezos_contract_address: verificationResult.contract_address
+        })
+        .eq("id", metric.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return verificationResult;
+    },
+    onSuccess: (data) => {
       toast({
         title: "Success",
-        description: "Metric recorded on blockchain",
+        description: data.message || "Metric recorded on blockchain",
       });
+      
+      // Refresh all relevant data
+      queryClient.invalidateQueries({ queryKey: ['widget-metrics'] });
       
       // Refresh the component to show the new blockchain data
       window.location.reload();
-    } catch (error) {
-      console.error('Failed to record metric:', error);
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to record metric on blockchain",
         variant: "destructive",
       });
-    } finally {
-      setIsVerifying(false);
-    }
+    },
+  });
+
+  const handleRecordMetric = () => {
+    verifyMutation.mutate();
   };
 
   const handleViewOnBlockchain = () => {
@@ -156,10 +155,10 @@ export const BlockchainVerification = ({ metric }: BlockchainVerificationProps) 
           size="sm" 
           variant="default" 
           onClick={handleRecordMetric}
-          disabled={isVerifying}
+          disabled={verifyMutation.isPending}
           className="w-full"
         >
-          {isVerifying ? (
+          {verifyMutation.isPending ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Verifying...

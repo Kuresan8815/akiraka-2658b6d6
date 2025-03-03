@@ -1,11 +1,12 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ExternalLink, Loader2 } from "lucide-react";
 import { Product } from "@/types/product";
+import { verifyProductOnBlockchain } from "@/utils/blockchainUtils";
 
 interface ProductBlockchainVerificationProps {
   product: Product;
@@ -17,23 +18,15 @@ export const ProductBlockchainVerification = ({
   onVerificationComplete 
 }: ProductBlockchainVerificationProps) => {
   const { toast } = useToast();
-  const [isVerifying, setIsVerifying] = useState(false);
 
-  const handleVerifyProduct = async () => {
-    if (!product.id) {
-      toast({
-        title: "Error",
-        description: "Missing product data",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Create a mutation for product verification
+  const verifyMutation = useMutation({
+    mutationFn: async () => {
+      if (!product.id) {
+        throw new Error("Missing product data");
+      }
 
-    setIsVerifying(true);
-
-    try {
-      const payload = {
-        action: 'verifyProduct',
+      const verificationResult = await verifyProductOnBlockchain({
         productId: product.id,
         productData: {
           name: product.name,
@@ -43,20 +36,28 @@ export const ProductBlockchainVerification = ({
           sustainability_score: product.sustainability_score,
           origin: product.origin
         }
-      };
-
-      console.log('Verifying product on blockchain:', payload);
-
-      const { data, error } = await supabase.functions.invoke('verify-tezos-metric', {
-        body: payload
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
-        throw error;
+      if (verificationResult.status !== "success") {
+        throw new Error(verificationResult.message);
       }
 
-      console.log('Verification response:', data);
+      // Update the local database with the blockchain verification data
+      const { error: updateError } = await supabase
+        .from("products")
+        .update({
+          blockchain_tx_id: verificationResult.transaction_hash,
+          blockchain_verified_at: new Date().toISOString()
+        })
+        .eq("id", product.id);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return verificationResult;
+    },
+    onSuccess: (data) => {
       toast({
         title: "Success",
         description: "Product verified on blockchain",
@@ -65,17 +66,16 @@ export const ProductBlockchainVerification = ({
       if (onVerificationComplete) {
         onVerificationComplete();
       }
-    } catch (error) {
+    },
+    onError: (error: any) => {
       console.error('Failed to verify product:', error);
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "Failed to verify product on blockchain",
         variant: "destructive",
       });
-    } finally {
-      setIsVerifying(false);
     }
-  };
+  });
 
   if (product.blockchain_tx_id) {
     return (
@@ -106,11 +106,11 @@ export const ProductBlockchainVerification = ({
       <Button 
         size="sm" 
         variant="default" 
-        onClick={handleVerifyProduct}
-        disabled={isVerifying}
+        onClick={() => verifyMutation.mutate()}
+        disabled={verifyMutation.isPending}
         className="w-full"
       >
-        {isVerifying ? (
+        {verifyMutation.isPending ? (
           <>
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             Verifying...

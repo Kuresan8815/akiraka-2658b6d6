@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Save, Link, AlertTriangle } from "lucide-react";
 import { BlockchainVerification } from "./BlockchainVerification";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface DataEntryTableProps {
   category: "environmental" | "social" | "governance";
@@ -20,6 +21,7 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
   const [savedMetrics, setSavedMetrics] = useState<Record<string, any>>({});
   const [latestValues, setLatestValues] = useState<Record<string, any>>({});
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   // Fetch existing verified metrics
   useEffect(() => {
@@ -28,28 +30,34 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
 
       const widgetIds = activeMetrics.map(m => m.widget?.id).filter(Boolean);
       
-      const { data, error } = await supabase
-        .from("widget_metrics")
-        .select('*')
-        .eq('business_id', businessId)
-        .in('widget_id', widgetIds)
-        .not('tezos_operation_hash', 'is', null) // Correct syntax for checking non-null values
-        .order('recorded_at', { ascending: false });
+      if (widgetIds.length === 0) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("widget_metrics")
+          .select('*')
+          .eq('business_id', businessId)
+          .in('widget_id', widgetIds)
+          .not('tezos_operation_hash', 'is', null) // Correct syntax for checking non-null values
+          .order('recorded_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching verified metrics:', error);
-        return;
-      }
-
-      // Group by widget_id and get latest value for each
-      const latest: Record<string, any> = {};
-      data?.forEach(metric => {
-        if (!latest[metric.widget_id] || metric.recorded_at > latest[metric.widget_id].recorded_at) {
-          latest[metric.widget_id] = metric;
+        if (error) {
+          console.error('Error fetching verified metrics:', error);
+          return;
         }
-      });
 
-      setLatestValues(latest);
+        // Group by widget_id and get latest value for each
+        const latest: Record<string, any> = {};
+        data?.forEach(metric => {
+          if (!latest[metric.widget_id] || metric.recorded_at > latest[metric.widget_id].recorded_at) {
+            latest[metric.widget_id] = metric;
+          }
+        });
+
+        setLatestValues(latest);
+      } catch (err) {
+        console.error('Failed to fetch verified metrics:', err);
+      }
     };
 
     fetchVerifiedMetrics();
@@ -100,6 +108,15 @@ export const DataEntryTable = ({ category, activeMetrics, businessId }: DataEntr
         ...prev,
         [widgetId]: metricData
       }));
+
+      // Clear the input after successful save
+      setMetrics(prev => ({
+        ...prev,
+        [widgetId]: ""
+      }));
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['widget-metrics'] });
 
       toast({
         title: "Data Saved",
